@@ -1,0 +1,29 @@
+{
+  "home": {
+    "badge": "En construcción",
+    "title": "Liga Pokémon",
+    "subtitle": "Gestiona tus ligas y torneos semanales de TCG y VGC en un solo sitio.",
+    "cta": "Empezar"
+  },
+  "nav": {
+    "signIn": "Entrar",
+    "signOut": "Salir",
+    "profile": "Perfil",
+    "settings": "Ajustes",
+    "admin": "Admin"
+  },
+  "auth": {
+    "loginTitle": "Entrar",
+    "loginSubtitle": "Accede con tu cuenta de Google para continuar.",
+    "google": "Entrar con Google",
+    "redirecting": "Redirigiendo…"
+  },
+  "placeholder": {
+    "profileTitle": "Tu perfil",
+    "settingsTitle": "Ajustes",
+    "soon": "Próximamente."
+  },
+  "theme": {
+    "toggle": "Cambiar tema"
+  }
+}
