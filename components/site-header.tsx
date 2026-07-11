@@ -29,6 +29,7 @@ export async function SiteHeader() {
                 settings: t("settings"),
                 signOut: t("signOut"),
                 admin: t("admin"),
+                adminArea: t("adminArea"),
               }}
             />
           ) : (
