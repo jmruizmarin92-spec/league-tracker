@@ -71,6 +71,21 @@ async function getLeagueLocations(
   return data as { locations: string[]; default_location: string | null } | null;
 }
 
+export async function setLeagueArchivedAction(formData: FormData) {
+  const id = String(formData.get("league_id") ?? "");
+  const slug = String(formData.get("slug") ?? "");
+  const archived = String(formData.get("archived") ?? "") === "true";
+  if (!id) return;
+  const supabase = await createClient();
+  await supabase
+    .from("leagues")
+    .update({ archived_at: archived ? new Date().toISOString() : null })
+    .eq("id", id);
+  revalidatePath("/", "layout");
+  revalidatePath(`/leagues/${slug}/admin`);
+  revalidatePath(`/leagues/${slug}`);
+}
+
 export async function addLeagueLocationAction(formData: FormData) {
   const id = String(formData.get("league_id") ?? "");
   const slug = String(formData.get("slug") ?? "");

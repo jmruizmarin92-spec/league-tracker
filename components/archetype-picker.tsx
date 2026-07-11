@@ -1,7 +1,11 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
-import { setMyArchetypesAction, type ActionState } from "@/app/actions/sessions";
+import { useActionState, useMemo, useState, useTransition } from "react";
+import {
+  setMyArchetypesAction,
+  setArchetypeVisibilityAction,
+  type ActionState,
+} from "@/app/actions/sessions";
 import { POKEDEX, spriteUrl } from "@/lib/pokedex";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -134,6 +138,7 @@ export function ArchetypePicker({
   const [a1, setA1] = useState(initial.a1);
   const [a2, setA2] = useState(initial.a2);
   const [isPublic, setIsPublic] = useState(initial.isPublic);
+  const [, startTransition] = useTransition();
 
   const options = useMemo<Option[]>(() => {
     const pkm = POKEDEX.map((p) => ({
@@ -187,7 +192,10 @@ export function ArchetypePicker({
         <Switch
           id="arch-public"
           checked={isPublic}
-          onCheckedChange={setIsPublic}
+          onCheckedChange={(v) => {
+            setIsPublic(v);
+            startTransition(() => setArchetypeVisibilityAction(sessionId, v));
+          }}
         />
         <label htmlFor="arch-public" className="text-sm">
           {labels.publicLabel}

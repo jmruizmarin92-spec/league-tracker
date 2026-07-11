@@ -1,12 +1,16 @@
 import type { StandingRow } from "@/lib/scoring";
 
+type Chip = { key: string; name: string; icon: string | null };
+
 export function StandingsTable({
   rows,
   names,
+  archetypes,
   labels,
 }: {
   rows: StandingRow[];
   names: Map<string, string>;
+  archetypes?: Map<string, Chip[]>;
   labels: {
     rank: string;
     player: string;
@@ -33,7 +37,23 @@ export function StandingsTable({
               <td className="py-2 pr-2 tabular-nums text-muted-foreground">
                 {r.rank}
               </td>
-              <td className="py-2 pr-2">{names.get(r.playerId) ?? "—"}</td>
+              <td className="py-2 pr-2">
+                <span className="flex items-center gap-1.5">
+                  {names.get(r.playerId) ?? "—"}
+                  {archetypes?.get(r.playerId)?.map((c) =>
+                    c.icon ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        key={c.key}
+                        src={c.icon}
+                        alt={c.name}
+                        title={c.name}
+                        className="h-5 w-5"
+                      />
+                    ) : null,
+                  )}
+                </span>
+              </td>
               <td className="py-2 pr-2 text-right font-medium tabular-nums">
                 {r.points}
               </td>

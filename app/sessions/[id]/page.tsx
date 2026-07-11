@@ -32,39 +32,6 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-function ArchetypeIcons({
-  p,
-  chips,
-  canSee,
-}: {
-  p: SessionParticipant;
-  chips: Map<string, ArchetypeChip>;
-  canSee: boolean;
-}) {
-  if (!canSee) return null;
-  const keys = [p.archetype1, p.archetype2].filter(Boolean) as string[];
-  const resolved = keys.map((k) => chips.get(k)).filter(Boolean) as ArchetypeChip[];
-  if (resolved.length === 0) return null;
-  return (
-    <span className="flex items-center gap-1">
-      {resolved.map((c) =>
-        c.icon ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img key={c.key} src={c.icon} alt={c.name} title={c.name} className="h-6 w-6" />
-        ) : (
-          <span
-            key={c.key}
-            title={c.name}
-            className="rounded bg-muted px-1.5 py-0.5 text-xs"
-          >
-            {c.name}
-          </span>
-        ),
-      )}
-    </span>
-  );
-}
-
 export default async function SessionPage({
   params,
 }: {
@@ -123,6 +90,17 @@ export default async function SessionPage({
     return p ? pairingName(p) : "—";
   };
   const standingsNames = new Map(standingIds.map((pid) => [pid, displayName(pid)]));
+
+  // Public archetypes to show in the standings, keyed by player.
+  const publicArch = new Map<string, ArchetypeChip[]>();
+  for (const p of participants) {
+    if (!p.archetype_public) continue;
+    const arr = [p.archetype1, p.archetype2]
+      .filter((k): k is string => !!k)
+      .map((k) => chips.get(k))
+      .filter((c): c is ArchetypeChip => !!c);
+    if (arr.length > 0) publicArch.set(p.player_id, arr);
+  }
   const myPlayerId = participants.find((p) => p.is_me)?.player_id ?? null;
   const hasPending = matches.some((m) => m.result === "pending");
   const lastRoundNumber = rounds.at(-1)?.number ?? 0;
@@ -168,15 +146,8 @@ export default async function SessionPage({
       key={p.player_id}
       className="flex items-center justify-between gap-3 py-2"
     >
-      <span className="flex items-center gap-2">
-        <span className={p.is_me ? "font-medium" : undefined}>
-          {pairingName(p)}
-        </span>
-        <ArchetypeIcons
-          p={p}
-          chips={chips}
-          canSee={p.archetype_public || p.is_me || admin}
-        />
+      <span className={p.is_me ? "font-medium" : undefined}>
+        {pairingName(p)}
       </span>
       {admin && (
         <form action={adminRemoveParticipantAction}>
@@ -252,6 +223,7 @@ export default async function SessionPage({
             <StandingsTable
               rows={standings}
               names={standingsNames}
+              archetypes={publicArch}
               labels={{
                 rank: t("rank"),
                 player: t("player"),
@@ -340,32 +312,34 @@ export default async function SessionPage({
         </Card>
       )}
 
-      {/* Participants */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {t("participants")} ({registered.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          {registered.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("noParticipants")}</p>
-          ) : (
-            <ul className="flex flex-col divide-y">{registered.map(renderRow)}</ul>
-          )}
+      {/* Participants (admin-only; standings/rounds already show the roster) */}
+      {admin && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {t("participants")} ({registered.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            {registered.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("noParticipants")}</p>
+            ) : (
+              <ul className="flex flex-col divide-y">{registered.map(renderRow)}</ul>
+            )}
 
-          {waitlisted.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                {t("waitlist")} ({waitlisted.length})
-              </span>
-              <ul className="flex flex-col divide-y">
-                {waitlisted.map(renderRow)}
-              </ul>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            {waitlisted.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <span className="text-sm font-medium text-muted-foreground">
+                  {t("waitlist")} ({waitlisted.length})
+                </span>
+                <ul className="flex flex-col divide-y">
+                  {waitlisted.map(renderRow)}
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Admin controls */}
       {admin && (

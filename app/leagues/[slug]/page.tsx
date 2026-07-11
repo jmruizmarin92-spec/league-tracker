@@ -39,6 +39,9 @@ export default async function LeaguePage({
               {league.name}
             </h1>
             <Badge variant="secondary">{league.game.toUpperCase()}</Badge>
+            {league.archived_at && (
+              <Badge variant="outline">{t("archivedBadge")}</Badge>
+            )}
           </div>
           {league.description && (
             <p className="text-muted-foreground">{league.description}</p>

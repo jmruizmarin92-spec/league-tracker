@@ -11,6 +11,7 @@ import {
   addLeagueLocationAction,
   removeLeagueLocationAction,
   setDefaultLocationAction,
+  setLeagueArchivedAction,
 } from "@/app/actions/leagues";
 import { Input } from "@/components/ui/input";
 import { LeaguePointsForm } from "@/components/league-points-form";
@@ -170,6 +171,33 @@ export default async function LeagueAdminPage({
               labels={{ placeholder: t("addAdminPlaceholder"), cta: t("add") }}
             />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* End / reactivate league */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("lifecycleTitle")}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            {league.archived_at ? t("endedHint") : t("activeHint")}
+          </p>
+          <form action={setLeagueArchivedAction}>
+            <input type="hidden" name="league_id" value={league.id} />
+            <input type="hidden" name="slug" value={slug} />
+            <input
+              type="hidden"
+              name="archived"
+              value={league.archived_at ? "false" : "true"}
+            />
+            <Button
+              type="submit"
+              variant={league.archived_at ? "outline" : "destructive"}
+            >
+              {league.archived_at ? t("reactivate") : t("endLeague")}
+            </Button>
+          </form>
         </CardContent>
       </Card>
     </main>

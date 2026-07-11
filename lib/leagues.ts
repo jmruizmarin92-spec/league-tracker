@@ -16,6 +16,7 @@ export type League = {
   draw_value: number;
   locations: string[];
   default_location: string | null;
+  archived_at: string | null;
   created_at: string;
 };
 
@@ -24,6 +25,16 @@ export async function listLeagues(): Promise<League[]> {
   const { data } = await supabase
     .from("leagues")
     .select("*")
+    .order("created_at", { ascending: false });
+  return (data as League[] | null) ?? [];
+}
+
+export async function listActiveLeagues(): Promise<League[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("leagues")
+    .select("*")
+    .is("archived_at", null)
     .order("created_at", { ascending: false });
   return (data as League[] | null) ?? [];
 }

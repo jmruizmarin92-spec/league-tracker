@@ -78,6 +78,18 @@ export async function setMyArchetypesAction(
   return { ok: true };
 }
 
+export async function setArchetypeVisibilityAction(
+  sessionId: string,
+  isPublic: boolean,
+) {
+  const supabase = await createClient();
+  await supabase.rpc("set_archetype_visibility", {
+    p_session: sessionId,
+    p_public: isPublic,
+  });
+  revalidatePath(`/sessions/${sessionId}`);
+}
+
 export async function createSessionPlayerAction(formData: FormData) {
   const id = String(formData.get("session_id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
