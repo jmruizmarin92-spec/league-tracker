@@ -24,7 +24,6 @@ export function CreateSessionForm({
   locations: string[];
   defaultLocation: string | null;
   labels: {
-    name: string;
     startsAt: string;
     location: string;
     locationPlaceholder: string;
@@ -51,12 +50,6 @@ export function CreateSessionForm({
       {hasVenues && <input type="hidden" name="location" value={location} />}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="name" className="text-sm font-medium">
-            {labels.name}
-          </label>
-          <Input id="name" name="name" maxLength={80} />
-        </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="starts_at" className="text-sm font-medium">
             {labels.startsAt}

@@ -188,9 +188,9 @@ export default async function Home({
                         <GameBadge game={l.game} />
                       </div>
                     </CardHeader>
-                    {l.description && (
+                    {l.subtitle && (
                       <CardContent className="text-sm text-muted-foreground">
-                        {l.description}
+                        {l.subtitle}
                       </CardContent>
                     )}
                   </Card>

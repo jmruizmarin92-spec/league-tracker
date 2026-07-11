@@ -32,15 +32,12 @@ export default async function LeaguesPage() {
                         {formatLabel(l.format) && (
                           <Badge variant="outline">{formatLabel(l.format)}</Badge>
                         )}
-                        {l.subtitle && (
-                          <Badge variant="outline">{l.subtitle}</Badge>
-                        )}
                       </div>
                     </div>
                   </CardHeader>
-                  {(l.description || formatMonthRange(l.starts_month, l.ends_month)) && (
+                  {(l.subtitle || formatMonthRange(l.starts_month, l.ends_month)) && (
                     <CardContent className="flex flex-col gap-1 text-sm text-muted-foreground">
-                      {l.description && <p>{l.description}</p>}
+                      {l.subtitle && <p>{l.subtitle}</p>}
                       {formatMonthRange(l.starts_month, l.ends_month) && (
                         <p>{formatMonthRange(l.starts_month, l.ends_month)}</p>
                       )}

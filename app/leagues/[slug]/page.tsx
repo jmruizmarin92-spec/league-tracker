@@ -86,7 +86,6 @@ export default async function LeaguePage({
               locations={league.locations}
               defaultLocation={league.default_location}
               labels={{
-                name: t("sName"),
                 startsAt: t("sStartsAt"),
                 location: t("sLocation"),
                 locationPlaceholder: t("sLocationPlaceholder"),
