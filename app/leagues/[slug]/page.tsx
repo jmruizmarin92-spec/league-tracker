@@ -5,6 +5,7 @@ import { Calendar, MapPin, Coins } from "lucide-react";
 import { getLeagueBySlug, isLeagueAdmin, formatLabel } from "@/lib/leagues";
 import { listSessions } from "@/lib/sessions";
 import { formatDateTime, formatCost, formatMonthRange } from "@/lib/format";
+import { weekdayLabel, formatTimeOfDay } from "@/lib/weekday";
 import { CreateSessionForm } from "@/components/create-session-form";
 import { GameBadge } from "@/components/game-badge";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,9 @@ export default async function LeaguePage({
           {formatMonthRange(league.starts_month, league.ends_month) && (
             <p className="text-sm text-muted-foreground">
               {formatMonthRange(league.starts_month, league.ends_month)}
+              {weekdayLabel(league.session_weekday) && formatTimeOfDay(league.session_time) && (
+                <> · {weekdayLabel(league.session_weekday)}, {formatTimeOfDay(league.session_time)}</>
+              )}
             </p>
           )}
         </div>

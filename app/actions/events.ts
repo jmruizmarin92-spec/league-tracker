@@ -190,6 +190,48 @@ export async function setEventStatusAction(formData: FormData) {
   revalidatePath(`/events/${slug}`);
 }
 
+export async function addEventStaffAction(formData: FormData) {
+  const slug = String(formData.get("slug") ?? "");
+  const eventId = String(formData.get("event_id") ?? "");
+  const playerId = String(formData.get("player_id") ?? "");
+  const role = capText(String(formData.get("role") ?? ""), 60);
+  if (!playerId || !role) return;
+  const supabase = await createClient();
+  await supabase.rpc("add_event_staff", {
+    p_event: eventId,
+    p_player: playerId,
+    p_role: role,
+  });
+  revalidatePath(`/events/${slug}`);
+}
+
+export async function createEventStaffPlayerAction(formData: FormData) {
+  const slug = String(formData.get("slug") ?? "");
+  const eventId = String(formData.get("event_id") ?? "");
+  const name = capText(String(formData.get("name") ?? ""), 60);
+  const role = capText(String(formData.get("role") ?? ""), 60);
+  if (!name || !role) return;
+  const supabase = await createClient();
+  await supabase.rpc("create_event_staff_player", {
+    p_event: eventId,
+    p_name: name,
+    p_role: role,
+  });
+  revalidatePath(`/events/${slug}`);
+}
+
+export async function removeEventStaffAction(formData: FormData) {
+  const slug = String(formData.get("slug") ?? "");
+  const eventId = String(formData.get("event_id") ?? "");
+  const playerId = String(formData.get("player_id") ?? "");
+  const supabase = await createClient();
+  await supabase.rpc("remove_event_staff", {
+    p_event: eventId,
+    p_player: playerId,
+  });
+  revalidatePath(`/events/${slug}`);
+}
+
 export async function deleteEventAction(formData: FormData) {
   const eventId = String(formData.get("event_id") ?? "");
   if (!eventId) return;

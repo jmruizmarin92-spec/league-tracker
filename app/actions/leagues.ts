@@ -101,6 +101,62 @@ export async function updateLeagueDurationAction(
   return { ok: true };
 }
 
+export async function updateLeagueScheduleAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const id = String(formData.get("league_id") ?? "");
+  const slug = String(formData.get("slug") ?? "");
+  const weekdayRaw = String(formData.get("session_weekday") ?? "");
+  const time = String(formData.get("session_time") ?? "");
+  const costRaw = String(formData.get("default_cost") ?? "0").replace(",", ".");
+
+  const weekday = weekdayRaw === "" ? null : Number(weekdayRaw);
+  if (weekday !== null && (!Number.isInteger(weekday) || weekday < 0 || weekday > 6)) {
+    return { error: "Día de la semana no válido." };
+  }
+  if (time && !/^\d{2}:\d{2}$/.test(time)) {
+    return { error: "Hora no válida." };
+  }
+  const cost = costRaw === "" ? 0 : Number(costRaw);
+  if (Number.isNaN(cost) || cost < 0) return { error: "Coste no válido." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("leagues")
+    .update({
+      session_weekday: weekday,
+      session_time: time || null,
+      default_cost: cost,
+    })
+    .eq("id", id);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/leagues/${slug}/admin`);
+  revalidatePath(`/leagues/${slug}`);
+  return { ok: true };
+}
+
+export type GenerateSessionsState = ActionState & { count?: number };
+
+export async function generateLeagueSessionsAction(
+  _prev: GenerateSessionsState,
+  formData: FormData,
+): Promise<GenerateSessionsState> {
+  const id = String(formData.get("league_id") ?? "");
+  const slug = String(formData.get("slug") ?? "");
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("generate_league_sessions", {
+    p_league: id,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath(`/leagues/${slug}/admin`);
+  revalidatePath(`/leagues/${slug}`);
+  return { ok: true, count: data as number };
+}
+
 export async function updateLeaguePointsAction(
   _prev: ActionState,
   formData: FormData,

@@ -20,6 +20,9 @@ export type League = {
   draw_value: number;
   locations: string[];
   default_location: string | null;
+  session_weekday: number | null;
+  session_time: string | null;
+  default_cost: number;
   archived_at: string | null;
   starts_month: string | null;
   ends_month: string | null;

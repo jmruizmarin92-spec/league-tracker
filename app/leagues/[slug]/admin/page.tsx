@@ -19,7 +19,10 @@ import { Input } from "@/components/ui/input";
 import { LeagueDetailsForm } from "@/components/league-details-form";
 import { LeaguePointsForm } from "@/components/league-points-form";
 import { LeagueDurationForm } from "@/components/league-duration-form";
+import { LeagueScheduleForm } from "@/components/league-schedule-form";
+import { GenerateSessionsButton } from "@/components/generate-sessions-button";
 import { AddAdminForm } from "@/components/add-admin-form";
+import { weekdayLabel } from "@/lib/weekday";
 import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -126,6 +129,52 @@ export default async function LeagueAdminPage({
               saved: t("saved"),
             }}
           />
+        </CardContent>
+      </Card>
+
+      {/* Weekly schedule + bulk session generation */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("scheduleTitle")}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <p className="text-sm text-muted-foreground">{t("scheduleHint")}</p>
+          <LeagueScheduleForm
+            leagueId={league.id}
+            slug={slug}
+            defaults={{
+              weekday: league.session_weekday,
+              time: league.session_time,
+              cost: league.default_cost,
+            }}
+            labels={{
+              weekday: t("fieldWeekday"),
+              weekdayPlaceholder: t("weekdayPlaceholder"),
+              time: t("fieldTime"),
+              cost: t("fieldDefaultCost"),
+              save: t("save"),
+              saved: t("saved"),
+            }}
+          />
+          {league.session_weekday != null && league.session_time != null && (
+            <div className="flex flex-col gap-2 border-t pt-4">
+              <span className="text-sm font-medium">{t("generateTitle")}</span>
+              <p className="text-sm text-muted-foreground">
+                {t("generateHint", {
+                  weekday: weekdayLabel(league.session_weekday) ?? "",
+                })}
+              </p>
+              <GenerateSessionsButton
+                leagueId={league.id}
+                slug={slug}
+                labels={{
+                  cta: t("generateCta"),
+                  created: t("generateCreated"),
+                  none: t("generateNone"),
+                }}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 

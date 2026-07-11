@@ -7,7 +7,9 @@ import {
   listRegistrations,
   getMyRegistration,
   getEventLists,
+  listEventStaff,
 } from "@/lib/events";
+import { listPlayers } from "@/lib/players";
 import { getUser, getProfile } from "@/lib/auth";
 import { pairingName } from "@/lib/player-name";
 import { formatDateTime, formatCost } from "@/lib/format";
@@ -15,14 +17,18 @@ import {
   adminRemoveRegistrationAction,
   setEventStatusAction,
   deleteEventAction,
+  removeEventStaffAction,
+  createEventStaffPlayerAction,
 } from "@/app/actions/events";
 import { EventRegister } from "@/components/event-register";
 import { EditEventForm } from "@/components/edit-event-form";
+import { AddStaffForm } from "@/components/add-staff-form";
 import { CategoryBadge } from "@/components/category-badge";
 import { GameBadge } from "@/components/game-badge";
 import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function EventPage({
@@ -35,15 +41,23 @@ export default async function EventPage({
   if (!event) notFound();
 
   const t = await getTranslations("event");
-  const [admin, regs, myReg, user, viewerProfile] = await Promise.all([
+  const [admin, regs, myReg, user, viewerProfile, staff] = await Promise.all([
     isEventAdmin(event.id),
     listRegistrations(event.id),
     getMyRegistration(event.id),
     getUser(),
     getProfile(),
+    listEventStaff(event.id),
   ]);
   const isSiteAdmin = !!viewerProfile?.is_admin;
   const lists = admin ? await getEventLists(event.id) : new Map();
+
+  const staffIds = new Set(staff.map((s) => s.player_id));
+  const addableStaff = admin
+    ? (await listPlayers())
+        .filter((p) => !staffIds.has(p.id))
+        .map((p) => ({ id: p.id, label: pairingName(p) }))
+    : [];
 
   const registered = regs.filter((r) => r.status === "registered");
   const waitlisted = regs.filter((r) => r.status === "waitlisted");
@@ -226,6 +240,92 @@ export default async function EventPage({
           )}
         </CardContent>
       </Card>
+
+      {/* Staff (judges, scorekeepers, helpers) */}
+      {(staff.length > 0 || admin) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {t("staffTitle")} ({staff.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            {staff.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("noStaff")}</p>
+            ) : (
+              <ul className="flex flex-col divide-y">
+                {staff.map((s) => (
+                  <li
+                    key={s.player_id}
+                    className="flex items-center justify-between gap-3 py-2"
+                  >
+                    <span className="flex items-center gap-2">
+                      {s.display_name}
+                      <Badge variant="outline">{s.role}</Badge>
+                    </span>
+                    {admin && (
+                      <form action={removeEventStaffAction}>
+                        <input type="hidden" name="slug" value={slug} />
+                        <input type="hidden" name="event_id" value={event.id} />
+                        <input type="hidden" name="player_id" value={s.player_id} />
+                        <Button type="submit" variant="ghost" size="sm">
+                          {t("remove")}
+                        </Button>
+                      </form>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {admin && (
+              <div className="flex flex-col gap-3 border-t pt-4">
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm font-medium">{t("addStaff")}</span>
+                  <AddStaffForm
+                    eventId={event.id}
+                    slug={slug}
+                    players={addableStaff}
+                    labels={{
+                      placeholder: t("choosePlayer"),
+                      rolePlaceholder: t("rolePlaceholder"),
+                      cta: t("add"),
+                    }}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm font-medium">{t("createStaffPlayer")}</span>
+                  <p className="text-sm text-muted-foreground">
+                    {t("createStaffPlayerHint")}
+                  </p>
+                  <form
+                    action={createEventStaffPlayerAction}
+                    className="flex flex-col gap-2 sm:flex-row"
+                  >
+                    <input type="hidden" name="event_id" value={event.id} />
+                    <input type="hidden" name="slug" value={slug} />
+                    <Input
+                      name="name"
+                      maxLength={60}
+                      placeholder={t("newPlayerPlaceholder")}
+                      className="sm:flex-1"
+                    />
+                    <Input
+                      name="role"
+                      maxLength={60}
+                      placeholder={t("rolePlaceholder")}
+                      className="sm:w-44"
+                    />
+                    <Button type="submit" variant="secondary">
+                      {t("createPlayerCta")}
+                    </Button>
+                  </form>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Edit event details */}
       {admin && (

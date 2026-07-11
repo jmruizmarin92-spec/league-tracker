@@ -145,6 +145,32 @@ export async function getMyRegistration(eventId: string): Promise<MyRegistration
   };
 }
 
+export type EventStaffMember = {
+  player_id: string;
+  role: string;
+  display_name: string;
+};
+
+type StaffRow = {
+  player_id: string;
+  role: string;
+  players: { display_name: string } | null;
+};
+
+export async function listEventStaff(eventId: string): Promise<EventStaffMember[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("event_staff")
+    .select("player_id, role, players(display_name)")
+    .eq("event_id", eventId)
+    .order("created_at");
+  return ((data as StaffRow[] | null) ?? []).map((r) => ({
+    player_id: r.player_id,
+    role: r.role,
+    display_name: r.players?.display_name ?? "—",
+  }));
+}
+
 // Admin: all submitted lists for an event, keyed by player_id (RLS allows admins).
 export async function getEventLists(
   eventId: string,
