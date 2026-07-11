@@ -5,7 +5,7 @@ import { listActiveLeagues, formatLabel } from "@/lib/leagues";
 import { getUpcoming } from "@/lib/agenda";
 import { formatDateTime, formatCost } from "@/lib/format";
 import { CATEGORIES } from "@/lib/event-category";
-import { buildFilterHref } from "@/lib/filter-href";
+import { buildFilterHref, ACTIVE_FILTER_CLASS } from "@/lib/filter-href";
 import { CategoryBadge } from "@/components/category-badge";
 import { GameBadge } from "@/components/game-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -63,7 +63,8 @@ export default async function Home({
                   key={g || "all"}
                   asChild
                   size="sm"
-                  variant={(gameFilter ?? "") === g ? "secondary" : "outline"}
+                  variant="outline"
+                  className={(gameFilter ?? "") === g ? ACTIVE_FILTER_CLASS : undefined}
                 >
                   <Link href={buildFilterHref("/", sp, { game: g || undefined })}>
                     {g ? g.toUpperCase() : t("filterAllGames")}
@@ -78,7 +79,8 @@ export default async function Home({
               <Button
                 asChild
                 size="sm"
-                variant={!typeFilter ? "secondary" : "outline"}
+                variant="outline"
+                className={!typeFilter ? ACTIVE_FILTER_CLASS : undefined}
               >
                 <Link href={buildFilterHref("/", sp, { type: undefined })}>
                   {t("filterAllCategories")}
@@ -87,7 +89,8 @@ export default async function Home({
               <Button
                 asChild
                 size="sm"
-                variant={typeFilter === "session" ? "secondary" : "outline"}
+                variant="outline"
+                className={typeFilter === "session" ? ACTIVE_FILTER_CLASS : undefined}
               >
                 <Link href={buildFilterHref("/", sp, { type: "session" })}>
                   {t("session")}
@@ -100,7 +103,8 @@ export default async function Home({
                     key={c.value}
                     asChild
                     size="sm"
-                    variant={typeFilter === c.value ? "secondary" : "outline"}
+                    variant="outline"
+                    className={typeFilter === c.value ? ACTIVE_FILTER_CLASS : undefined}
                   >
                     <Link href={buildFilterHref("/", sp, { type: c.value })}>
                       <Icon className="h-3.5 w-3.5" />

@@ -4,7 +4,7 @@ import { listEvents } from "@/lib/events";
 import { getProfile } from "@/lib/auth";
 import { formatDateTime, formatCost } from "@/lib/format";
 import { CATEGORIES } from "@/lib/event-category";
-import { buildFilterHref } from "@/lib/filter-href";
+import { buildFilterHref, ACTIVE_FILTER_CLASS } from "@/lib/filter-href";
 import { CreateEventForm } from "@/components/create-event-form";
 import { CategoryBadge } from "@/components/category-badge";
 import { GameBadge } from "@/components/game-badge";
@@ -49,7 +49,8 @@ export default async function EventsPage({
               key={g || "all"}
               asChild
               size="sm"
-              variant={(gameFilter ?? "") === g ? "secondary" : "outline"}
+              variant="outline"
+              className={(gameFilter ?? "") === g ? ACTIVE_FILTER_CLASS : undefined}
             >
               <Link href={buildFilterHref("/events", sp, { game: g || undefined })}>
                 {g ? g.toUpperCase() : t("filterAllGames")}
@@ -64,7 +65,8 @@ export default async function EventsPage({
           <Button
             asChild
             size="sm"
-            variant={!categoryFilter ? "secondary" : "outline"}
+            variant="outline"
+            className={!categoryFilter ? ACTIVE_FILTER_CLASS : undefined}
           >
             <Link href={buildFilterHref("/events", sp, { category: undefined })}>
               {t("filterAllCategories")}
@@ -77,7 +79,8 @@ export default async function EventsPage({
                 key={c.value}
                 asChild
                 size="sm"
-                variant={categoryFilter === c.value ? "secondary" : "outline"}
+                variant="outline"
+                className={categoryFilter === c.value ? ACTIVE_FILTER_CLASS : undefined}
               >
                 <Link href={buildFilterHref("/events", sp, { category: c.value })}>
                   <Icon className="h-3.5 w-3.5" />

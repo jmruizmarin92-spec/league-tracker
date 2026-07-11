@@ -5,7 +5,7 @@ import { getProfile } from "@/lib/auth";
 import { getPlayersByIds } from "@/lib/players";
 import { pairingName } from "@/lib/player-name";
 import { formatDateTime } from "@/lib/format";
-import { buildFilterHref } from "@/lib/filter-href";
+import { buildFilterHref, ACTIVE_FILTER_CLASS } from "@/lib/filter-href";
 import {
   computeCareerTotals,
   computeHeadToHead,
@@ -100,7 +100,8 @@ export default async function PlayerProfilePage({
               key={g || "all"}
               asChild
               size="sm"
-              variant={(gameFilter ?? "") === g ? "secondary" : "outline"}
+              variant="outline"
+              className={(gameFilter ?? "") === g ? ACTIVE_FILTER_CLASS : undefined}
             >
               <Link href={buildFilterHref(`/players/${id}`, sp, { game: g || undefined })}>
                 {g ? g.toUpperCase() : t("filterAllGames")}
