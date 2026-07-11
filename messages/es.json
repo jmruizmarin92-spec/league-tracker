@@ -229,6 +229,7 @@
   "me": {
     "title": "Tu jugador",
     "pairingPreview": "Así apareces en los emparejamientos:",
+    "viewPublicProfile": "Ver mi perfil público →",
     "editTitle": "Datos del jugador",
     "fieldAlias": "Alias",
     "fieldFirstName": "Nombre",
@@ -268,6 +269,24 @@
     "mergeIntoPlaceholder": "Elegir jugador…",
     "mergeCta": "Fusionar",
     "mergeSuccess": "Jugadores fusionados."
+  },
+  "playerProfile": {
+    "pokemonId": "Pokémon ID",
+    "gameId": "Game ID",
+    "managedBadge": "Jugador gestionado",
+    "careerTitle": "Estadísticas",
+    "wins": "Victorias",
+    "losses": "Derrotas",
+    "draws": "Empates",
+    "sessionsAttended": "Sesiones jugadas",
+    "leaguesTitle": "Historial por liga",
+    "noLeagues": "Aún no ha participado en ninguna liga.",
+    "recordLine": "{points} pts · {w}-{l}-{d} · {sessions} sesiones",
+    "archetypesTitle": "Arquetipos usados",
+    "noArchetypes": "Sin arquetipos registrados.",
+    "privateBadge": "Privado",
+    "h2hTitle": "Cara a cara",
+    "noH2h": "Aún no hay partidas registradas."
   },
   "placeholder": {
     "profileTitle": "Tu perfil",

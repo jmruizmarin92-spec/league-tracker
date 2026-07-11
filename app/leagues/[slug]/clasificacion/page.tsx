@@ -76,7 +76,14 @@ export default async function LeagueStandingsPage({
                       <td className="py-2 pr-2 tabular-nums text-muted-foreground">
                         {r.rank}
                       </td>
-                      <td className="py-2 pr-2">{name(r.playerId)}</td>
+                      <td className="py-2 pr-2">
+                        <Link
+                          href={`/players/${r.playerId}`}
+                          className="hover:text-primary hover:underline"
+                        >
+                          {name(r.playerId)}
+                        </Link>
+                      </td>
                       <td className="py-2 pr-2 text-right font-medium tabular-nums">
                         {r.leaguePoints}
                       </td>

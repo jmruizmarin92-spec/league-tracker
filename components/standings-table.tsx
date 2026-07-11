@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { StandingRow } from "@/lib/scoring";
 
 type Chip = { key: string; name: string; icon: string | null };
@@ -39,7 +40,12 @@ export function StandingsTable({
               </td>
               <td className="py-2 pr-2">
                 <span className="flex items-center gap-1.5">
-                  {names.get(r.playerId) ?? "—"}
+                  <Link
+                    href={`/players/${r.playerId}`}
+                    className="hover:text-primary hover:underline"
+                  >
+                    {names.get(r.playerId) ?? "—"}
+                  </Link>
                   {archetypes?.get(r.playerId)?.map((c) =>
                     c.icon ? (
                       // eslint-disable-next-line @next/next/no-img-element

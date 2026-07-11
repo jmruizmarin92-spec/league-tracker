@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { requireUser } from "@/lib/auth";
 import { getMyPlayer, getMyClaims, listUnclaimedPlayers } from "@/lib/players";
@@ -28,6 +29,14 @@ export default async function MePage() {
               {pairingName(player)}
             </span>
           </p>
+        )}
+        {player && (
+          <Link
+            href={`/players/${player.id}`}
+            className="w-fit text-sm text-primary hover:underline"
+          >
+            {t("viewPublicProfile")}
+          </Link>
         )}
       </div>
 
