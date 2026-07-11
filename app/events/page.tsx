@@ -49,7 +49,7 @@ export default async function EventsPage({
               key={g || "all"}
               asChild
               size="sm"
-              variant={(gameFilter ?? "") === g ? "default" : "outline"}
+              variant={(gameFilter ?? "") === g ? "secondary" : "outline"}
             >
               <Link href={buildFilterHref("/events", sp, { game: g || undefined })}>
                 {g ? g.toUpperCase() : t("filterAllGames")}
@@ -64,7 +64,7 @@ export default async function EventsPage({
           <Button
             asChild
             size="sm"
-            variant={!categoryFilter ? "default" : "outline"}
+            variant={!categoryFilter ? "secondary" : "outline"}
           >
             <Link href={buildFilterHref("/events", sp, { category: undefined })}>
               {t("filterAllCategories")}
@@ -77,7 +77,7 @@ export default async function EventsPage({
                 key={c.value}
                 asChild
                 size="sm"
-                variant={categoryFilter === c.value ? "default" : "outline"}
+                variant={categoryFilter === c.value ? "secondary" : "outline"}
               >
                 <Link href={buildFilterHref("/events", sp, { category: c.value })}>
                   <Icon className="h-3.5 w-3.5" />

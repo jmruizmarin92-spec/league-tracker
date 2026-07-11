@@ -63,7 +63,7 @@ export default async function Home({
                   key={g || "all"}
                   asChild
                   size="sm"
-                  variant={(gameFilter ?? "") === g ? "default" : "outline"}
+                  variant={(gameFilter ?? "") === g ? "secondary" : "outline"}
                 >
                   <Link href={buildFilterHref("/", sp, { game: g || undefined })}>
                     {g ? g.toUpperCase() : t("filterAllGames")}
@@ -78,7 +78,7 @@ export default async function Home({
               <Button
                 asChild
                 size="sm"
-                variant={!typeFilter ? "default" : "outline"}
+                variant={!typeFilter ? "secondary" : "outline"}
               >
                 <Link href={buildFilterHref("/", sp, { type: undefined })}>
                   {t("filterAllCategories")}
@@ -87,7 +87,7 @@ export default async function Home({
               <Button
                 asChild
                 size="sm"
-                variant={typeFilter === "session" ? "default" : "outline"}
+                variant={typeFilter === "session" ? "secondary" : "outline"}
               >
                 <Link href={buildFilterHref("/", sp, { type: "session" })}>
                   {t("session")}
@@ -100,7 +100,7 @@ export default async function Home({
                     key={c.value}
                     asChild
                     size="sm"
-                    variant={typeFilter === c.value ? "default" : "outline"}
+                    variant={typeFilter === c.value ? "secondary" : "outline"}
                   >
                     <Link href={buildFilterHref("/", sp, { type: c.value })}>
                       <Icon className="h-3.5 w-3.5" />

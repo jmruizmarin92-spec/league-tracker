@@ -100,7 +100,7 @@ export default async function PlayerProfilePage({
               key={g || "all"}
               asChild
               size="sm"
-              variant={(gameFilter ?? "") === g ? "default" : "outline"}
+              variant={(gameFilter ?? "") === g ? "secondary" : "outline"}
             >
               <Link href={buildFilterHref(`/players/${id}`, sp, { game: g || undefined })}>
                 {g ? g.toUpperCase() : t("filterAllGames")}
