@@ -8,14 +8,16 @@ import {
   getMyRegistration,
   getEventLists,
 } from "@/lib/events";
-import { getUser } from "@/lib/auth";
+import { getUser, getProfile } from "@/lib/auth";
 import { pairingName } from "@/lib/player-name";
 import { formatDateTime, formatCost } from "@/lib/format";
 import {
   adminRemoveRegistrationAction,
   setEventStatusAction,
+  deleteEventAction,
 } from "@/app/actions/events";
 import { EventRegister } from "@/components/event-register";
+import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,12 +32,14 @@ export default async function EventPage({
   if (!event) notFound();
 
   const t = await getTranslations("event");
-  const [admin, regs, myReg, user] = await Promise.all([
+  const [admin, regs, myReg, user, viewerProfile] = await Promise.all([
     isEventAdmin(event.id),
     listRegistrations(event.id),
     getMyRegistration(event.id),
     getUser(),
+    getProfile(),
   ]);
+  const isSiteAdmin = !!viewerProfile?.is_admin;
   const lists = admin ? await getEventLists(event.id) : new Map();
 
   const registered = regs.filter((r) => r.status === "registered");
@@ -55,8 +59,10 @@ export default async function EventPage({
         <Link href="/events" className="text-sm text-muted-foreground hover:text-foreground">
           ← {t("allEvents")}
         </Link>
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">{event.name}</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="truncate text-2xl font-semibold tracking-tight">
+            {event.name}
+          </h1>
           <Badge variant="secondary">{event.game.toUpperCase()}</Badge>
           <Badge variant={event.status === "open" ? "default" : "secondary"}>
             {t(`status_${event.status}`)}
@@ -224,7 +230,7 @@ export default async function EventPage({
           </CardHeader>
           <CardContent className="flex flex-col gap-2">
             <span className="text-sm font-medium">{t("statusLabel")}</span>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {(["open", "closed", "complete"] as const).map((s) => (
                 <form key={s} action={setEventStatusAction}>
                   <input type="hidden" name="slug" value={slug} />
@@ -240,6 +246,26 @@ export default async function EventPage({
                 </form>
               ))}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Hard delete (site admin only) */}
+      {isSiteAdmin && (
+        <Card className="border-destructive/40">
+          <CardHeader>
+            <CardTitle>{t("dangerZone")}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+            <p className="text-sm text-muted-foreground">
+              {t("deleteEventHint")}
+            </p>
+            <form action={deleteEventAction}>
+              <input type="hidden" name="event_id" value={event.id} />
+              <ConfirmDeleteButton confirmMessage={t("confirmDeleteEvent")}>
+                {t("deleteEvent")}
+              </ConfirmDeleteButton>
+            </form>
           </CardContent>
         </Card>
       )}

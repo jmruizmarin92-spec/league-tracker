@@ -34,19 +34,19 @@ export default async function ArchetypesAdminPage() {
             {byGame[game].map((c) => (
               <li
                 key={c.id}
-                className="flex items-center justify-between gap-3 py-2"
+                className="flex flex-wrap items-center justify-between gap-3 py-2"
               >
-                <span className="flex items-center gap-2">
+                <span className="flex min-w-0 items-center gap-2">
                   {c.icon_url && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={c.icon_url} alt="" className="h-6 w-6" />
+                    <img src={c.icon_url} alt="" className="h-6 w-6 shrink-0" />
                   )}
-                  {c.name}
+                  <span className="truncate">{c.name}</span>
                   {!c.active && (
                     <Badge variant="secondary">{t("inactive")}</Badge>
                   )}
                 </span>
-                <div className="flex gap-2">
+                <div className="flex shrink-0 gap-2">
                   <form action={toggleCustomArchetypeAction}>
                     <input type="hidden" name="id" value={c.id} />
                     <input type="hidden" name="active" value={String(c.active)} />

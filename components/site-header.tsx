@@ -12,25 +12,25 @@ export async function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
-      <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-3 px-4">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="font-semibold tracking-tight">
+      <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-2 px-4">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+          <Link href="/" className="truncate font-semibold tracking-tight">
             Liga Pokémon
           </Link>
           <Link
             href="/leagues"
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            className="shrink-0 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             {t("leagues")}
           </Link>
           <Link
             href="/events"
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            className="shrink-0 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             {t("events")}
           </Link>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <ThemeToggle />
           {profile && user ? (
             <UserMenu

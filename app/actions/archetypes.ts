@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { capText, isHttpUrl } from "@/lib/validation";
 
 export type ActionState = { error?: string; ok?: boolean };
 
@@ -10,10 +11,13 @@ export async function createCustomArchetypeAction(
   formData: FormData,
 ): Promise<ActionState> {
   const game = String(formData.get("game") ?? "");
-  const name = String(formData.get("name") ?? "").trim();
-  const iconUrl = String(formData.get("icon_url") ?? "").trim();
+  const name = capText(String(formData.get("name") ?? ""), 60);
+  const iconUrl = capText(String(formData.get("icon_url") ?? ""), 500);
   if (game !== "tcg" && game !== "vgc") return { error: "Juego no válido." };
   if (!name) return { error: "Introduce un nombre." };
+  if (iconUrl && !isHttpUrl(iconUrl)) {
+    return { error: "La URL del icono no es válida." };
+  }
 
   const supabase = await createClient();
   const {

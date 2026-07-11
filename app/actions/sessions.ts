@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { capText } from "@/lib/validation";
 
 export type ActionState = { error?: string; ok?: boolean };
 
@@ -12,9 +13,9 @@ export async function createSessionAction(
 ): Promise<ActionState> {
   const leagueId = String(formData.get("league_id") ?? "");
   const slug = String(formData.get("slug") ?? "");
-  const name = String(formData.get("name") ?? "");
+  const name = capText(String(formData.get("name") ?? ""), 80);
   const startsAtIso = String(formData.get("starts_at_iso") ?? "");
-  const location = String(formData.get("location") ?? "");
+  const location = capText(String(formData.get("location") ?? ""), 120);
   const costRaw = String(formData.get("cost") ?? "0").replace(",", ".");
   const capacityRaw = String(formData.get("capacity") ?? "");
 
@@ -92,7 +93,7 @@ export async function setArchetypeVisibilityAction(
 
 export async function createSessionPlayerAction(formData: FormData) {
   const id = String(formData.get("session_id") ?? "");
-  const name = String(formData.get("name") ?? "").trim();
+  const name = capText(String(formData.get("name") ?? ""), 60);
   if (!id || !name) return;
   await rpc("create_session_player", { p_session: id, p_name: name });
   revalidatePath(`/sessions/${id}`);
@@ -118,4 +119,14 @@ export async function setSessionStatusAction(formData: FormData) {
   const status = String(formData.get("status") ?? "");
   await rpc("set_session_status", { p_session: id, p_status: status });
   revalidatePath(`/sessions/${id}`);
+}
+
+export async function deleteSessionAction(formData: FormData) {
+  const id = String(formData.get("session_id") ?? "");
+  const leagueSlug = String(formData.get("league_slug") ?? "");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("delete_session", { p_session: id });
+  if (error) return;
+  revalidatePath(`/leagues/${leagueSlug}`);
+  redirect(`/leagues/${leagueSlug}`);
 }

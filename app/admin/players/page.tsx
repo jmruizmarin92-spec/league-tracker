@@ -5,9 +5,11 @@ import {
   createManagedPlayerAction,
   approveClaimAction,
   rejectClaimAction,
+  deletePlayerAction,
 } from "@/app/actions/players";
 import { PlayerNameForm } from "@/components/player-name-form";
 import { MergePlayersForm } from "@/components/merge-players-form";
+import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -104,12 +106,26 @@ export default async function AdminPlayersPage() {
               {players.map((p) => (
                 <li
                   key={p.id}
-                  className="flex items-center justify-between gap-3 py-2"
+                  className="flex flex-wrap items-center justify-between gap-3 py-2"
                 >
-                  <span>{p.display_name}</span>
-                  <Badge variant={p.user_id ? "default" : "secondary"}>
-                    {p.user_id ? t("badgeLinked") : t("badgeManaged")}
-                  </Badge>
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="truncate">{p.display_name}</span>
+                    <Badge variant={p.user_id ? "default" : "secondary"}>
+                      {p.user_id ? t("badgeLinked") : t("badgeManaged")}
+                    </Badge>
+                  </span>
+                  {!p.user_id && (
+                    <form action={deletePlayerAction}>
+                      <input type="hidden" name="player_id" value={p.id} />
+                      <ConfirmDeleteButton
+                        confirmMessage={t("confirmDeletePlayer", {
+                          name: p.display_name,
+                        })}
+                      >
+                        {t("delete")}
+                      </ConfirmDeleteButton>
+                    </form>
+                  )}
                 </li>
               ))}
             </ul>

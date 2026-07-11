@@ -25,6 +25,7 @@ function ArchetypeCombobox({
   placeholder,
   searchPlaceholder,
   clearLabel,
+  noResultsLabel,
 }: {
   options: Option[];
   value: string;
@@ -32,6 +33,7 @@ function ArchetypeCombobox({
   placeholder: string;
   searchPlaceholder: string;
   clearLabel: string;
+  noResultsLabel: string;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -65,7 +67,10 @@ function ArchetypeCombobox({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-72 p-0" align="start">
+      <PopoverContent
+        className="w-[min(18rem,calc(100vw-2rem))] p-0"
+        align="start"
+      >
         <div className="p-2">
           <Input
             autoFocus
@@ -85,6 +90,11 @@ function ArchetypeCombobox({
           >
             {clearLabel}
           </button>
+          {results.length === 0 && query.trim() !== "" && (
+            <p className="px-2 py-3 text-center text-sm text-muted-foreground">
+              {noResultsLabel}
+            </p>
+          )}
           {results.map((o) => (
             <button
               key={o.key}
@@ -126,6 +136,7 @@ export function ArchetypePicker({
     placeholder: string;
     search: string;
     clear: string;
+    noResults: string;
     publicLabel: string;
     save: string;
     saved: string;
@@ -173,6 +184,7 @@ export function ArchetypePicker({
             placeholder={labels.placeholder}
             searchPlaceholder={labels.search}
             clearLabel={labels.clear}
+            noResultsLabel={labels.noResults}
           />
         </div>
         <div className="flex flex-col gap-1.5">
@@ -184,6 +196,7 @@ export function ArchetypePicker({
             placeholder={labels.placeholder}
             searchPlaceholder={labels.search}
             clearLabel={labels.clear}
+            noResultsLabel={labels.noResults}
           />
         </div>
       </div>

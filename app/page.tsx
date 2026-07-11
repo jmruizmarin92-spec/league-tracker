@@ -41,9 +41,9 @@ export default async function Home() {
                   href={u.href}
                   className="flex items-center justify-between gap-3 p-3 transition-colors hover:bg-accent/50"
                 >
-                  <span className="flex flex-col">
-                    <span className="flex items-center gap-2 font-medium">
-                      {u.name}
+                  <span className="flex min-w-0 flex-col">
+                    <span className="flex flex-wrap items-center gap-2 font-medium">
+                      <span className="truncate">{u.name}</span>
                       <Badge variant="secondary">{u.game.toUpperCase()}</Badge>
                       <Badge variant="outline">
                         {u.kind === "session" ? t("session") : t("event")}

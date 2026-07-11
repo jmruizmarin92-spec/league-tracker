@@ -6,16 +6,19 @@ import {
   listLeagueAdmins,
   listAddableUsers,
 } from "@/lib/leagues";
+import { getProfile } from "@/lib/auth";
 import {
   removeLeagueAdminAction,
   addLeagueLocationAction,
   removeLeagueLocationAction,
   setDefaultLocationAction,
   setLeagueArchivedAction,
+  deleteLeagueAction,
 } from "@/app/actions/leagues";
 import { Input } from "@/components/ui/input";
 import { LeaguePointsForm } from "@/components/league-points-form";
 import { AddAdminForm } from "@/components/add-admin-form";
+import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,10 +34,12 @@ export default async function LeagueAdminPage({
   if (!(await isLeagueAdmin(league.id))) redirect(`/leagues/${slug}`);
 
   const t = await getTranslations("leagueAdmin");
-  const [admins, addable] = await Promise.all([
+  const [admins, addable, viewerProfile] = await Promise.all([
     listLeagueAdmins(league.id),
     listAddableUsers(league.id),
+    getProfile(),
   ]);
+  const isSiteAdmin = !!viewerProfile?.is_admin;
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
@@ -76,20 +81,22 @@ export default async function LeagueAdminPage({
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <p className="text-sm text-muted-foreground">{t("locationsHint")}</p>
-          {league.locations.length > 0 && (
+          {league.locations.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("noLocations")}</p>
+          ) : (
             <ul className="flex flex-col divide-y">
               {league.locations.map((loc) => (
                 <li
                   key={loc}
-                  className="flex items-center justify-between gap-3 py-2"
+                  className="flex flex-wrap items-center justify-between gap-3 py-2"
                 >
-                  <span className="flex items-center gap-2">
-                    {loc}
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="truncate">{loc}</span>
                     {league.default_location === loc && (
                       <Badge>{t("defaultBadge")}</Badge>
                     )}
                   </span>
-                  <div className="flex gap-2">
+                  <div className="flex shrink-0 gap-2">
                     {league.default_location !== loc && (
                       <form action={setDefaultLocationAction}>
                         <input type="hidden" name="league_id" value={league.id} />
@@ -136,31 +143,35 @@ export default async function LeagueAdminPage({
           <CardTitle>{t("adminsTitle")}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <ul className="flex flex-col divide-y">
-            {admins.map((a) => (
-              <li
-                key={a.user_id}
-                className="flex items-center justify-between gap-3 py-2"
-              >
-                <span className="flex items-center gap-2">
-                  {a.display_name}
-                  <Badge variant={a.role === "owner" ? "default" : "secondary"}>
-                    {a.role === "owner" ? t("roleOwner") : t("roleAdmin")}
-                  </Badge>
-                </span>
-                {a.role !== "owner" && (
-                  <form action={removeLeagueAdminAction}>
-                    <input type="hidden" name="league_id" value={league.id} />
-                    <input type="hidden" name="user_id" value={a.user_id} />
-                    <input type="hidden" name="slug" value={slug} />
-                    <Button type="submit" variant="outline" size="sm">
-                      {t("remove")}
-                    </Button>
-                  </form>
-                )}
-              </li>
-            ))}
-          </ul>
+          {admins.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("noAdmins")}</p>
+          ) : (
+            <ul className="flex flex-col divide-y">
+              {admins.map((a) => (
+                <li
+                  key={a.user_id}
+                  className="flex flex-wrap items-center justify-between gap-3 py-2"
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="truncate">{a.display_name}</span>
+                    <Badge variant={a.role === "owner" ? "default" : "secondary"}>
+                      {a.role === "owner" ? t("roleOwner") : t("roleAdmin")}
+                    </Badge>
+                  </span>
+                  {a.role !== "owner" && (
+                    <form action={removeLeagueAdminAction}>
+                      <input type="hidden" name="league_id" value={league.id} />
+                      <input type="hidden" name="user_id" value={a.user_id} />
+                      <input type="hidden" name="slug" value={slug} />
+                      <Button type="submit" variant="outline" size="sm">
+                        {t("remove")}
+                      </Button>
+                    </form>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
 
           <div className="flex flex-col gap-2">
             <span className="text-sm font-medium">{t("addAdmin")}</span>
@@ -179,7 +190,7 @@ export default async function LeagueAdminPage({
         <CardHeader>
           <CardTitle>{t("lifecycleTitle")}</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-between gap-3">
+        <CardContent className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
           <p className="text-sm text-muted-foreground">
             {league.archived_at ? t("endedHint") : t("activeHint")}
           </p>
@@ -200,6 +211,26 @@ export default async function LeagueAdminPage({
           </form>
         </CardContent>
       </Card>
+
+      {/* Hard delete (site admin only) */}
+      {isSiteAdmin && (
+        <Card className="border-destructive/40">
+          <CardHeader>
+            <CardTitle>{t("dangerZone")}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+            <p className="text-sm text-muted-foreground">
+              {t("deleteLeagueHint")}
+            </p>
+            <form action={deleteLeagueAction}>
+              <input type="hidden" name="league_id" value={league.id} />
+              <ConfirmDeleteButton confirmMessage={t("confirmDeleteLeague")}>
+                {t("deleteLeague")}
+              </ConfirmDeleteButton>
+            </form>
+          </CardContent>
+        </Card>
+      )}
     </main>
   );
 }

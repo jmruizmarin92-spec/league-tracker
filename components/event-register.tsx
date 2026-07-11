@@ -70,6 +70,7 @@ export function EventRegister({
           rows={5}
           defaultValue={contentDefault}
           placeholder={labels.listPlaceholder}
+          maxLength={20000}
           className="font-mono text-xs"
         />
       </div>

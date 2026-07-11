@@ -3,26 +3,32 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { capText, isHttpUrl } from "@/lib/validation";
 
 export type ActionState = { error?: string; ok?: boolean };
+
+const LIST_CONTENT_MAX = 20_000;
 
 export async function createEventAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const name = String(formData.get("name") ?? "").trim();
+  const name = capText(String(formData.get("name") ?? ""), 100);
   const game = String(formData.get("game") ?? "");
   const startsAtIso = String(formData.get("starts_at_iso") ?? "");
-  const location = String(formData.get("location") ?? "");
+  const location = capText(String(formData.get("location") ?? ""), 120);
   const costRaw = String(formData.get("cost") ?? "0").replace(",", ".");
   const capacityRaw = String(formData.get("capacity") ?? "");
-  const description = String(formData.get("description") ?? "");
-  const externalUrl = String(formData.get("external_url") ?? "");
-  const prizes = String(formData.get("prizes") ?? "");
+  const description = capText(String(formData.get("description") ?? ""), 1000);
+  const externalUrl = capText(String(formData.get("external_url") ?? ""), 500);
+  const prizes = capText(String(formData.get("prizes") ?? ""), 1000);
   const listRequired = String(formData.get("list_required") ?? "") === "true";
 
   if (!name) return { error: "Introduce un nombre." };
   if (game !== "tcg" && game !== "vgc") return { error: "Elige un juego." };
+  if (externalUrl && !isHttpUrl(externalUrl)) {
+    return { error: "El enlace externo no es una URL válida." };
+  }
   const cost = costRaw === "" ? 0 : Number(costRaw);
   if (Number.isNaN(cost) || cost < 0) return { error: "Coste no válido." };
   const capacity = capacityRaw === "" ? null : Number(capacityRaw);
@@ -55,8 +61,10 @@ export async function registerEventAction(
 ): Promise<ActionState> {
   const slug = String(formData.get("slug") ?? "");
   const eventId = String(formData.get("event_id") ?? "");
-  const content = String(formData.get("content") ?? "");
-  const url = String(formData.get("url") ?? "");
+  const content = capText(String(formData.get("content") ?? ""), LIST_CONTENT_MAX);
+  const url = capText(String(formData.get("url") ?? ""), 500);
+  if (url && !isHttpUrl(url)) return { error: "El enlace no es una URL válida." };
+
   const supabase = await createClient();
   const { error } = await supabase.rpc("register_event", {
     p_event: eventId,
@@ -74,8 +82,10 @@ export async function submitListAction(
 ): Promise<ActionState> {
   const slug = String(formData.get("slug") ?? "");
   const eventId = String(formData.get("event_id") ?? "");
-  const content = String(formData.get("content") ?? "");
-  const url = String(formData.get("url") ?? "");
+  const content = capText(String(formData.get("content") ?? ""), LIST_CONTENT_MAX);
+  const url = capText(String(formData.get("url") ?? ""), 500);
+  if (url && !isHttpUrl(url)) return { error: "El enlace no es una URL válida." };
+
   const supabase = await createClient();
   const { error } = await supabase.rpc("submit_event_list", {
     p_event: eventId,
@@ -117,4 +127,15 @@ export async function setEventStatusAction(formData: FormData) {
     p_status: status,
   });
   revalidatePath(`/events/${slug}`);
+}
+
+export async function deleteEventAction(formData: FormData) {
+  const eventId = String(formData.get("event_id") ?? "");
+  if (!eventId) return;
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("delete_event", { p_event: eventId });
+  if (error) return;
+  revalidatePath("/events");
+  revalidatePath("/", "layout");
+  redirect("/events");
 }

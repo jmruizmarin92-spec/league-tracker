@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { capText } from "@/lib/validation";
 
 export type ActionState = { error?: string; ok?: boolean };
 
@@ -10,9 +11,9 @@ export async function createLeagueAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const name = String(formData.get("name") ?? "").trim();
+  const name = capText(String(formData.get("name") ?? ""), 80);
   const game = String(formData.get("game") ?? "");
-  const description = String(formData.get("description") ?? "");
+  const description = capText(String(formData.get("description") ?? ""), 200);
   if (!name) return { error: "Introduce un nombre." };
   if (game !== "tcg" && game !== "vgc") return { error: "Elige un juego." };
 
@@ -89,7 +90,7 @@ export async function setLeagueArchivedAction(formData: FormData) {
 export async function addLeagueLocationAction(formData: FormData) {
   const id = String(formData.get("league_id") ?? "");
   const slug = String(formData.get("slug") ?? "");
-  const location = String(formData.get("location") ?? "").trim();
+  const location = capText(String(formData.get("location") ?? ""), 120);
   if (!id || !location) return;
 
   const current = await getLeagueLocations(id);
@@ -164,4 +165,14 @@ export async function removeLeagueAdminAction(formData: FormData) {
   const supabase = await createClient();
   await supabase.rpc("remove_league_admin", { p_league: league, p_user: user });
   revalidatePath(`/leagues/${slug}/admin`);
+}
+
+export async function deleteLeagueAction(formData: FormData) {
+  const id = String(formData.get("league_id") ?? "");
+  if (!id) return;
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("delete_league", { p_league: id });
+  if (error) return;
+  revalidatePath("/", "layout");
+  redirect("/leagues");
 }

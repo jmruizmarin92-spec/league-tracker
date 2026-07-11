@@ -2,8 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { capText, capTextOrNull } from "@/lib/validation";
 
 export type ActionState = { error?: string; ok?: boolean };
+
+const NAME_MAX = 60;
 
 async function callRpc(
   fn: string,
@@ -12,11 +15,6 @@ async function callRpc(
   const supabase = await createClient();
   const { error } = await supabase.rpc(fn, args);
   return error ? error.message : null;
-}
-
-function emptyToNull(v: FormDataEntryValue | null): string | null {
-  const s = String(v ?? "").trim();
-  return s === "" ? null : s;
 }
 
 export async function updateMyPlayerAction(
@@ -29,17 +27,17 @@ export async function updateMyPlayerAction(
   } = await supabase.auth.getUser();
   if (!user) return { error: "No autenticado." };
 
-  const alias = String(formData.get("display_name") ?? "").trim();
+  const alias = capText(String(formData.get("display_name") ?? ""), NAME_MAX);
   if (!alias) return { error: "El alias es obligatorio." };
 
   const { error } = await supabase
     .from("players")
     .update({
       display_name: alias,
-      first_name: emptyToNull(formData.get("first_name")),
-      last_name: emptyToNull(formData.get("last_name")),
-      pokemon_id: emptyToNull(formData.get("pokemon_id")),
-      game_id: emptyToNull(formData.get("game_id")),
+      first_name: capTextOrNull(String(formData.get("first_name") ?? ""), NAME_MAX),
+      last_name: capTextOrNull(String(formData.get("last_name") ?? ""), NAME_MAX),
+      pokemon_id: capTextOrNull(String(formData.get("pokemon_id") ?? ""), NAME_MAX),
+      game_id: capTextOrNull(String(formData.get("game_id") ?? ""), NAME_MAX),
     })
     .eq("user_id", user.id);
 
@@ -52,7 +50,7 @@ export async function createManagedPlayerAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const name = String(formData.get("display_name") ?? "").trim();
+  const name = capText(String(formData.get("display_name") ?? ""), NAME_MAX);
   if (!name) return { error: "Introduce un nombre." };
   const err = await callRpc("create_managed_player", { p_display_name: name });
   if (err) return { error: err };
@@ -94,5 +92,12 @@ export async function rejectClaimAction(formData: FormData) {
   await callRpc("reject_player_claim", {
     p_claim_id: String(formData.get("claim_id")),
   });
+  revalidatePath("/admin/players");
+}
+
+export async function deletePlayerAction(formData: FormData) {
+  const playerId = String(formData.get("player_id") ?? "");
+  if (!playerId) return;
+  await callRpc("delete_player", { p_player: playerId });
   revalidatePath("/admin/players");
 }

@@ -83,7 +83,11 @@
     "waitlist": "Lista de espera",
     "remove": "Quitar",
     "adminTitle": "Gestión del evento",
-    "statusLabel": "Estado"
+    "statusLabel": "Estado",
+    "dangerZone": "Zona peligrosa",
+    "deleteEventHint": "Elimina el evento y todas sus inscripciones y listas.",
+    "deleteEvent": "Eliminar evento",
+    "confirmDeleteEvent": "¿Eliminar este evento por completo? Se borrarán todas las inscripciones y listas. No se puede deshacer."
   },
   "leagues": {
     "title": "Ligas",
@@ -139,6 +143,9 @@
     "createPlayerCta": "Crear y añadir",
     "completeNoAdd": "Esta sesión está finalizada; no se pueden añadir jugadores.",
     "statusLabel": "Estado",
+    "dangerZone": "Zona peligrosa",
+    "deleteSession": "Eliminar sesión",
+    "confirmDeleteSession": "¿Eliminar esta sesión? Se borrarán sus rondas, partidas e inscripciones. No se puede deshacer.",
     "myArchetypes": "Mis arquetipos",
     "archHint": "Elige hasta dos Pokémon (o un arquetipo personalizado) para mostrar como tu arquetipo.",
     "arch1": "Arquetipo 1",
@@ -146,6 +153,7 @@
     "archPlaceholder": "Sin elegir",
     "archSearch": "Buscar…",
     "archClear": "Ninguno",
+    "archNoResults": "Sin resultados.",
     "archPublic": "Mostrar públicamente",
     "archSave": "Guardar arquetipos",
     "archSaved": "Guardado.",
@@ -224,7 +232,9 @@
     "makeDefault": "Hacer predeterminado",
     "locationPlaceholder": "Nuevo lugar",
     "addLocation": "Añadir",
+    "noLocations": "Aún no hay lugares para esta liga.",
     "adminsTitle": "Administradores",
+    "noAdmins": "Aún no hay administradores.",
     "roleOwner": "Propietario",
     "roleAdmin": "Admin",
     "remove": "Quitar",
@@ -235,7 +245,11 @@
     "activeHint": "La liga está activa.",
     "endedHint": "La liga está finalizada.",
     "endLeague": "Finalizar liga",
-    "reactivate": "Reactivar liga"
+    "reactivate": "Reactivar liga",
+    "dangerZone": "Zona peligrosa",
+    "deleteLeagueHint": "Elimina la liga y todas sus sesiones, rondas, partidas e inscripciones.",
+    "deleteLeague": "Eliminar liga",
+    "confirmDeleteLeague": "¿Eliminar esta liga por completo? Se borrarán todas sus sesiones, rondas y partidas. No se puede deshacer."
   },
   "auth": {
     "loginTitle": "Entrar",
@@ -278,6 +292,8 @@
     "noPlayers": "Aún no hay jugadores.",
     "badgeLinked": "Vinculado",
     "badgeManaged": "Gestionado",
+    "delete": "Eliminar",
+    "confirmDeletePlayer": "¿Eliminar a {name}? Esto borra su historial de partidas y no se puede deshacer.",
     "mergeTitle": "Fusionar jugadores",
     "mergeDesc": "Combina un duplicado en otro jugador. El primero se elimina y su historial pasa al segundo.",
     "mergeFrom": "Fusionar (se elimina)",

@@ -21,12 +21,14 @@ import {
   adminRemoveParticipantAction,
   setSessionStatusAction,
   createSessionPlayerAction,
+  deleteSessionAction,
 } from "@/app/actions/sessions";
 import { generateRoundAction } from "@/app/actions/rounds";
 import { AddParticipantForm } from "@/components/add-participant-form";
 import { ArchetypePicker } from "@/components/archetype-picker";
 import { StandingsTable } from "@/components/standings-table";
 import { RoundsTabs, type RoundView } from "@/components/rounds-tabs";
+import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -172,8 +174,8 @@ export default async function SessionPage({
             ← {session.league.name}
           </Link>
         )}
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="truncate text-2xl font-semibold tracking-tight">
             {session.name ?? formatDateTime(session.starts_at) ?? t("session")}
           </h1>
           <Badge variant={session.status === "active" ? "default" : "secondary"}>
@@ -310,6 +312,7 @@ export default async function SessionPage({
                 placeholder: t("archPlaceholder"),
                 search: t("archSearch"),
                 clear: t("archClear"),
+                noResults: t("archNoResults"),
                 publicLabel: t("archPublic"),
                 save: t("archSave"),
                 saved: t("archSaved"),
@@ -398,7 +401,7 @@ export default async function SessionPage({
 
             <div className="flex flex-col gap-2">
               <span className="text-sm font-medium">{t("statusLabel")}</span>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {(["setup", "active", "complete"] as const).map((s) => (
                   <form key={s} action={setSessionStatusAction}>
                     <input type="hidden" name="session_id" value={id} />
@@ -414,6 +417,23 @@ export default async function SessionPage({
                 ))}
               </div>
             </div>
+
+            {session.league && (
+              <div className="flex flex-col gap-2 border-t pt-4">
+                <span className="text-sm font-medium">{t("dangerZone")}</span>
+                <form action={deleteSessionAction} className="w-fit">
+                  <input type="hidden" name="session_id" value={id} />
+                  <input
+                    type="hidden"
+                    name="league_slug"
+                    value={session.league.slug}
+                  />
+                  <ConfirmDeleteButton confirmMessage={t("confirmDeleteSession")}>
+                    {t("deleteSession")}
+                  </ConfirmDeleteButton>
+                </form>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

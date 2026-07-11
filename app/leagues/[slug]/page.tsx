@@ -32,10 +32,10 @@ export default async function LeaguePage({
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight">
+      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
+        <div className="flex min-w-0 flex-col gap-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="truncate text-2xl font-semibold tracking-tight">
               {league.name}
             </h1>
             <Badge variant="secondary">{league.game.toUpperCase()}</Badge>
