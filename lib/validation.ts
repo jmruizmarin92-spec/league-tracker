@@ -10,6 +10,15 @@ export function capTextOrNull(value: string, maxLen: number): string | null {
   return capped === "" ? null : capped;
 }
 
+// Accepts "" | "YYYY-MM" | "YYYY-MM-DD" (from an <input type="month"> or a
+// pre-built ISO date) and returns a full date string or null.
+export function toMonthDate(value: string): string | null {
+  if (!value) return null;
+  if (/^\d{4}-\d{2}$/.test(value)) return `${value}-01`;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  return null;
+}
+
 export function isHttpUrl(value: string): boolean {
   try {
     const u = new URL(value);

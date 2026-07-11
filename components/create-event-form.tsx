@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { createEventAction, type ActionState } from "@/app/actions/events";
+import { CategorySelect } from "@/components/category-select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ export function CreateEventForm({
     {},
   );
   const [game, setGame] = useState("");
+  const [category, setCategory] = useState("");
   const [local, setLocal] = useState("");
   const [listRequired, setListRequired] = useState(false);
   const iso = local ? new Date(local).toISOString() : "";
@@ -31,6 +33,7 @@ export function CreateEventForm({
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="game" value={game} />
+      <input type="hidden" name="category" value={category} />
       <input type="hidden" name="starts_at_iso" value={iso} />
       <input type="hidden" name="list_required" value={String(listRequired)} />
 
@@ -38,6 +41,15 @@ export function CreateEventForm({
         <div className="flex flex-col gap-1.5">
           <label htmlFor="name" className="text-sm font-medium">{labels.name}</label>
           <Input id="name" name="name" maxLength={100} />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium">{labels.category}</label>
+          <CategorySelect
+            value={category}
+            onChange={setCategory}
+            placeholder={labels.categoryPlaceholder}
+            noneLabel={labels.categoryNone}
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium">{labels.game}</label>

@@ -17,6 +17,7 @@ import {
 } from "@/app/actions/leagues";
 import { Input } from "@/components/ui/input";
 import { LeaguePointsForm } from "@/components/league-points-form";
+import { LeagueDurationForm } from "@/components/league-duration-form";
 import { AddAdminForm } from "@/components/add-admin-form";
 import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
 import { Button } from "@/components/ui/button";
@@ -69,6 +70,30 @@ export default async function LeagueAdminPage({
               save: t("save"),
               saved: t("saved"),
               hint: t("pointsHint"),
+            }}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Season duration */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("durationTitle")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <LeagueDurationForm
+            leagueId={league.id}
+            slug={slug}
+            defaults={{
+              startsMonth: league.starts_month,
+              endsMonth: league.ends_month,
+            }}
+            labels={{
+              startMonth: t("fieldStartMonth"),
+              endMonth: t("fieldEndMonth"),
+              hint: t("durationHint"),
+              save: t("save"),
+              saved: t("saved"),
             }}
           />
         </CardContent>

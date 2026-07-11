@@ -16,3 +16,26 @@ export function formatCost(cost: number): string {
     currency: "EUR",
   }).format(cost);
 }
+
+function formatMonth(iso: string): string {
+  const s = new Intl.DateTimeFormat("es-ES", {
+    month: "long",
+    year: "numeric",
+    timeZone: TZ,
+  }).format(new Date(iso));
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// A league's season window, e.g. "Enero 2026 – Marzo 2026". Handles either
+// end being unset, and returns null if neither is set.
+export function formatMonthRange(
+  startsMonth: string | null,
+  endsMonth: string | null,
+): string | null {
+  if (startsMonth && endsMonth) {
+    return `${formatMonth(startsMonth)} – ${formatMonth(endsMonth)}`;
+  }
+  if (startsMonth) return `Desde ${formatMonth(startsMonth)}`;
+  if (endsMonth) return `Hasta ${formatMonth(endsMonth)}`;
+  return null;
+}

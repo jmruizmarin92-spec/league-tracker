@@ -20,14 +20,17 @@ import {
   leaveSessionAction,
   adminRemoveParticipantAction,
   setSessionStatusAction,
+  setSessionCategoryAction,
   createSessionPlayerAction,
   deleteSessionAction,
 } from "@/app/actions/sessions";
 import { generateRoundAction } from "@/app/actions/rounds";
+import { CATEGORIES } from "@/lib/event-category";
 import { AddParticipantForm } from "@/components/add-participant-form";
 import { ArchetypePicker } from "@/components/archetype-picker";
 import { StandingsTable } from "@/components/standings-table";
 import { RoundsTabs, type RoundView } from "@/components/rounds-tabs";
+import { CategoryBadge } from "@/components/category-badge";
 import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -178,6 +181,7 @@ export default async function SessionPage({
           <h1 className="truncate text-2xl font-semibold tracking-tight">
             {session.name ?? formatDateTime(session.starts_at) ?? t("session")}
           </h1>
+          <CategoryBadge category={session.category} />
           <Badge variant={session.status === "active" ? "default" : "secondary"}>
             {t(`status_${session.status}`)}
           </Badge>
@@ -398,6 +402,50 @@ export default async function SessionPage({
                 </div>
               </>
             )}
+
+            <div className="flex flex-col gap-2">
+              <span className="text-sm font-medium">{t("categoryLabel")}</span>
+              <div className="flex flex-wrap gap-2">
+                <form action={setSessionCategoryAction}>
+                  <input type="hidden" name="session_id" value={id} />
+                  <input type="hidden" name="category" value="" />
+                  <input
+                    type="hidden"
+                    name="league_slug"
+                    value={session.league?.slug ?? ""}
+                  />
+                  <Button
+                    type="submit"
+                    size="sm"
+                    variant={!session.category ? "default" : "outline"}
+                  >
+                    {t("categoryNone")}
+                  </Button>
+                </form>
+                {CATEGORIES.map((c) => {
+                  const Icon = c.icon;
+                  return (
+                    <form key={c.value} action={setSessionCategoryAction}>
+                      <input type="hidden" name="session_id" value={id} />
+                      <input type="hidden" name="category" value={c.value} />
+                      <input
+                        type="hidden"
+                        name="league_slug"
+                        value={session.league?.slug ?? ""}
+                      />
+                      <Button
+                        type="submit"
+                        size="sm"
+                        variant={session.category === c.value ? "default" : "outline"}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                        {c.label}
+                      </Button>
+                    </form>
+                  );
+                })}
+              </div>
+            </div>
 
             <div className="flex flex-col gap-2">
               <span className="text-sm font-medium">{t("statusLabel")}</span>

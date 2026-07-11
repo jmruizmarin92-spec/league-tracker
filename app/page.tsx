@@ -3,15 +3,32 @@ import { getTranslations } from "next-intl/server";
 import { listActiveLeagues } from "@/lib/leagues";
 import { getUpcoming } from "@/lib/agenda";
 import { formatDateTime, formatCost } from "@/lib/format";
+import { CATEGORIES } from "@/lib/event-category";
+import { buildFilterHref } from "@/lib/filter-href";
+import { CategoryBadge } from "@/components/category-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ game?: string; category?: string }>;
+}) {
   const t = await getTranslations("landing");
-  const [leagues, upcoming] = await Promise.all([
+  const sp = await searchParams;
+  const gameFilter = sp.game === "tcg" || sp.game === "vgc" ? sp.game : null;
+  const categoryFilter = sp.category ?? null;
+
+  const [leagues, allUpcoming] = await Promise.all([
     listActiveLeagues(),
     getUpcoming(),
   ]);
+  const upcoming = allUpcoming.filter(
+    (u) =>
+      (!gameFilter || u.game === gameFilter) &&
+      (!categoryFilter || u.category === categoryFilter),
+  );
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 p-6">
@@ -31,8 +48,57 @@ export default async function Home() {
             {t("allEvents")}
           </Link>
         </div>
+
+        {allUpcoming.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap gap-2">
+              {(["", "tcg", "vgc"] as const).map((g) => (
+                <Button
+                  key={g || "all"}
+                  asChild
+                  size="sm"
+                  variant={(gameFilter ?? "") === g ? "default" : "outline"}
+                >
+                  <Link href={buildFilterHref("/", sp, { game: g || undefined })}>
+                    {g ? g.toUpperCase() : t("filterAllGames")}
+                  </Link>
+                </Button>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                asChild
+                size="sm"
+                variant={!categoryFilter ? "default" : "outline"}
+              >
+                <Link href={buildFilterHref("/", sp, { category: undefined })}>
+                  {t("filterAllCategories")}
+                </Link>
+              </Button>
+              {CATEGORIES.map((c) => {
+                const Icon = c.icon;
+                return (
+                  <Button
+                    key={c.value}
+                    asChild
+                    size="sm"
+                    variant={categoryFilter === c.value ? "default" : "outline"}
+                  >
+                    <Link href={buildFilterHref("/", sp, { category: c.value })}>
+                      <Icon className="h-3.5 w-3.5" />
+                      {c.label}
+                    </Link>
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {upcoming.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("noUpcoming")}</p>
+          <p className="text-sm text-muted-foreground">
+            {allUpcoming.length === 0 ? t("noUpcoming") : t("noMatches")}
+          </p>
         ) : (
           <ul className="flex flex-col divide-y rounded-lg border">
             {upcoming.map((u) => (
@@ -45,6 +111,7 @@ export default async function Home() {
                     <span className="flex flex-wrap items-center gap-2 font-medium">
                       <span className="truncate">{u.name}</span>
                       <Badge variant="secondary">{u.game.toUpperCase()}</Badge>
+                      <CategoryBadge category={u.category} />
                       <Badge variant="outline">
                         {u.kind === "session" ? t("session") : t("event")}
                       </Badge>

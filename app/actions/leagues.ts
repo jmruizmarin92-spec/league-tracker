@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { capText } from "@/lib/validation";
+import { capText, toMonthDate } from "@/lib/validation";
+import { FORMATS_BY_GAME, type Game } from "@/lib/league-format";
 
 export type ActionState = { error?: string; ok?: boolean };
 
@@ -13,20 +14,56 @@ export async function createLeagueAction(
 ): Promise<ActionState> {
   const name = capText(String(formData.get("name") ?? ""), 80);
   const game = String(formData.get("game") ?? "");
+  const format = String(formData.get("format") ?? "");
   const description = capText(String(formData.get("description") ?? ""), 200);
+  const startsMonth = toMonthDate(String(formData.get("starts_month") ?? ""));
+  const endsMonth = toMonthDate(String(formData.get("ends_month") ?? ""));
   if (!name) return { error: "Introduce un nombre." };
   if (game !== "tcg" && game !== "vgc") return { error: "Elige un juego." };
+  const allowed = FORMATS_BY_GAME[game as Game].map((f) => f.value);
+  if (!allowed.includes(format)) return { error: "Elige un formato válido." };
+  if (startsMonth && endsMonth && endsMonth < startsMonth) {
+    return { error: "El mes de fin no puede ser anterior al de inicio." };
+  }
 
   const supabase = await createClient();
   const { data: slug, error } = await supabase.rpc("create_league", {
     p_name: name,
     p_game: game,
     p_description: description,
+    p_starts_month: startsMonth,
+    p_ends_month: endsMonth,
+    p_format: format,
   });
   if (error) return { error: error.message };
 
   revalidatePath("/leagues");
   redirect(`/leagues/${slug}`);
+}
+
+export async function updateLeagueDurationAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const id = String(formData.get("league_id") ?? "");
+  const slug = String(formData.get("slug") ?? "");
+  const startsMonth = toMonthDate(String(formData.get("starts_month") ?? ""));
+  const endsMonth = toMonthDate(String(formData.get("ends_month") ?? ""));
+  if (startsMonth && endsMonth && endsMonth < startsMonth) {
+    return { error: "El mes de fin no puede ser anterior al de inicio." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("leagues")
+    .update({ starts_month: startsMonth, ends_month: endsMonth })
+    .eq("id", id);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/leagues/${slug}/admin`);
+  revalidatePath(`/leagues/${slug}`);
+  revalidatePath("/leagues");
+  return { ok: true };
 }
 
 export async function updateLeaguePointsAction(

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { capText, isHttpUrl } from "@/lib/validation";
+import { isCategory } from "@/lib/event-category";
 
 export type ActionState = { error?: string; ok?: boolean };
 
@@ -14,6 +15,7 @@ export async function createEventAction(
   formData: FormData,
 ): Promise<ActionState> {
   const name = capText(String(formData.get("name") ?? ""), 100);
+  const category = String(formData.get("category") ?? "");
   const game = String(formData.get("game") ?? "");
   const startsAtIso = String(formData.get("starts_at_iso") ?? "");
   const location = capText(String(formData.get("location") ?? ""), 120);
@@ -26,6 +28,7 @@ export async function createEventAction(
 
   if (!name) return { error: "Introduce un nombre." };
   if (game !== "tcg" && game !== "vgc") return { error: "Elige un juego." };
+  if (category && !isCategory(category)) return { error: "Categoría no válida." };
   if (externalUrl && !isHttpUrl(externalUrl)) {
     return { error: "El enlace externo no es una URL válida." };
   }
@@ -48,11 +51,65 @@ export async function createEventAction(
     p_prizes: prizes,
     p_list_required: listRequired,
     p_capacity: capacity,
+    p_category: category || null,
   });
   if (error) return { error: error.message };
 
   revalidatePath("/events");
   redirect(`/events/${slug}`);
+}
+
+export async function updateEventAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const eventId = String(formData.get("event_id") ?? "");
+  const slug = String(formData.get("slug") ?? "");
+  const name = capText(String(formData.get("name") ?? ""), 100);
+  const category = String(formData.get("category") ?? "");
+  const startsAtIso = String(formData.get("starts_at_iso") ?? "");
+  const location = capText(String(formData.get("location") ?? ""), 120);
+  const costRaw = String(formData.get("cost") ?? "0").replace(",", ".");
+  const capacityRaw = String(formData.get("capacity") ?? "");
+  const description = capText(String(formData.get("description") ?? ""), 1000);
+  const externalUrl = capText(String(formData.get("external_url") ?? ""), 500);
+  const prizes = capText(String(formData.get("prizes") ?? ""), 1000);
+  const listRequired = String(formData.get("list_required") ?? "") === "true";
+
+  if (!name) return { error: "Introduce un nombre." };
+  if (category && !isCategory(category)) return { error: "Categoría no válida." };
+  if (externalUrl && !isHttpUrl(externalUrl)) {
+    return { error: "El enlace externo no es una URL válida." };
+  }
+  const cost = costRaw === "" ? 0 : Number(costRaw);
+  if (Number.isNaN(cost) || cost < 0) return { error: "Coste no válido." };
+  const capacity = capacityRaw === "" ? null : Number(capacityRaw);
+  if (capacity !== null && (!Number.isInteger(capacity) || capacity < 1)) {
+    return { error: "El aforo debe ser un entero positivo." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("events")
+    .update({
+      name,
+      category: category || null,
+      starts_at: startsAtIso === "" ? null : startsAtIso,
+      location: location || null,
+      cost,
+      description: description || null,
+      external_url: externalUrl || null,
+      prizes: prizes || null,
+      list_required: listRequired,
+      capacity,
+    })
+    .eq("id", eventId);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/events/${slug}`);
+  revalidatePath("/events");
+  revalidatePath("/", "layout");
+  return { ok: true };
 }
 
 export async function registerEventAction(

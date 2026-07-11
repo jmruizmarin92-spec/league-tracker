@@ -17,6 +17,8 @@ import {
   deleteEventAction,
 } from "@/app/actions/events";
 import { EventRegister } from "@/components/event-register";
+import { EditEventForm } from "@/components/edit-event-form";
+import { CategoryBadge } from "@/components/category-badge";
 import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -64,6 +66,7 @@ export default async function EventPage({
             {event.name}
           </h1>
           <Badge variant="secondary">{event.game.toUpperCase()}</Badge>
+          <CategoryBadge category={event.category} />
           <Badge variant={event.status === "open" ? "default" : "secondary"}>
             {t(`status_${event.status}`)}
           </Badge>
@@ -221,6 +224,52 @@ export default async function EventPage({
           )}
         </CardContent>
       </Card>
+
+      {/* Edit event details */}
+      {admin && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("editTitle")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <EditEventForm
+              eventId={event.id}
+              slug={slug}
+              defaults={{
+                name: event.name,
+                category: event.category,
+                startsAt: event.starts_at,
+                location: event.location,
+                cost: event.cost,
+                capacity: event.capacity,
+                externalUrl: event.external_url,
+                description: event.description,
+                prizes: event.prizes,
+                listRequired: event.list_required,
+              }}
+              labels={{
+                name: t("eName"),
+                category: t("fCategory"),
+                categoryPlaceholder: t("categoryPlaceholder"),
+                categoryNone: t("categoryNone"),
+                startsAt: t("eStartsAt"),
+                location: t("eLocation"),
+                cost: t("eCost"),
+                capacity: t("eCapacity"),
+                capacityHint: t("eCapacityHint"),
+                externalUrl: t("eExternalUrl"),
+                externalUrlHint: t("eExternalUrlHint"),
+                description: t("eDescription"),
+                prizes: t("ePrizes"),
+                prizesHint: t("ePrizesHint"),
+                listRequired: t("eListRequired"),
+                save: t("save"),
+                saved: t("saved"),
+              }}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Admin status */}
       {admin && (

@@ -6,6 +6,7 @@ export type UpcomingItem = {
   href: string;
   name: string;
   game: Game;
+  category: string | null;
   startsAt: string;
   location: string | null;
   cost: number;
@@ -19,6 +20,7 @@ type SessionRow = {
   location: string | null;
   cost: number;
   status: string;
+  category: string | null;
   league: { name: string; slug: string; game: Game } | null;
 };
 
@@ -29,10 +31,13 @@ type EventRow = {
   location: string | null;
   cost: number;
   game: Game;
+  category: string | null;
 };
 
-// Upcoming sessions + independent events (both future, not yet complete).
-export async function getUpcoming(limit = 25): Promise<UpcomingItem[]> {
+// Every upcoming session + independent event (future, not yet complete).
+// Small-scale app — no pagination; filtering (by game/category) happens
+// after this, so nothing here should be truncated.
+export async function getUpcoming(): Promise<UpcomingItem[]> {
   const supabase = await createClient();
   const nowIso = new Date().toISOString();
 
@@ -40,14 +45,14 @@ export async function getUpcoming(limit = 25): Promise<UpcomingItem[]> {
     supabase
       .from("sessions")
       .select(
-        "id, name, starts_at, location, cost, status, league:leagues(name, slug, game)",
+        "id, name, starts_at, location, cost, status, category, league:leagues(name, slug, game)",
       )
       .gte("starts_at", nowIso)
       .neq("status", "complete")
       .order("starts_at"),
     supabase
       .from("events")
-      .select("slug, name, starts_at, location, cost, game")
+      .select("slug, name, starts_at, location, cost, game, category")
       .gte("starts_at", nowIso)
       .neq("status", "complete")
       .order("starts_at"),
@@ -62,6 +67,7 @@ export async function getUpcoming(limit = 25): Promise<UpcomingItem[]> {
       href: `/sessions/${s.id}`,
       name: s.name ?? s.league.name,
       game: s.league.game,
+      category: s.category,
       startsAt: s.starts_at,
       location: s.location,
       cost: s.cost,
@@ -76,6 +82,7 @@ export async function getUpcoming(limit = 25): Promise<UpcomingItem[]> {
       href: `/events/${e.slug}`,
       name: e.name,
       game: e.game,
+      category: e.category,
       startsAt: e.starts_at,
       location: e.location,
       cost: e.cost,
@@ -84,5 +91,5 @@ export async function getUpcoming(limit = 25): Promise<UpcomingItem[]> {
   }
 
   items.sort((a, b) => a.startsAt.localeCompare(b.startsAt));
-  return items.slice(0, limit);
+  return items;
 }

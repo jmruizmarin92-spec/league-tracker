@@ -9,6 +9,7 @@ export type EventRow = {
   id: string;
   name: string;
   slug: string;
+  category: string | null;
   game: Game;
   starts_at: string | null;
   location: string | null;

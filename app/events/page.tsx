@@ -3,9 +3,13 @@ import { getTranslations } from "next-intl/server";
 import { listEvents } from "@/lib/events";
 import { getProfile } from "@/lib/auth";
 import { formatDateTime, formatCost } from "@/lib/format";
+import { CATEGORIES } from "@/lib/event-category";
+import { buildFilterHref } from "@/lib/filter-href";
 import { CreateEventForm } from "@/components/create-event-form";
+import { CategoryBadge } from "@/components/category-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 const STATUS_VARIANT = {
   open: "default",
@@ -13,16 +17,75 @@ const STATUS_VARIANT = {
   complete: "outline",
 } as const;
 
-export default async function EventsPage() {
+export default async function EventsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ game?: string; category?: string }>;
+}) {
   const t = await getTranslations("events");
-  const [events, profile] = await Promise.all([listEvents(), getProfile()]);
+  const sp = await searchParams;
+  const gameFilter = sp.game === "tcg" || sp.game === "vgc" ? sp.game : null;
+  const categoryFilter = sp.category ?? null;
+
+  const [allEvents, profile] = await Promise.all([listEvents(), getProfile()]);
+  const events = allEvents.filter(
+    (e) =>
+      (!gameFilter || e.game === gameFilter) &&
+      (!categoryFilter || e.category === categoryFilter),
+  );
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
       <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
 
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap gap-2">
+          {(["", "tcg", "vgc"] as const).map((g) => (
+            <Button
+              key={g || "all"}
+              asChild
+              size="sm"
+              variant={(gameFilter ?? "") === g ? "default" : "outline"}
+            >
+              <Link href={buildFilterHref("/events", sp, { game: g || undefined })}>
+                {g ? g.toUpperCase() : t("filterAllGames")}
+              </Link>
+            </Button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            asChild
+            size="sm"
+            variant={!categoryFilter ? "default" : "outline"}
+          >
+            <Link href={buildFilterHref("/events", sp, { category: undefined })}>
+              {t("filterAllCategories")}
+            </Link>
+          </Button>
+          {CATEGORIES.map((c) => {
+            const Icon = c.icon;
+            return (
+              <Button
+                key={c.value}
+                asChild
+                size="sm"
+                variant={categoryFilter === c.value ? "default" : "outline"}
+              >
+                <Link href={buildFilterHref("/events", sp, { category: c.value })}>
+                  <Icon className="h-3.5 w-3.5" />
+                  {c.label}
+                </Link>
+              </Button>
+            );
+          })}
+        </div>
+      </div>
+
       {events.length === 0 ? (
-        <p className="text-muted-foreground">{t("empty")}</p>
+        <p className="text-muted-foreground">
+          {allEvents.length === 0 ? t("empty") : t("noMatches")}
+        </p>
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2">
           {events.map((e) => (
@@ -30,9 +93,12 @@ export default async function EventsPage() {
               <Link href={`/events/${e.slug}`} className="block">
                 <Card className="h-full transition-colors hover:border-primary">
                   <CardHeader>
-                    <div className="flex items-center justify-between gap-2">
-                      <CardTitle>{e.name}</CardTitle>
-                      <Badge variant="secondary">{e.game.toUpperCase()}</Badge>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <CardTitle className="truncate">{e.name}</CardTitle>
+                      <div className="flex flex-wrap gap-1">
+                        <Badge variant="secondary">{e.game.toUpperCase()}</Badge>
+                        <CategoryBadge category={e.category} />
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="flex flex-col gap-2 text-sm text-muted-foreground">
@@ -61,6 +127,9 @@ export default async function EventsPage() {
             <CreateEventForm
               labels={{
                 name: t("fName"),
+                category: t("fCategory"),
+                categoryPlaceholder: t("categoryPlaceholder"),
+                categoryNone: t("categoryNone"),
                 game: t("fGame"),
                 gamePlaceholder: t("gamePlaceholder"),
                 startsAt: t("fStartsAt"),

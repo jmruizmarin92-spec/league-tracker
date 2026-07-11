@@ -2,8 +2,10 @@ import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getUser, getProfile } from "@/lib/auth";
 import type { MatchInput, MatchResult } from "@/lib/scoring";
+import type { Game } from "@/lib/league-format";
 
-export type Game = "tcg" | "vgc";
+export type { Game } from "@/lib/league-format";
+export { FORMATS_BY_GAME, formatLabel } from "@/lib/league-format";
 
 export type League = {
   id: string;
@@ -11,12 +13,15 @@ export type League = {
   slug: string;
   description: string | null;
   game: Game;
+  format: string | null;
   win_value: number;
   attendance_value: number;
   draw_value: number;
   locations: string[];
   default_location: string | null;
   archived_at: string | null;
+  starts_month: string | null;
+  ends_month: string | null;
   created_at: string;
 };
 

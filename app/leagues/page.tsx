@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { listLeagues } from "@/lib/leagues";
+import { listLeagues, formatLabel } from "@/lib/leagues";
 import { getProfile } from "@/lib/auth";
+import { formatMonthRange } from "@/lib/format";
 import { CreateLeagueForm } from "@/components/create-league-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,12 +26,20 @@ export default async function LeaguesPage() {
                   <CardHeader>
                     <div className="flex items-center justify-between gap-2">
                       <CardTitle>{l.name}</CardTitle>
-                      <Badge variant="secondary">{l.game.toUpperCase()}</Badge>
+                      <div className="flex gap-1">
+                        <Badge variant="secondary">{l.game.toUpperCase()}</Badge>
+                        {formatLabel(l.format) && (
+                          <Badge variant="outline">{formatLabel(l.format)}</Badge>
+                        )}
+                      </div>
                     </div>
                   </CardHeader>
-                  {l.description && (
-                    <CardContent className="text-sm text-muted-foreground">
-                      {l.description}
+                  {(l.description || formatMonthRange(l.starts_month, l.ends_month)) && (
+                    <CardContent className="flex flex-col gap-1 text-sm text-muted-foreground">
+                      {l.description && <p>{l.description}</p>}
+                      {formatMonthRange(l.starts_month, l.ends_month) && (
+                        <p>{formatMonthRange(l.starts_month, l.ends_month)}</p>
+                      )}
                     </CardContent>
                   )}
                 </Card>
@@ -51,7 +60,11 @@ export default async function LeaguesPage() {
                 name: t("fieldName"),
                 game: t("fieldGame"),
                 gamePlaceholder: t("gamePlaceholder"),
+                format: t("fieldFormat"),
+                formatPlaceholder: t("formatPlaceholder"),
                 description: t("fieldDescription"),
+                startMonth: t("fieldStartMonth"),
+                endMonth: t("fieldEndMonth"),
                 cta: t("createCta"),
               }}
             />
