@@ -9,10 +9,12 @@ import {
 } from "@/lib/sessions";
 import { isLeagueAdmin } from "@/lib/leagues";
 import { getUser } from "@/lib/auth";
-import { listPlayers } from "@/lib/players";
+import { listPlayers, getPlayersByIds } from "@/lib/players";
 import { pairingName } from "@/lib/player-name";
 import { formatDateTime, formatCost } from "@/lib/format";
 import { resolveArchetypes, listCustoms, type ArchetypeChip } from "@/lib/archetypes";
+import { getRounds, getSessionMatches } from "@/lib/rounds";
+import { computeStandings, type MatchInput } from "@/lib/scoring";
 import {
   joinSessionAction,
   leaveSessionAction,
@@ -20,8 +22,11 @@ import {
   setSessionStatusAction,
   createSessionPlayerAction,
 } from "@/app/actions/sessions";
+import { generateRoundAction } from "@/app/actions/rounds";
 import { AddParticipantForm } from "@/components/add-participant-form";
 import { ArchetypePicker } from "@/components/archetype-picker";
+import { StandingsTable } from "@/components/standings-table";
+import { RoundsTabs, type RoundView } from "@/components/rounds-tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -90,6 +95,59 @@ export default async function SessionPage({
   const registered = participants.filter((p) => p.status === "registered");
   const waitlisted = participants.filter((p) => p.status === "waitlisted");
   const isComplete = session.status === "complete";
+
+  // Rounds, matches, standings.
+  const [rounds, matches] = await Promise.all([
+    getRounds(id),
+    getSessionMatches(id),
+  ]);
+  const standingIds = [
+    ...new Set([
+      ...registered.map((p) => p.player_id),
+      ...matches.flatMap(
+        (m) => [m.player1_id, m.player2_id].filter(Boolean) as string[],
+      ),
+    ]),
+  ];
+  const standings = computeStandings(
+    standingIds,
+    matches.map<MatchInput>((m) => ({
+      player1: m.player1_id,
+      player2: m.player2_id,
+      result: m.result,
+    })),
+  );
+  const nameMap = await getPlayersByIds(standingIds);
+  const displayName = (pid: string) => {
+    const p = nameMap.get(pid);
+    return p ? pairingName(p) : "—";
+  };
+  const standingsNames = new Map(standingIds.map((pid) => [pid, displayName(pid)]));
+  const myPlayerId = participants.find((p) => p.is_me)?.player_id ?? null;
+  const hasPending = matches.some((m) => m.result === "pending");
+  const lastRoundNumber = rounds.at(-1)?.number ?? 0;
+  const nextRoundNumber = lastRoundNumber + 1;
+
+  const roundViews: RoundView[] = rounds.map((r) => ({
+    id: r.id,
+    number: r.number,
+    isLast: r.number === lastRoundNumber,
+    matches: matches
+      .filter((m) => m.round_id === r.id)
+      .map((m) => {
+        const mine =
+          myPlayerId != null &&
+          (m.player1_id === myPlayerId || m.player2_id === myPlayerId);
+        return {
+          id: m.id,
+          p1Name: displayName(m.player1_id),
+          p2Name: m.player2_id ? displayName(m.player2_id) : null,
+          result: m.result,
+          canReport: admin || mine,
+          isMine: mine,
+        };
+      }),
+  }));
 
   const participantIds = new Set(participants.map((p) => p.player_id));
   const addable = admin
@@ -182,6 +240,72 @@ export default async function SessionPage({
             </form>
           )}
         </div>
+      )}
+
+      {/* Standings */}
+      {standings.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("standings")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <StandingsTable
+              rows={standings}
+              names={standingsNames}
+              labels={{
+                rank: t("rank"),
+                player: t("player"),
+                points: t("points"),
+                record: t("record"),
+                buchholz: t("buchholz"),
+              }}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Rounds */}
+      {(rounds.length > 0 || (admin && !isComplete)) && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle>{t("rounds")}</CardTitle>
+              {admin && !isComplete && (
+                <form action={generateRoundAction}>
+                  <input type="hidden" name="session_id" value={id} />
+                  <Button type="submit" size="sm" disabled={hasPending}>
+                    {t("generateRound", { n: nextRoundNumber })}
+                  </Button>
+                </form>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-5">
+            {hasPending && admin && (
+              <p className="text-xs text-muted-foreground">
+                {t("pendingBlocksNext")}
+              </p>
+            )}
+            {rounds.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("noRounds")}</p>
+            ) : (
+              <RoundsTabs
+                sessionId={id}
+                admin={admin}
+                rounds={roundViews}
+                labels={{
+                  roundWord: t("roundWord"),
+                  deleteRound: t("deleteRound"),
+                  bye: t("bye"),
+                  draw: t("draw"),
+                  pending: t("pending"),
+                  winPrefix: t("winPrefix"),
+                  mine: t("mine"),
+                }}
+              />
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* My archetypes */}

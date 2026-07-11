@@ -46,6 +46,27 @@ export async function listUnclaimedPlayers(): Promise<Player[]> {
   return (data as Player[] | null) ?? [];
 }
 
+// Minimal player fields for name rendering, keyed by id.
+export async function getPlayersByIds(
+  ids: string[],
+): Promise<Map<string, Pick<Player, "display_name" | "first_name" | "last_name">>> {
+  const map = new Map<string, Pick<Player, "display_name" | "first_name" | "last_name">>();
+  if (ids.length === 0) return map;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("players")
+    .select("id, display_name, first_name, last_name")
+    .in("id", ids);
+  for (const p of (data as (Player & { id: string })[] | null) ?? []) {
+    map.set(p.id, {
+      display_name: p.display_name,
+      first_name: p.first_name,
+      last_name: p.last_name,
+    });
+  }
+  return map;
+}
+
 export type ClaimStatus = "pending" | "approved" | "rejected";
 
 export type MyClaim = {

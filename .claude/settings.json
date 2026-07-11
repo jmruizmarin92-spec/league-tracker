@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Write",
+      "Edit",
+      "PowerShell(npm run build:*)",
+      "PowerShell(npm run dev:*)",
+      "PowerShell(npm test:*)",
+      "PowerShell(npm run lint:*)",
+      "PowerShell(npm run start:*)",
+      "PowerShell(npm install:*)",
+      "PowerShell(npm ci:*)",
+      "PowerShell(npx shadcn@latest:*)",
+      "PowerShell(npx --yes shadcn@latest:*)",
+      "PowerShell(git status:*)",
+      "PowerShell(git log:*)",
+      "PowerShell(git diff:*)",
+      "PowerShell(git show:*)",
+      "PowerShell(git branch:*)",
+      "PowerShell(git remote:*)",
+      "PowerShell(git ls-remote:*)",
+      "PowerShell(git config:*)",
+      "PowerShell(git rev-parse:*)",
+      "PowerShell(git init:*)",
+      "PowerShell(git add:*)",
+      "PowerShell(git commit:*)",
+      "PowerShell(git push:*)",
+      "PowerShell(git pull:*)",
+      "PowerShell(git checkout:*)",
+      "PowerShell(Invoke-WebRequest:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run dev:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(curl:*)"
+    ]
+  }
+}
