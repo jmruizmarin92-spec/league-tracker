@@ -168,7 +168,24 @@
     "draw": "Empate",
     "pending": "Pendiente",
     "win1": "Gana 1",
-    "win2": "Gana 2"
+    "win2": "Gana 2",
+    "openDisplay": "Abrir pantalla completa ↗"
+  },
+  "display": {
+    "session": "Sesión",
+    "live": "En directo",
+    "round": "Ronda {n}",
+    "rounds": "Rondas",
+    "waitingRound": "Esperando la primera ronda.",
+    "bye": "Bye",
+    "draw": "Empate",
+    "pending": "Pendiente",
+    "standings": "Clasificación",
+    "noStandings": "Aún no hay clasificación.",
+    "rank": "#",
+    "player": "Jugador",
+    "points": "Pts",
+    "record": "V-D-E"
   },
   "archetypesAdmin": {
     "title": "Arquetipos personalizados",

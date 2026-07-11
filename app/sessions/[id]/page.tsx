@@ -183,6 +183,13 @@ export default async function SessionPage({
         {meta.length > 0 && (
           <p className="text-sm text-muted-foreground">{meta.join(" · ")}</p>
         )}
+        <Link
+          href={`/sessions/${id}/display`}
+          target="_blank"
+          className="w-fit text-sm text-primary hover:underline"
+        >
+          {t("openDisplay")}
+        </Link>
       </div>
 
       {/* Self join / leave */}
