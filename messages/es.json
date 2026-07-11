@@ -7,7 +7,7 @@
   },
   "landing": {
     "title": "Torneos Pokémon Granada",
-    "subtitle": "Próximas sesiones y torneos, y tus ligas activas.",
+    "subtitle": "Próximas sesiones de liga y torneos.",
     "upcoming": "Próximos",
     "noUpcoming": "No hay sesiones ni eventos próximos.",
     "noMatches": "Nada coincide con el filtro.",
@@ -15,12 +15,11 @@
     "filterAllGames": "Todos",
     "filterTypeLabel": "Tipo:",
     "filterAllCategories": "Todos",
-    "allEvents": "Ver eventos",
     "session": "Sesión de liga",
     "event": "Torneo",
-    "activeLeagues": "Ligas activas",
-    "noLeagues": "No hay ligas activas.",
-    "allLeagues": "Ver todas"
+    "prevPage": "Anterior",
+    "nextPage": "Siguiente",
+    "pageOf": "Página {page} de {total}"
   },
   "nav": {
     "signIn": "Entrar",
@@ -31,7 +30,8 @@
     "adminArea": "Administración",
     "archetypes": "Arquetipos",
     "leagues": "Ligas",
-    "events": "Eventos"
+    "statistics": "Estadísticas",
+    "adminEvents": "Eventos"
   },
   "events": {
     "title": "Eventos",
@@ -67,7 +67,7 @@
     "status_complete": "Finalizado"
   },
   "event": {
-    "allEvents": "Eventos",
+    "allEvents": "Inicio",
     "capacity": "Aforo",
     "fSubtitle": "Subtítulo",
     "subtitleHint": "Información breve (opcional)",
@@ -224,9 +224,9 @@
     "standings": "Clasificación",
     "rank": "#",
     "player": "Jugador",
-    "points": "Pts",
-    "record": "V-D-E",
-    "buchholz": "Buchholz",
+    "points": "Puntos",
+    "record": "Results",
+    "buchholz": "%Opp Winrate",
     "rounds": "Rondas",
     "noRounds": "Aún no hay rondas.",
     "round": "Ronda {n}",
@@ -274,6 +274,7 @@
   "leagueStandings": {
     "title": "Clasificación de la liga",
     "formula": "Puntos = {win} por victoria + {attendance} por asistencia.",
+    "prizes": "Premios",
     "empty": "Aún no hay resultados en esta liga.",
     "rank": "#",
     "player": "Jugador",
@@ -290,6 +291,8 @@
     "fieldGame": "Juego",
     "fieldFormat": "Formato",
     "formatPlaceholder": "Elige un formato",
+    "fieldPrizes": "Premios",
+    "prizesHint": "Premios de la liga (opcional)",
     "pointsTitle": "Puntos de liga",
     "pointsHint": "Puntos que cada sesión aporta a la liga.",
     "durationTitle": "Duración de la temporada",

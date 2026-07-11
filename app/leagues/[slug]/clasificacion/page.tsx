@@ -46,6 +46,11 @@ export default async function LeagueStandingsPage({
             attendance: league.attendance_value,
           })}
         </p>
+        {league.prizes && (
+          <p className="text-sm text-muted-foreground">
+            {t("prizes")}: {league.prizes}
+          </p>
+        )}
       </div>
 
       <Card>

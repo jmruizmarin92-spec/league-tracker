@@ -67,6 +67,7 @@ export default async function LeagueAdminPage({
               subtitle: league.subtitle,
               game: league.game,
               format: league.format,
+              prizes: league.prizes,
             }}
             labels={{
               name: t("fieldName"),
@@ -75,6 +76,8 @@ export default async function LeagueAdminPage({
               game: t("fieldGame"),
               format: t("fieldFormat"),
               formatPlaceholder: t("formatPlaceholder"),
+              prizes: t("fieldPrizes"),
+              prizesHint: t("prizesHint"),
               save: t("save"),
               saved: t("saved"),
             }}

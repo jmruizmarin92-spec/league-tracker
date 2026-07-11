@@ -73,7 +73,7 @@ export default async function EventPage({
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
       <div className="flex flex-col gap-2">
-        <Link href="/events" className="text-sm text-muted-foreground hover:text-foreground">
+        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
           ← {t("allEvents")}
         </Link>
         <div className="flex flex-wrap items-center gap-2">

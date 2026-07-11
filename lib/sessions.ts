@@ -33,8 +33,8 @@ export async function listSessions(leagueId: string): Promise<Session[]> {
     .from("sessions")
     .select("*")
     .eq("league_id", leagueId)
-    .order("starts_at", { ascending: false, nullsFirst: false })
-    .order("created_at", { ascending: false });
+    .order("starts_at", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: true });
   return (data as Session[] | null) ?? [];
 }
 

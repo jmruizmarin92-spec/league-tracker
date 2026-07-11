@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { updateLeagueDetailsAction, type ActionState } from "@/app/actions/leagues";
 import { FORMATS_BY_GAME, type Game } from "@/lib/league-format";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -26,6 +27,7 @@ export function LeagueDetailsForm({
     subtitle: string | null;
     game: Game;
     format: string | null;
+    prizes: string | null;
   };
   labels: {
     name: string;
@@ -34,6 +36,8 @@ export function LeagueDetailsForm({
     game: string;
     format: string;
     formatPlaceholder: string;
+    prizes: string;
+    prizesHint: string;
     save: string;
     saved: string;
   };
@@ -109,6 +113,19 @@ export function LeagueDetailsForm({
               ))}
             </SelectContent>
           </Select>
+        </div>
+        <div className="flex flex-col gap-1.5 sm:col-span-2">
+          <label htmlFor="ld_prizes" className="text-sm font-medium">
+            {labels.prizes}
+          </label>
+          <Textarea
+            id="ld_prizes"
+            name="prizes"
+            rows={2}
+            maxLength={1000}
+            placeholder={labels.prizesHint}
+            defaultValue={defaults.prizes ?? ""}
+          />
         </div>
       </div>
 

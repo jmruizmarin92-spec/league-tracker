@@ -57,7 +57,7 @@ export async function createEventAction(
   });
   if (error) return { error: error.message };
 
-  revalidatePath("/events");
+  revalidatePath("/");
   redirect(`/events/${slug}`);
 }
 
@@ -111,8 +111,7 @@ export async function updateEventAction(
   if (error) return { error: error.message };
 
   revalidatePath(`/events/${slug}`);
-  revalidatePath("/events");
-  revalidatePath("/", "layout");
+  revalidatePath("/");
   return { ok: true };
 }
 
@@ -238,7 +237,6 @@ export async function deleteEventAction(formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase.rpc("delete_event", { p_event: eventId });
   if (error) return;
-  revalidatePath("/events");
-  revalidatePath("/", "layout");
-  redirect("/events");
+  revalidatePath("/");
+  redirect("/");
 }

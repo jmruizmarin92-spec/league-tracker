@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { getUser, getProfile } from "@/lib/auth";
+import { getMyPlayer } from "@/lib/players";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/user-menu";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/button";
 export async function SiteHeader() {
   const user = await getUser();
   const profile = await getProfile();
+  const myPlayer = user ? await getMyPlayer() : null;
   const t = await getTranslations("nav");
 
   return (
@@ -23,12 +25,14 @@ export async function SiteHeader() {
           >
             {t("leagues")}
           </Link>
-          <Link
-            href="/events"
-            className="shrink-0 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {t("events")}
-          </Link>
+          {myPlayer && (
+            <Link
+              href={`/players/${myPlayer.id}`}
+              className="shrink-0 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {t("statistics")}
+            </Link>
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <ThemeToggle />
@@ -45,6 +49,7 @@ export async function SiteHeader() {
                 admin: t("admin"),
                 adminArea: t("adminArea"),
                 archetypes: t("archetypes"),
+                adminEvents: t("adminEvents"),
               }}
             />
           ) : (

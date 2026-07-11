@@ -15,6 +15,7 @@ export type League = {
   description: string | null;
   game: Game;
   format: string | null;
+  prizes: string | null;
   win_value: number;
   attendance_value: number;
   draw_value: number;

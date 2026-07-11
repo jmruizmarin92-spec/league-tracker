@@ -51,6 +51,7 @@ export async function updateLeagueDetailsAction(
   const subtitle = capText(String(formData.get("subtitle") ?? ""), 80);
   const game = String(formData.get("game") ?? "");
   const format = String(formData.get("format") ?? "");
+  const prizes = capText(String(formData.get("prizes") ?? ""), 1000);
 
   if (!name) return { error: "Introduce un nombre." };
   if (game !== "tcg" && game !== "vgc") return { error: "Elige un juego." };
@@ -65,6 +66,7 @@ export async function updateLeagueDetailsAction(
       subtitle: subtitle || null,
       game,
       format,
+      prizes: prizes || null,
     })
     .eq("id", id);
   if (error) return { error: error.message };

@@ -78,31 +78,6 @@ export default async function LeaguePage({
         </div>
       </div>
 
-      {admin && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("createSession")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CreateSessionForm
-              leagueId={league.id}
-              slug={slug}
-              locations={league.locations}
-              defaultLocation={league.default_location}
-              labels={{
-                startsAt: t("sStartsAt"),
-                location: t("sLocation"),
-                locationPlaceholder: t("sLocationPlaceholder"),
-                cost: t("sCost"),
-                capacity: t("sCapacity"),
-                capacityHint: t("sCapacityHint"),
-                cta: t("sCreate"),
-              }}
-            />
-          </CardContent>
-        </Card>
-      )}
-
       <Card>
         <CardHeader>
           <CardTitle>{t("sessionsTitle")}</CardTitle>
@@ -149,6 +124,31 @@ export default async function LeaguePage({
           )}
         </CardContent>
       </Card>
+
+      {admin && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("createSession")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CreateSessionForm
+              leagueId={league.id}
+              slug={slug}
+              locations={league.locations}
+              defaultLocation={league.default_location}
+              labels={{
+                startsAt: t("sStartsAt"),
+                location: t("sLocation"),
+                locationPlaceholder: t("sLocationPlaceholder"),
+                cost: t("sCost"),
+                capacity: t("sCapacity"),
+                capacityHint: t("sCapacityHint"),
+                cta: t("sCreate"),
+              }}
+            />
+          </CardContent>
+        </Card>
+      )}
     </main>
   );
 }
