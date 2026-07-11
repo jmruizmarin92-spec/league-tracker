@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getUser, getProfile } from "@/lib/auth";
+import type { MatchInput, MatchResult } from "@/lib/scoring";
 
 export type Game = "tcg" | "vgc";
 
@@ -90,6 +91,44 @@ export async function isLeagueAdmin(leagueId: string): Promise<boolean> {
     .eq("user_id", user.id)
     .maybeSingle();
   return !!data;
+}
+
+// Every match in a league, grouped by session (for league standings).
+export async function getLeagueMatchesBySession(
+  leagueId: string,
+): Promise<MatchInput[][]> {
+  const supabase = await createClient();
+  const { data: sessions } = await supabase
+    .from("sessions")
+    .select("id")
+    .eq("league_id", leagueId);
+  const sessionIds = ((sessions as { id: string }[] | null) ?? []).map(
+    (s) => s.id,
+  );
+  if (sessionIds.length === 0) return [];
+
+  const { data: matches } = await supabase
+    .from("matches")
+    .select("session_id, player1_id, player2_id, result")
+    .in("session_id", sessionIds);
+
+  const bySession = new Map<string, MatchInput[]>();
+  for (const id of sessionIds) bySession.set(id, []);
+  for (const m of (matches as
+    | {
+        session_id: string;
+        player1_id: string;
+        player2_id: string | null;
+        result: MatchResult;
+      }[]
+    | null) ?? []) {
+    bySession.get(m.session_id)?.push({
+      player1: m.player1_id,
+      player2: m.player2_id,
+      result: m.result,
+    });
+  }
+  return [...bySession.values()];
 }
 
 // Registered users not already admins of this league (for the add-admin picker).

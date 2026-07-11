@@ -44,11 +44,18 @@ export default async function LeaguePage({
             <p className="text-muted-foreground">{league.description}</p>
           )}
         </div>
-        {admin && (
+        <div className="flex gap-2">
           <Button asChild variant="outline">
-            <Link href={`/leagues/${slug}/admin`}>{t("manage")}</Link>
+            <Link href={`/leagues/${slug}/clasificacion`}>
+              {t("standingsLink")}
+            </Link>
           </Button>
-        )}
+          {admin && (
+            <Button asChild variant="outline">
+              <Link href={`/leagues/${slug}/admin`}>{t("manage")}</Link>
+            </Button>
+          )}
+        </div>
       </div>
 
       {admin && (

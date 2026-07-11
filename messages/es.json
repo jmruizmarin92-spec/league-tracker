@@ -27,6 +27,7 @@
   },
   "league": {
     "manage": "Administrar",
+    "standingsLink": "Clasificación",
     "sessionsTitle": "Sesiones",
     "noSessions": "Aún no hay sesiones.",
     "session": "Sesión",
@@ -109,6 +110,16 @@
     "fieldName": "Nombre",
     "fieldIconUrl": "URL del icono (opcional)",
     "add": "Añadir"
+  },
+  "leagueStandings": {
+    "title": "Clasificación de la liga",
+    "formula": "Puntos = {win} por victoria + {attendance} por asistencia.",
+    "empty": "Aún no hay resultados en esta liga.",
+    "rank": "#",
+    "player": "Jugador",
+    "points": "Puntos",
+    "wins": "Victorias",
+    "attended": "Asistencias"
   },
   "leagueAdmin": {
     "title": "Administrar liga",
