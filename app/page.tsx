@@ -133,6 +133,9 @@ export default async function Home({
                     <span className="flex flex-wrap items-center gap-2 font-medium">
                       <span className="truncate">{u.name}</span>
                       <GameBadge game={u.game} />
+                      {formatLabel(u.format) && (
+                        <Badge variant="outline">{formatLabel(u.format)}</Badge>
+                      )}
                       <CategoryBadge category={u.category} />
                       {u.kind === "session" && (
                         <Badge variant="outline">{t("session")}</Badge>
