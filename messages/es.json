@@ -11,7 +11,40 @@
     "profile": "Perfil",
     "settings": "Ajustes",
     "admin": "Admin",
-    "adminArea": "Administración"
+    "adminArea": "Administración",
+    "leagues": "Ligas"
+  },
+  "leagues": {
+    "title": "Ligas",
+    "createTitle": "Crear liga",
+    "fieldName": "Nombre",
+    "fieldGame": "Juego",
+    "gamePlaceholder": "Elige un juego",
+    "fieldDescription": "Descripción",
+    "createCta": "Crear liga",
+    "empty": "Aún no hay ligas."
+  },
+  "league": {
+    "manage": "Administrar",
+    "sessionsTitle": "Sesiones",
+    "sessionsSoon": "Próximamente."
+  },
+  "leagueAdmin": {
+    "title": "Administrar liga",
+    "pointsTitle": "Puntos de liga",
+    "pointsHint": "Puntos que cada sesión aporta a la liga.",
+    "winValue": "Puntos por victoria",
+    "attendanceValue": "Puntos por asistencia",
+    "drawValue": "Puntos por empate",
+    "save": "Guardar",
+    "saved": "Guardado.",
+    "adminsTitle": "Administradores",
+    "roleOwner": "Propietario",
+    "roleAdmin": "Admin",
+    "remove": "Quitar",
+    "addAdmin": "Añadir administrador",
+    "addAdminPlaceholder": "Elige un usuario",
+    "add": "Añadir"
   },
   "auth": {
     "loginTitle": "Entrar",
