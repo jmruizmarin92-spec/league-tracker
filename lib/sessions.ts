@@ -18,7 +18,13 @@ export type Session = {
 };
 
 export type SessionWithLeague = Session & {
-  league: { id: string; name: string; slug: string; game: Game } | null;
+  league: {
+    id: string;
+    name: string;
+    slug: string;
+    game: Game;
+    locations: string[];
+  } | null;
 };
 
 export async function listSessions(leagueId: string): Promise<Session[]> {
@@ -37,7 +43,7 @@ export const getSession = cache(
     const supabase = await createClient();
     const { data } = await supabase
       .from("sessions")
-      .select("*, league:leagues(id, name, slug, game)")
+      .select("*, league:leagues(id, name, slug, game, locations)")
       .eq("id", id)
       .maybeSingle();
     return data as SessionWithLeague | null;

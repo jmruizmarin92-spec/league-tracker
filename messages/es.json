@@ -1,7 +1,7 @@
 {
   "home": {
     "badge": "En construcción",
-    "title": "Liga Pokémon",
+    "title": "Pokémon Granada",
     "subtitle": "Gestiona tus ligas y torneos semanales de TCG y VGC en un solo sitio.",
     "cta": "Empezar"
   },
@@ -185,6 +185,15 @@
     "newPlayerPlaceholder": "Nombre / alias",
     "createPlayerCta": "Crear y añadir",
     "completeNoAdd": "Esta sesión está finalizada; no se pueden añadir jugadores.",
+    "editDetailsTitle": "Editar detalles",
+    "sStartsAt": "Fecha y hora",
+    "sLocation": "Lugar",
+    "sLocationPlaceholder": "Elige un lugar",
+    "sCost": "Coste (€)",
+    "sCapacity": "Aforo",
+    "sCapacityHint": "Sin límite",
+    "save": "Guardar",
+    "saved": "Guardado.",
     "statusLabel": "Estado",
     "categoryLabel": "Categoría",
     "categoryNone": "Sin categoría",

@@ -15,7 +15,7 @@ export async function SiteHeader() {
       <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-2 px-4">
         <div className="flex min-w-0 items-center gap-2 sm:gap-4">
           <Link href="/" className="truncate font-semibold tracking-tight">
-            Liga Pokémon
+            Pokémon Granada
           </Link>
           <Link
             href="/leagues"

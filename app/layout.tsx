@@ -6,7 +6,7 @@ import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Liga Pokémon",
+  title: "Pokémon Granada",
   description: "Gestión de ligas y torneos Pokémon TCG y VGC",
 };
 

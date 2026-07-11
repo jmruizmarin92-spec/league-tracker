@@ -25,6 +25,7 @@ import {
 } from "@/app/actions/sessions";
 import { generateRoundAction } from "@/app/actions/rounds";
 import { AddParticipantForm } from "@/components/add-participant-form";
+import { EditSessionForm } from "@/components/edit-session-form";
 import { ArchetypePicker } from "@/components/archetype-picker";
 import { StandingsTable } from "@/components/standings-table";
 import { RoundsTabs, type RoundView } from "@/components/rounds-tabs";
@@ -400,7 +401,31 @@ export default async function SessionPage({
             )}
 
 
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 border-t pt-4">
+              <span className="text-sm font-medium">{t("editDetailsTitle")}</span>
+              <EditSessionForm
+                sessionId={id}
+                locations={session.league?.locations ?? []}
+                defaults={{
+                  startsAt: session.starts_at,
+                  location: session.location,
+                  cost: session.cost,
+                  capacity: session.capacity,
+                }}
+                labels={{
+                  startsAt: t("sStartsAt"),
+                  location: t("sLocation"),
+                  locationPlaceholder: t("sLocationPlaceholder"),
+                  cost: t("sCost"),
+                  capacity: t("sCapacity"),
+                  capacityHint: t("sCapacityHint"),
+                  save: t("save"),
+                  saved: t("saved"),
+                }}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2 border-t pt-4">
               <span className="text-sm font-medium">{t("statusLabel")}</span>
               <div className="flex flex-wrap gap-2">
                 {(["setup", "active", "complete"] as const).map((s) => (

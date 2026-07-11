@@ -41,6 +41,37 @@ export async function createSessionAction(
   redirect(`/sessions/${id}`);
 }
 
+export async function updateSessionAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const id = String(formData.get("session_id") ?? "");
+  const startsAtIso = String(formData.get("starts_at_iso") ?? "");
+  const location = capText(String(formData.get("location") ?? ""), 120);
+  const costRaw = String(formData.get("cost") ?? "0").replace(",", ".");
+  const capacityRaw = String(formData.get("capacity") ?? "");
+
+  const cost = costRaw === "" ? 0 : Number(costRaw);
+  if (Number.isNaN(cost) || cost < 0) return { error: "Coste no válido." };
+  const capacity = capacityRaw === "" ? null : Number(capacityRaw);
+  if (capacity !== null && (!Number.isInteger(capacity) || capacity < 1)) {
+    return { error: "El aforo debe ser un entero positivo." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_session", {
+    p_session: id,
+    p_starts_at: startsAtIso === "" ? null : startsAtIso,
+    p_location: location,
+    p_cost: cost,
+    p_capacity: capacity,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath(`/sessions/${id}`);
+  return { ok: true };
+}
+
 async function rpc(fn: string, args: Record<string, unknown>) {
   const supabase = await createClient();
   await supabase.rpc(fn, args);

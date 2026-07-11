@@ -6,7 +6,6 @@ import { formatMonthRange } from "@/lib/format";
 import { CreateLeagueForm } from "@/components/create-league-form";
 import { GameBadge } from "@/components/game-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 
 export default async function LeaguesPage() {
   const t = await getTranslations("leagues");
@@ -27,17 +26,19 @@ export default async function LeaguesPage() {
                   <CardHeader>
                     <div className="flex items-center justify-between gap-2">
                       <CardTitle>{l.name}</CardTitle>
-                      <div className="flex flex-wrap gap-1">
-                        <GameBadge game={l.game} />
-                        {formatLabel(l.format) && (
-                          <Badge variant="outline">{formatLabel(l.format)}</Badge>
-                        )}
-                      </div>
+                      <GameBadge game={l.game} />
                     </div>
                   </CardHeader>
-                  {(l.subtitle || formatMonthRange(l.starts_month, l.ends_month)) && (
+                  {([formatLabel(l.format), l.subtitle].some(Boolean) ||
+                    formatMonthRange(l.starts_month, l.ends_month)) && (
                     <CardContent className="flex flex-col gap-1 text-sm text-muted-foreground">
-                      {l.subtitle && <p>{l.subtitle}</p>}
+                      {[formatLabel(l.format), l.subtitle].some(Boolean) && (
+                        <p>
+                          {[formatLabel(l.format), l.subtitle]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+                      )}
                       {formatMonthRange(l.starts_month, l.ends_month) && (
                         <p>{formatMonthRange(l.starts_month, l.ends_month)}</p>
                       )}
