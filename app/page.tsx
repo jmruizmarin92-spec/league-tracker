@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Calendar, MapPin, Coins } from "lucide-react";
-import { listActiveLeagues } from "@/lib/leagues";
+import { listActiveLeagues, formatLabel } from "@/lib/leagues";
 import { getUpcoming } from "@/lib/agenda";
 import { formatDateTime, formatCost } from "@/lib/format";
 import { CATEGORIES } from "@/lib/event-category";
@@ -188,9 +188,11 @@ export default async function Home({
                         <GameBadge game={l.game} />
                       </div>
                     </CardHeader>
-                    {l.subtitle && (
+                    {[formatLabel(l.format), l.subtitle].some(Boolean) && (
                       <CardContent className="text-sm text-muted-foreground">
-                        {l.subtitle}
+                        {[formatLabel(l.format), l.subtitle]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </CardContent>
                     )}
                   </Card>
