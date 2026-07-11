@@ -68,7 +68,7 @@ Archetype catalog (admin-curated, shared per game):
 - `archetype_options` — `id`, **`game`** (`tcg` | `vgc`), `name`, `icon_url` (Supabase Storage), `active`, `created_by`. Separate lists per game; managed by site admins.
 
 Independent events (standalone):
-- `events` — `id`, `name`, `slug`, **`game`** (`tcg` | `vgc`), `starts_at`, `location`, `cost` (EUR), `description`, **`list_required`** (bool), **`capacity`** (nullable = unlimited), `status` (`open` | `closed` | `complete`), `created_by`.
+- `events` — `id`, `name`, `slug`, **`game`** (`tcg` | `vgc`), `starts_at`, `location`, `cost` (EUR), `description`, **`external_url`** (payment/registration link), **`prizes`** (text — prize breakdown), **`list_required`** (bool), **`capacity`** (nullable = unlimited), `status` (`open` | `closed` | `complete`), `created_by`.
 - `event_admins` — `event_id`, `user_id` (owner + co-admins for an event).
 - `event_registrations` — `id`, `event_id`, `player_id`, **`status`** (`registered` | `waitlisted`), **`list_text`** (nullable — TCG .txt / VGC pokepaste text), **`list_url`** (nullable — pokepaste link), `submitted_at`, `registered_at`.
 

@@ -57,6 +57,80 @@ export async function updateLeaguePointsAction(
   return { ok: true };
 }
 
+// --- League locations (venue picklist + default) ---
+
+async function getLeagueLocations(
+  id: string,
+): Promise<{ locations: string[]; default_location: string | null } | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("leagues")
+    .select("locations, default_location")
+    .eq("id", id)
+    .maybeSingle();
+  return data as { locations: string[]; default_location: string | null } | null;
+}
+
+export async function addLeagueLocationAction(formData: FormData) {
+  const id = String(formData.get("league_id") ?? "");
+  const slug = String(formData.get("slug") ?? "");
+  const location = String(formData.get("location") ?? "").trim();
+  if (!id || !location) return;
+
+  const current = await getLeagueLocations(id);
+  if (!current) return;
+  if (current.locations.includes(location)) return;
+
+  const locations = [...current.locations, location];
+  const supabase = await createClient();
+  await supabase
+    .from("leagues")
+    .update({
+      locations,
+      // First venue added becomes the default automatically.
+      default_location: current.default_location ?? location,
+    })
+    .eq("id", id);
+  revalidatePath(`/leagues/${slug}/admin`);
+}
+
+export async function removeLeagueLocationAction(formData: FormData) {
+  const id = String(formData.get("league_id") ?? "");
+  const slug = String(formData.get("slug") ?? "");
+  const location = String(formData.get("location") ?? "");
+  if (!id || !location) return;
+
+  const current = await getLeagueLocations(id);
+  if (!current) return;
+
+  const locations = current.locations.filter((l) => l !== location);
+  const supabase = await createClient();
+  await supabase
+    .from("leagues")
+    .update({
+      locations,
+      default_location:
+        current.default_location === location
+          ? (locations[0] ?? null)
+          : current.default_location,
+    })
+    .eq("id", id);
+  revalidatePath(`/leagues/${slug}/admin`);
+}
+
+export async function setDefaultLocationAction(formData: FormData) {
+  const id = String(formData.get("league_id") ?? "");
+  const slug = String(formData.get("slug") ?? "");
+  const location = String(formData.get("location") ?? "");
+  if (!id || !location) return;
+  const supabase = await createClient();
+  await supabase
+    .from("leagues")
+    .update({ default_location: location })
+    .eq("id", id);
+  revalidatePath(`/leagues/${slug}/admin`);
+}
+
 export async function addLeagueAdminAction(formData: FormData) {
   const league = String(formData.get("league_id") ?? "");
   const user = String(formData.get("user_id") ?? "");

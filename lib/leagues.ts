@@ -13,6 +13,8 @@ export type League = {
   win_value: number;
   attendance_value: number;
   draw_value: number;
+  locations: string[];
+  default_location: string | null;
   created_at: string;
 };
 

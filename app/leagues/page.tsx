@@ -14,25 +14,6 @@ export default async function LeaguesPage() {
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
       <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
 
-      {profile?.is_admin && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("createTitle")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CreateLeagueForm
-              labels={{
-                name: t("fieldName"),
-                game: t("fieldGame"),
-                gamePlaceholder: t("gamePlaceholder"),
-                description: t("fieldDescription"),
-                cta: t("createCta"),
-              }}
-            />
-          </CardContent>
-        </Card>
-      )}
-
       {leagues.length === 0 ? (
         <p className="text-muted-foreground">{t("empty")}</p>
       ) : (
@@ -57,6 +38,25 @@ export default async function LeaguesPage() {
             </li>
           ))}
         </ul>
+      )}
+
+      {profile?.is_admin && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("createTitle")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CreateLeagueForm
+              labels={{
+                name: t("fieldName"),
+                game: t("fieldGame"),
+                gamePlaceholder: t("gamePlaceholder"),
+                description: t("fieldDescription"),
+                cta: t("createCta"),
+              }}
+            />
+          </CardContent>
+        </Card>
       )}
     </main>
   );

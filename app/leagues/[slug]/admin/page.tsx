@@ -6,7 +6,13 @@ import {
   listLeagueAdmins,
   listAddableUsers,
 } from "@/lib/leagues";
-import { removeLeagueAdminAction } from "@/app/actions/leagues";
+import {
+  removeLeagueAdminAction,
+  addLeagueLocationAction,
+  removeLeagueLocationAction,
+  setDefaultLocationAction,
+} from "@/app/actions/leagues";
+import { Input } from "@/components/ui/input";
 import { LeaguePointsForm } from "@/components/league-points-form";
 import { AddAdminForm } from "@/components/add-admin-form";
 import { Button } from "@/components/ui/button";
@@ -59,6 +65,67 @@ export default async function LeagueAdminPage({
               hint: t("pointsHint"),
             }}
           />
+        </CardContent>
+      </Card>
+
+      {/* Locations (venue picklist) */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("locationsTitle")}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <p className="text-sm text-muted-foreground">{t("locationsHint")}</p>
+          {league.locations.length > 0 && (
+            <ul className="flex flex-col divide-y">
+              {league.locations.map((loc) => (
+                <li
+                  key={loc}
+                  className="flex items-center justify-between gap-3 py-2"
+                >
+                  <span className="flex items-center gap-2">
+                    {loc}
+                    {league.default_location === loc && (
+                      <Badge>{t("defaultBadge")}</Badge>
+                    )}
+                  </span>
+                  <div className="flex gap-2">
+                    {league.default_location !== loc && (
+                      <form action={setDefaultLocationAction}>
+                        <input type="hidden" name="league_id" value={league.id} />
+                        <input type="hidden" name="slug" value={slug} />
+                        <input type="hidden" name="location" value={loc} />
+                        <Button type="submit" variant="ghost" size="sm">
+                          {t("makeDefault")}
+                        </Button>
+                      </form>
+                    )}
+                    <form action={removeLeagueLocationAction}>
+                      <input type="hidden" name="league_id" value={league.id} />
+                      <input type="hidden" name="slug" value={slug} />
+                      <input type="hidden" name="location" value={loc} />
+                      <Button type="submit" variant="outline" size="sm">
+                        {t("remove")}
+                      </Button>
+                    </form>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+          <form
+            action={addLeagueLocationAction}
+            className="flex flex-col gap-2 sm:flex-row"
+          >
+            <input type="hidden" name="league_id" value={league.id} />
+            <input type="hidden" name="slug" value={slug} />
+            <Input
+              name="location"
+              maxLength={120}
+              placeholder={t("locationPlaceholder")}
+              className="sm:flex-1"
+            />
+            <Button type="submit">{t("addLocation")}</Button>
+          </form>
         </CardContent>
       </Card>
 
