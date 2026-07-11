@@ -5,7 +5,7 @@ export type Category = "cup" | "challenge" | "demo" | "others";
 export const CATEGORIES: { value: Category; label: string; icon: LucideIcon }[] = [
   { value: "cup", label: "Cup", icon: Trophy },
   { value: "challenge", label: "Challenge", icon: Swords },
-  { value: "demo", label: "Demo", icon: Sparkles },
+  { value: "demo", label: "Demos", icon: Sparkles },
   { value: "others", label: "Otros", icon: Tag },
 ];
 

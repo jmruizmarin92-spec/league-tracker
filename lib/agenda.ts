@@ -6,11 +6,11 @@ export type UpcomingItem = {
   href: string;
   name: string;
   game: Game;
-  category: string | null;
+  category: string | null; // events only; sessions always null
   startsAt: string;
   location: string | null;
   cost: number;
-  subtitle: string | null; // league name for sessions
+  subtitle: string | null; // league name for sessions; the event's own subtitle for events
 };
 
 type SessionRow = {
@@ -20,7 +20,6 @@ type SessionRow = {
   location: string | null;
   cost: number;
   status: string;
-  category: string | null;
   league: { name: string; slug: string; game: Game } | null;
 };
 
@@ -32,6 +31,7 @@ type EventRow = {
   cost: number;
   game: Game;
   category: string | null;
+  subtitle: string | null;
 };
 
 // Every upcoming session + independent event (future, not yet complete).
@@ -45,14 +45,14 @@ export async function getUpcoming(): Promise<UpcomingItem[]> {
     supabase
       .from("sessions")
       .select(
-        "id, name, starts_at, location, cost, status, category, league:leagues(name, slug, game)",
+        "id, name, starts_at, location, cost, status, league:leagues(name, slug, game)",
       )
       .gte("starts_at", nowIso)
       .neq("status", "complete")
       .order("starts_at"),
     supabase
       .from("events")
-      .select("slug, name, starts_at, location, cost, game, category")
+      .select("slug, name, starts_at, location, cost, game, category, subtitle")
       .gte("starts_at", nowIso)
       .neq("status", "complete")
       .order("starts_at"),
@@ -67,7 +67,7 @@ export async function getUpcoming(): Promise<UpcomingItem[]> {
       href: `/sessions/${s.id}`,
       name: s.name ?? s.league.name,
       game: s.league.game,
-      category: s.category,
+      category: null,
       startsAt: s.starts_at,
       location: s.location,
       cost: s.cost,
@@ -86,7 +86,7 @@ export async function getUpcoming(): Promise<UpcomingItem[]> {
       startsAt: e.starts_at,
       location: e.location,
       cost: e.cost,
-      subtitle: null,
+      subtitle: e.subtitle,
     });
   }
 

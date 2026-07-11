@@ -41,6 +41,41 @@ export async function createLeagueAction(
   redirect(`/leagues/${slug}`);
 }
 
+export async function updateLeagueDetailsAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const id = String(formData.get("league_id") ?? "");
+  const slug = String(formData.get("slug") ?? "");
+  const name = capText(String(formData.get("name") ?? ""), 80);
+  const subtitle = capText(String(formData.get("subtitle") ?? ""), 80);
+  const game = String(formData.get("game") ?? "");
+  const format = String(formData.get("format") ?? "");
+
+  if (!name) return { error: "Introduce un nombre." };
+  if (game !== "tcg" && game !== "vgc") return { error: "Elige un juego." };
+  const allowed = FORMATS_BY_GAME[game as Game].map((f) => f.value);
+  if (!allowed.includes(format)) return { error: "Elige un formato válido." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("leagues")
+    .update({
+      name,
+      subtitle: subtitle || null,
+      game,
+      format,
+    })
+    .eq("id", id);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/leagues/${slug}/admin`);
+  revalidatePath(`/leagues/${slug}`);
+  revalidatePath("/leagues");
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
 export async function updateLeagueDurationAction(
   _prev: ActionState,
   formData: FormData,

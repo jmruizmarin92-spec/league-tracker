@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { capText } from "@/lib/validation";
-import { isCategory } from "@/lib/event-category";
 
 export type ActionState = { error?: string; ok?: boolean };
 
@@ -19,9 +18,7 @@ export async function createSessionAction(
   const location = capText(String(formData.get("location") ?? ""), 120);
   const costRaw = String(formData.get("cost") ?? "0").replace(",", ".");
   const capacityRaw = String(formData.get("capacity") ?? "");
-  const category = String(formData.get("category") ?? "");
 
-  if (category && !isCategory(category)) return { error: "Categoría no válida." };
   const cost = costRaw === "" ? 0 : Number(costRaw);
   if (Number.isNaN(cost) || cost < 0) return { error: "Coste no válido." };
   const capacity = capacityRaw === "" ? null : Number(capacityRaw);
@@ -37,7 +34,6 @@ export async function createSessionAction(
     p_location: location,
     p_cost: cost,
     p_capacity: capacity,
-    p_category: category || null,
   });
   if (error) return { error: error.message };
 
@@ -123,14 +119,6 @@ export async function setSessionStatusAction(formData: FormData) {
   const status = String(formData.get("status") ?? "");
   await rpc("set_session_status", { p_session: id, p_status: status });
   revalidatePath(`/sessions/${id}`);
-}
-
-export async function setSessionCategoryAction(formData: FormData) {
-  const id = String(formData.get("session_id") ?? "");
-  const category = String(formData.get("category") ?? "");
-  await rpc("set_session_category", { p_session: id, p_category: category || null });
-  revalidatePath(`/sessions/${id}`);
-  revalidatePath(`/leagues/${String(formData.get("league_slug") ?? "")}`);
 }
 
 export async function deleteSessionAction(formData: FormData) {

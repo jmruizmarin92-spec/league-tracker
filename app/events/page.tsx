@@ -7,6 +7,7 @@ import { CATEGORIES } from "@/lib/event-category";
 import { buildFilterHref } from "@/lib/filter-href";
 import { CreateEventForm } from "@/components/create-event-form";
 import { CategoryBadge } from "@/components/category-badge";
+import { GameBadge } from "@/components/game-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,7 +40,10 @@ export default async function EventsPage({
       <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
 
       <div className="flex flex-col gap-2">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-muted-foreground">
+            {t("filterGameLabel")}
+          </span>
           {(["", "tcg", "vgc"] as const).map((g) => (
             <Button
               key={g || "all"}
@@ -53,7 +57,10 @@ export default async function EventsPage({
             </Button>
           ))}
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-muted-foreground">
+            {t("filterCategoryLabel")}
+          </span>
           <Button
             asChild
             size="sm"
@@ -96,8 +103,11 @@ export default async function EventsPage({
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <CardTitle className="truncate">{e.name}</CardTitle>
                       <div className="flex flex-wrap gap-1">
-                        <Badge variant="secondary">{e.game.toUpperCase()}</Badge>
+                        <GameBadge game={e.game} />
                         <CategoryBadge category={e.category} />
+                        {e.subtitle && (
+                          <Badge variant="outline">{e.subtitle}</Badge>
+                        )}
                       </div>
                     </div>
                   </CardHeader>
@@ -127,6 +137,8 @@ export default async function EventsPage({
             <CreateEventForm
               labels={{
                 name: t("fName"),
+                subtitle: t("fSubtitle"),
+                subtitleHint: t("subtitleHint"),
                 category: t("fCategory"),
                 categoryPlaceholder: t("categoryPlaceholder"),
                 categoryNone: t("categoryNone"),

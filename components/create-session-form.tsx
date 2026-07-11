@@ -2,7 +2,6 @@
 
 import { useActionState, useState } from "react";
 import { createSessionAction, type ActionState } from "@/app/actions/sessions";
-import { CategorySelect } from "@/components/category-select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,9 +31,6 @@ export function CreateSessionForm({
     cost: string;
     capacity: string;
     capacityHint: string;
-    category: string;
-    categoryPlaceholder: string;
-    categoryNone: string;
     cta: string;
   };
 }) {
@@ -44,7 +40,6 @@ export function CreateSessionForm({
   );
   const [local, setLocal] = useState("");
   const [location, setLocation] = useState(defaultLocation ?? "");
-  const [category, setCategory] = useState("");
   const iso = local ? new Date(local).toISOString() : "";
   const hasVenues = locations.length > 0;
 
@@ -53,7 +48,6 @@ export function CreateSessionForm({
       <input type="hidden" name="league_id" value={leagueId} />
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="starts_at_iso" value={iso} />
-      <input type="hidden" name="category" value={category} />
       {hasVenues && <input type="hidden" name="location" value={location} />}
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -62,15 +56,6 @@ export function CreateSessionForm({
             {labels.name}
           </label>
           <Input id="name" name="name" maxLength={80} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium">{labels.category}</label>
-          <CategorySelect
-            value={category}
-            onChange={setCategory}
-            placeholder={labels.categoryPlaceholder}
-            noneLabel={labels.categoryNone}
-          />
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="starts_at" className="text-sm font-medium">

@@ -4,6 +4,7 @@ import { listLeagues, formatLabel } from "@/lib/leagues";
 import { getProfile } from "@/lib/auth";
 import { formatMonthRange } from "@/lib/format";
 import { CreateLeagueForm } from "@/components/create-league-form";
+import { GameBadge } from "@/components/game-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -26,10 +27,13 @@ export default async function LeaguesPage() {
                   <CardHeader>
                     <div className="flex items-center justify-between gap-2">
                       <CardTitle>{l.name}</CardTitle>
-                      <div className="flex gap-1">
-                        <Badge variant="secondary">{l.game.toUpperCase()}</Badge>
+                      <div className="flex flex-wrap gap-1">
+                        <GameBadge game={l.game} />
                         {formatLabel(l.format) && (
                           <Badge variant="outline">{formatLabel(l.format)}</Badge>
+                        )}
+                        {l.subtitle && (
+                          <Badge variant="outline">{l.subtitle}</Badge>
                         )}
                       </div>
                     </div>

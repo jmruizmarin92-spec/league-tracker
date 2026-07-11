@@ -11,6 +11,7 @@ export type League = {
   id: string;
   name: string;
   slug: string;
+  subtitle: string | null;
   description: string | null;
   game: Game;
   format: string | null;

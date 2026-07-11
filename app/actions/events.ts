@@ -15,6 +15,7 @@ export async function createEventAction(
   formData: FormData,
 ): Promise<ActionState> {
   const name = capText(String(formData.get("name") ?? ""), 100);
+  const subtitle = capText(String(formData.get("subtitle") ?? ""), 80);
   const category = String(formData.get("category") ?? "");
   const game = String(formData.get("game") ?? "");
   const startsAtIso = String(formData.get("starts_at_iso") ?? "");
@@ -52,6 +53,7 @@ export async function createEventAction(
     p_list_required: listRequired,
     p_capacity: capacity,
     p_category: category || null,
+    p_subtitle: subtitle || null,
   });
   if (error) return { error: error.message };
 
@@ -66,6 +68,7 @@ export async function updateEventAction(
   const eventId = String(formData.get("event_id") ?? "");
   const slug = String(formData.get("slug") ?? "");
   const name = capText(String(formData.get("name") ?? ""), 100);
+  const subtitle = capText(String(formData.get("subtitle") ?? ""), 80);
   const category = String(formData.get("category") ?? "");
   const startsAtIso = String(formData.get("starts_at_iso") ?? "");
   const location = capText(String(formData.get("location") ?? ""), 120);
@@ -93,6 +96,7 @@ export async function updateEventAction(
     .from("events")
     .update({
       name,
+      subtitle: subtitle || null,
       category: category || null,
       starts_at: startsAtIso === "" ? null : startsAtIso,
       location: location || null,

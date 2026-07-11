@@ -16,7 +16,7 @@ export default async function MePage() {
   const [player, myClaims] = await Promise.all([getMyPlayer(), getMyClaims()]);
 
   const pendingClaims = myClaims.filter((c) => c.status === "pending");
-  const unclaimed = await listUnclaimedPlayers();
+  const unclaimed = player ? [] : await listUnclaimedPlayers();
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
@@ -69,61 +69,64 @@ export default async function MePage() {
         </Card>
       )}
 
-      {/* Link an admin-created managed player (dedup) */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("claimTitle")}</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          <p className="text-sm text-muted-foreground">{t("claimDesc")}</p>
+      {/* Link an admin-created managed player (dedup) — only relevant before
+          the account has one; afterwards, admins merge duplicates manually. */}
+      {!player && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("claimTitle")}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <p className="text-sm text-muted-foreground">{t("claimDesc")}</p>
 
-          {pendingClaims.length > 0 && (
-            <div className="flex flex-col gap-2 rounded-md border p-3">
-              <span className="text-sm font-medium">{t("pendingTitle")}</span>
-              {pendingClaims.map((c) => (
-                <div
-                  key={c.id}
-                  className="flex items-center justify-between gap-3"
-                >
-                  <span className="text-sm">{c.player_name ?? "—"}</span>
-                  <Badge variant="secondary">{t("statusPending")}</Badge>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {unclaimed.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("noUnclaimed")}</p>
-          ) : (
-            <ul className="flex flex-col divide-y">
-              {unclaimed.map((p) => {
-                const alreadyRequested = pendingClaims.some(
-                  (c) => c.player_id === p.id,
-                );
-                return (
-                  <li
-                    key={p.id}
-                    className="flex items-center justify-between gap-3 py-2"
+            {pendingClaims.length > 0 && (
+              <div className="flex flex-col gap-2 rounded-md border p-3">
+                <span className="text-sm font-medium">{t("pendingTitle")}</span>
+                {pendingClaims.map((c) => (
+                  <div
+                    key={c.id}
+                    className="flex items-center justify-between gap-3"
                   >
-                    <span>{p.display_name}</span>
-                    <form action={requestClaimAction}>
-                      <input type="hidden" name="player_id" value={p.id} />
-                      <Button
-                        type="submit"
-                        variant="outline"
-                        size="sm"
-                        disabled={alreadyRequested}
-                      >
-                        {alreadyRequested ? t("statusPending") : t("claimCta")}
-                      </Button>
-                    </form>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+                    <span className="text-sm">{c.player_name ?? "—"}</span>
+                    <Badge variant="secondary">{t("statusPending")}</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {unclaimed.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("noUnclaimed")}</p>
+            ) : (
+              <ul className="flex flex-col divide-y">
+                {unclaimed.map((p) => {
+                  const alreadyRequested = pendingClaims.some(
+                    (c) => c.player_id === p.id,
+                  );
+                  return (
+                    <li
+                      key={p.id}
+                      className="flex items-center justify-between gap-3 py-2"
+                    >
+                      <span>{p.display_name}</span>
+                      <form action={requestClaimAction}>
+                        <input type="hidden" name="player_id" value={p.id} />
+                        <Button
+                          type="submit"
+                          variant="outline"
+                          size="sm"
+                          disabled={alreadyRequested}
+                        >
+                          {alreadyRequested ? t("statusPending") : t("claimCta")}
+                        </Button>
+                      </form>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </main>
   );
 }

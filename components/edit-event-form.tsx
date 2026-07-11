@@ -25,6 +25,7 @@ export function EditEventForm({
   slug: string;
   defaults: {
     name: string;
+    subtitle: string | null;
     category: string | null;
     startsAt: string | null;
     location: string | null;
@@ -155,6 +156,18 @@ export function EditEventForm({
             maxLength={1000}
             placeholder={labels.prizesHint}
             defaultValue={defaults.prizes ?? ""}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5 sm:col-span-2">
+          <label htmlFor="ee_subtitle" className="text-sm font-medium">
+            {labels.subtitle}
+          </label>
+          <Input
+            id="ee_subtitle"
+            name="subtitle"
+            maxLength={80}
+            placeholder={labels.subtitleHint}
+            defaultValue={defaults.subtitle ?? ""}
           />
         </div>
       </div>

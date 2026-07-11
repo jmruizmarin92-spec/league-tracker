@@ -19,6 +19,7 @@ import {
 import { EventRegister } from "@/components/event-register";
 import { EditEventForm } from "@/components/edit-event-form";
 import { CategoryBadge } from "@/components/category-badge";
+import { GameBadge } from "@/components/game-badge";
 import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -65,8 +66,9 @@ export default async function EventPage({
           <h1 className="truncate text-2xl font-semibold tracking-tight">
             {event.name}
           </h1>
-          <Badge variant="secondary">{event.game.toUpperCase()}</Badge>
+          <GameBadge game={event.game} />
           <CategoryBadge category={event.category} />
+          {event.subtitle && <Badge variant="outline">{event.subtitle}</Badge>}
           <Badge variant={event.status === "open" ? "default" : "secondary"}>
             {t(`status_${event.status}`)}
           </Badge>
@@ -237,6 +239,7 @@ export default async function EventPage({
               slug={slug}
               defaults={{
                 name: event.name,
+                subtitle: event.subtitle,
                 category: event.category,
                 startsAt: event.starts_at,
                 location: event.location,
@@ -249,6 +252,8 @@ export default async function EventPage({
               }}
               labels={{
                 name: t("eName"),
+                subtitle: t("fSubtitle"),
+                subtitleHint: t("subtitleHint"),
                 category: t("fCategory"),
                 categoryPlaceholder: t("categoryPlaceholder"),
                 categoryNone: t("categoryNone"),

@@ -5,6 +5,7 @@ import { getProfile } from "@/lib/auth";
 import { getPlayersByIds } from "@/lib/players";
 import { pairingName } from "@/lib/player-name";
 import { formatDateTime } from "@/lib/format";
+import { buildFilterHref } from "@/lib/filter-href";
 import {
   computeCareerTotals,
   computeHeadToHead,
@@ -18,30 +19,45 @@ import {
 } from "@/lib/player-profile-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export default async function PlayerProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ game?: string }>;
 }) {
   const { id } = await params;
   const player = await getPlayer(id);
   if (!player) notFound();
 
   const t = await getTranslations("playerProfile");
-  const [viewerProfile, records] = await Promise.all([
+  const sp = await searchParams;
+  const gameFilter = sp.game === "tcg" || sp.game === "vgc" ? sp.game : null;
+
+  const [viewerProfile, allRecords] = await Promise.all([
     getProfile(),
     getPlayerMatchRecords(id),
   ]);
   const isOwner = viewerProfile != null && player.user_id === viewerProfile.id;
   const canSeePrivate = isOwner || !!viewerProfile?.is_admin;
 
+  const allLeagueIds = [...new Set(allRecords.map((r) => r.leagueId))];
+  const leagueConfigs = await getLeagueConfigs(allLeagueIds);
+
+  const records = gameFilter
+    ? allRecords.filter((r) => leagueConfigs.get(r.leagueId)?.game === gameFilter)
+    : allRecords;
+
   const career = computeCareerTotals(records);
-  const leagueIds = [...new Set(records.map((r) => r.leagueId))];
-  const leagueConfigs = await getLeagueConfigs(leagueIds);
   const leagueHistory = computeLeagueHistory(records, leagueConfigs);
   const h2h = computeHeadToHead(records);
-  const archetypeHistory = await getArchetypeHistory(id, canSeePrivate);
+
+  const allArchetypeHistory = await getArchetypeHistory(id, canSeePrivate);
+  const archetypeHistory = gameFilter
+    ? allArchetypeHistory.filter((e) => e.game === gameFilter)
+    : allArchetypeHistory;
 
   const opponentIds = h2h.map((r) => r.opponentId);
   const opponentNames = await getPlayersByIds(opponentIds);
@@ -72,6 +88,27 @@ export default async function PlayerProfilePage({
           </Badge>
         )}
       </div>
+
+      {/* Game filter */}
+      {allLeagueIds.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-muted-foreground">
+            {t("filterGameLabel")}
+          </span>
+          {(["", "tcg", "vgc"] as const).map((g) => (
+            <Button
+              key={g || "all"}
+              asChild
+              size="sm"
+              variant={(gameFilter ?? "") === g ? "default" : "outline"}
+            >
+              <Link href={buildFilterHref(`/players/${id}`, sp, { game: g || undefined })}>
+                {g ? g.toUpperCase() : t("filterAllGames")}
+              </Link>
+            </Button>
+          ))}
+        </div>
+      )}
 
       {/* Career totals */}
       <Card>

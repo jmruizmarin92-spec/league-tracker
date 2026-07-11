@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Player } from "@/lib/players";
+import type { Game } from "@/lib/league-format";
 import type { PlayerMatchRecord, LeaguePointConfig } from "@/lib/player-profile";
 import { resolveArchetypes, type ArchetypeChip } from "@/lib/archetypes";
 
@@ -62,19 +63,23 @@ export async function getPlayerMatchRecords(
 
 export async function getLeagueConfigs(
   leagueIds: string[],
-): Promise<Map<string, LeaguePointConfig & { name: string; slug: string }>> {
-  const map = new Map<string, LeaguePointConfig & { name: string; slug: string }>();
+): Promise<Map<string, LeaguePointConfig & { name: string; slug: string; game: Game }>> {
+  const map = new Map<
+    string,
+    LeaguePointConfig & { name: string; slug: string; game: Game }
+  >();
   if (leagueIds.length === 0) return map;
   const supabase = await createClient();
   const { data } = await supabase
     .from("leagues")
-    .select("id, name, slug, win_value, draw_value, attendance_value")
+    .select("id, name, slug, game, win_value, draw_value, attendance_value")
     .in("id", leagueIds);
   for (const l of (data as
     | {
         id: string;
         name: string;
         slug: string;
+        game: Game;
         win_value: number;
         draw_value: number;
         attendance_value: number;
@@ -83,6 +88,7 @@ export async function getLeagueConfigs(
     map.set(l.id, {
       name: l.name,
       slug: l.slug,
+      game: l.game,
       winValue: l.win_value,
       drawValue: l.draw_value,
       attendanceValue: l.attendance_value,
@@ -95,6 +101,7 @@ export type ArchetypeHistoryEntry = {
   sessionId: string;
   leagueName: string;
   leagueSlug: string;
+  game: Game | null;
   startsAt: string | null;
   chips: ArchetypeChip[];
   isPublic: boolean;
@@ -110,7 +117,7 @@ export async function getArchetypeHistory(
   const { data } = await supabase
     .from("session_participants")
     .select(
-      "session_id, archetype1, archetype2, archetype_public, sessions(starts_at, leagues(name, slug))",
+      "session_id, archetype1, archetype2, archetype_public, sessions(starts_at, leagues(name, slug, game))",
     )
     .eq("player_id", playerId)
     .or("archetype1.not.is.null,archetype2.not.is.null");
@@ -122,7 +129,7 @@ export async function getArchetypeHistory(
     archetype_public: boolean;
     sessions: {
       starts_at: string | null;
-      leagues: { name: string; slug: string } | null;
+      leagues: { name: string; slug: string; game: Game } | null;
     } | null;
   };
   const rows = ((data as Row[] | null) ?? []).filter(
@@ -138,6 +145,7 @@ export async function getArchetypeHistory(
       sessionId: r.session_id,
       leagueName: r.sessions?.leagues?.name ?? "—",
       leagueSlug: r.sessions?.leagues?.slug ?? "",
+      game: r.sessions?.leagues?.game ?? null,
       startsAt: r.sessions?.starts_at ?? null,
       isPublic: r.archetype_public,
       chips: [r.archetype1, r.archetype2]

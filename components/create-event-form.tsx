@@ -91,6 +91,17 @@ export function CreateEventForm({
           <label htmlFor="e_prizes" className="text-sm font-medium">{labels.prizes}</label>
           <Textarea id="e_prizes" name="prizes" rows={2} maxLength={1000} placeholder={labels.prizesHint} />
         </div>
+        <div className="flex flex-col gap-1.5 sm:col-span-2">
+          <label htmlFor="e_subtitle" className="text-sm font-medium">
+            {labels.subtitle}
+          </label>
+          <Input
+            id="e_subtitle"
+            name="subtitle"
+            maxLength={80}
+            placeholder={labels.subtitleHint}
+          />
+        </div>
       </div>
 
       <div className="flex items-center gap-2">

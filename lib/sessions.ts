@@ -13,7 +13,6 @@ export type Session = {
   location: string | null;
   cost: number;
   capacity: number | null;
-  category: string | null;
   status: SessionStatus;
   created_at: string;
 };

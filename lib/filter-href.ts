@@ -1,14 +1,16 @@
-// Builds a link that sets/clears game+category query params while
-// preserving whichever of the two isn't being changed.
+// Builds a link that sets/clears arbitrary query params while preserving
+// whichever ones aren't being changed. Generic over the param names so it
+// works for {game, category} on /events and {game, type} on the landing page.
 export function buildFilterHref(
   basePath: string,
-  current: { game?: string; category?: string },
-  patch: { game?: string; category?: string },
+  current: Record<string, string | undefined>,
+  patch: Record<string, string | undefined>,
 ): string {
   const next = { ...current, ...patch };
   const params = new URLSearchParams();
-  if (next.game) params.set("game", next.game);
-  if (next.category) params.set("category", next.category);
+  for (const [key, value] of Object.entries(next)) {
+    if (value) params.set(key, value);
+  }
   const qs = params.toString();
   return qs ? `${basePath}?${qs}` : basePath;
 }

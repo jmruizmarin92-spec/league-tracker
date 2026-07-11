@@ -6,6 +6,7 @@ import { formatDateTime, formatCost } from "@/lib/format";
 import { CATEGORIES } from "@/lib/event-category";
 import { buildFilterHref } from "@/lib/filter-href";
 import { CategoryBadge } from "@/components/category-badge";
+import { GameBadge } from "@/components/game-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,22 +14,23 @@ import { Button } from "@/components/ui/button";
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ game?: string; category?: string }>;
+  searchParams: Promise<{ game?: string; type?: string }>;
 }) {
   const t = await getTranslations("landing");
   const sp = await searchParams;
   const gameFilter = sp.game === "tcg" || sp.game === "vgc" ? sp.game : null;
-  const categoryFilter = sp.category ?? null;
+  const typeFilter = sp.type ?? null;
 
   const [leagues, allUpcoming] = await Promise.all([
     listActiveLeagues(),
     getUpcoming(),
   ]);
-  const upcoming = allUpcoming.filter(
-    (u) =>
-      (!gameFilter || u.game === gameFilter) &&
-      (!categoryFilter || u.category === categoryFilter),
-  );
+  const upcoming = allUpcoming.filter((u) => {
+    if (gameFilter && u.game !== gameFilter) return false;
+    if (!typeFilter) return true;
+    if (typeFilter === "session") return u.kind === "session";
+    return u.kind === "event" && u.category === typeFilter;
+  });
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 p-6">
@@ -51,7 +53,10 @@ export default async function Home({
 
         {allUpcoming.length > 0 && (
           <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium text-muted-foreground">
+                {t("filterGameLabel")}
+              </span>
               {(["", "tcg", "vgc"] as const).map((g) => (
                 <Button
                   key={g || "all"}
@@ -65,14 +70,26 @@ export default async function Home({
                 </Button>
               ))}
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium text-muted-foreground">
+                {t("filterTypeLabel")}
+              </span>
               <Button
                 asChild
                 size="sm"
-                variant={!categoryFilter ? "default" : "outline"}
+                variant={!typeFilter ? "default" : "outline"}
               >
-                <Link href={buildFilterHref("/", sp, { category: undefined })}>
+                <Link href={buildFilterHref("/", sp, { type: undefined })}>
                   {t("filterAllCategories")}
+                </Link>
+              </Button>
+              <Button
+                asChild
+                size="sm"
+                variant={typeFilter === "session" ? "default" : "outline"}
+              >
+                <Link href={buildFilterHref("/", sp, { type: "session" })}>
+                  {t("session")}
                 </Link>
               </Button>
               {CATEGORIES.map((c) => {
@@ -82,9 +99,9 @@ export default async function Home({
                     key={c.value}
                     asChild
                     size="sm"
-                    variant={categoryFilter === c.value ? "default" : "outline"}
+                    variant={typeFilter === c.value ? "default" : "outline"}
                   >
-                    <Link href={buildFilterHref("/", sp, { category: c.value })}>
+                    <Link href={buildFilterHref("/", sp, { type: c.value })}>
                       <Icon className="h-3.5 w-3.5" />
                       {c.label}
                     </Link>
@@ -110,11 +127,11 @@ export default async function Home({
                   <span className="flex min-w-0 flex-col">
                     <span className="flex flex-wrap items-center gap-2 font-medium">
                       <span className="truncate">{u.name}</span>
-                      <Badge variant="secondary">{u.game.toUpperCase()}</Badge>
+                      <GameBadge game={u.game} />
                       <CategoryBadge category={u.category} />
-                      <Badge variant="outline">
-                        {u.kind === "session" ? t("session") : t("event")}
-                      </Badge>
+                      {u.kind === "session" && (
+                        <Badge variant="outline">{t("session")}</Badge>
+                      )}
                     </span>
                     <span className="text-sm text-muted-foreground">
                       {[
@@ -156,7 +173,7 @@ export default async function Home({
                     <CardHeader>
                       <div className="flex items-center justify-between gap-2">
                         <CardTitle>{l.name}</CardTitle>
-                        <Badge variant="secondary">{l.game.toUpperCase()}</Badge>
+                        <GameBadge game={l.game} />
                       </div>
                     </CardHeader>
                     {l.description && (

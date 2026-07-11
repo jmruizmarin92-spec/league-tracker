@@ -16,6 +16,7 @@ import {
   deleteLeagueAction,
 } from "@/app/actions/leagues";
 import { Input } from "@/components/ui/input";
+import { LeagueDetailsForm } from "@/components/league-details-form";
 import { LeaguePointsForm } from "@/components/league-points-form";
 import { LeagueDurationForm } from "@/components/league-duration-form";
 import { AddAdminForm } from "@/components/add-admin-form";
@@ -48,6 +49,35 @@ export default async function LeagueAdminPage({
         <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
         <p className="text-muted-foreground">{league.name}</p>
       </div>
+
+      {/* League details */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("detailsTitle")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <LeagueDetailsForm
+            leagueId={league.id}
+            slug={slug}
+            defaults={{
+              name: league.name,
+              subtitle: league.subtitle,
+              game: league.game,
+              format: league.format,
+            }}
+            labels={{
+              name: t("fieldName"),
+              subtitle: t("fieldSubtitle"),
+              subtitleHint: t("subtitleHint"),
+              game: t("fieldGame"),
+              format: t("fieldFormat"),
+              formatPlaceholder: t("formatPlaceholder"),
+              save: t("save"),
+              saved: t("saved"),
+            }}
+          />
+        </CardContent>
+      </Card>
 
       {/* Point configuration */}
       <Card>

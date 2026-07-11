@@ -10,6 +10,7 @@ export type EventRow = {
   name: string;
   slug: string;
   category: string | null;
+  subtitle: string | null;
   game: Game;
   starts_at: string | null;
   location: string | null;
