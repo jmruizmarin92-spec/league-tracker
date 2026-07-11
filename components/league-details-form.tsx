@@ -43,7 +43,12 @@ export function LeagueDetailsForm({
     {},
   );
   const [game, setGame] = useState<Game>(defaults.game);
-  const [format, setFormat] = useState(defaults.format ?? "");
+  // VGC has exactly one format; seed it so an existing VGC league that
+  // predates the format field (format === null) can still be saved — the
+  // select is disabled for VGC, so it can't be set by hand.
+  const [format, setFormat] = useState(
+    defaults.format ?? (defaults.game === "vgc" ? "champions" : ""),
+  );
 
   function onGameChange(v: string) {
     const g = v as Game;
