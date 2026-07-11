@@ -38,6 +38,7 @@ export async function SiteHeader() {
                 signOut: t("signOut"),
                 admin: t("admin"),
                 adminArea: t("adminArea"),
+                archetypes: t("archetypes"),
               }}
             />
           ) : (

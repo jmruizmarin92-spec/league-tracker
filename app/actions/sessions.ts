@@ -57,6 +57,27 @@ export async function leaveSessionAction(formData: FormData) {
   revalidatePath(`/sessions/${id}`);
 }
 
+export async function setMyArchetypesAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const id = String(formData.get("session_id") ?? "");
+  const a1 = String(formData.get("a1") ?? "");
+  const a2 = String(formData.get("a2") ?? "");
+  const isPublic = String(formData.get("is_public") ?? "true") === "true";
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_participant_archetypes", {
+    p_session: id,
+    p_a1: a1,
+    p_a2: a2,
+    p_public: isPublic,
+  });
+  if (error) return { error: error.message };
+  revalidatePath(`/sessions/${id}`);
+  return { ok: true };
+}
+
 export async function createSessionPlayerAction(formData: FormData) {
   const id = String(formData.get("session_id") ?? "");
   const name = String(formData.get("name") ?? "").trim();

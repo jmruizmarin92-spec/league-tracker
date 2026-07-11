@@ -5,12 +5,14 @@ import {
   getSession,
   listParticipants,
   getMyParticipation,
+  type SessionParticipant,
 } from "@/lib/sessions";
 import { isLeagueAdmin } from "@/lib/leagues";
 import { getUser } from "@/lib/auth";
 import { listPlayers } from "@/lib/players";
 import { pairingName } from "@/lib/player-name";
 import { formatDateTime, formatCost } from "@/lib/format";
+import { resolveArchetypes, listCustoms, type ArchetypeChip } from "@/lib/archetypes";
 import {
   joinSessionAction,
   leaveSessionAction,
@@ -19,10 +21,44 @@ import {
   createSessionPlayerAction,
 } from "@/app/actions/sessions";
 import { AddParticipantForm } from "@/components/add-participant-form";
+import { ArchetypePicker } from "@/components/archetype-picker";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+function ArchetypeIcons({
+  p,
+  chips,
+  canSee,
+}: {
+  p: SessionParticipant;
+  chips: Map<string, ArchetypeChip>;
+  canSee: boolean;
+}) {
+  if (!canSee) return null;
+  const keys = [p.archetype1, p.archetype2].filter(Boolean) as string[];
+  const resolved = keys.map((k) => chips.get(k)).filter(Boolean) as ArchetypeChip[];
+  if (resolved.length === 0) return null;
+  return (
+    <span className="flex items-center gap-1">
+      {resolved.map((c) =>
+        c.icon ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img key={c.key} src={c.icon} alt={c.name} title={c.name} className="h-6 w-6" />
+        ) : (
+          <span
+            key={c.key}
+            title={c.name}
+            className="rounded bg-muted px-1.5 py-0.5 text-xs"
+          >
+            {c.name}
+          </span>
+        ),
+      )}
+    </span>
+  );
+}
 
 export default async function SessionPage({
   params,
@@ -34,12 +70,22 @@ export default async function SessionPage({
   if (!session) notFound();
 
   const t = await getTranslations("session");
-  const [admin, participants, myStatus, user] = await Promise.all([
+  const game = session.league?.game;
+
+  const [admin, participants, myPart, user, customsAll] = await Promise.all([
     session.league ? isLeagueAdmin(session.league.id) : Promise.resolve(false),
     listParticipants(id),
     getMyParticipation(id),
     getUser(),
+    game ? listCustoms(game) : Promise.resolve([]),
   ]);
+
+  const chips = await resolveArchetypes(
+    participants.flatMap((p) => [p.archetype1, p.archetype2]),
+  );
+  const activeCustoms = customsAll
+    .filter((c) => c.active)
+    .map((c) => ({ id: c.id, name: c.name, icon_url: c.icon_url }));
 
   const registered = participants.filter((p) => p.status === "registered");
   const waitlisted = participants.filter((p) => p.status === "waitlisted");
@@ -59,6 +105,33 @@ export default async function SessionPage({
     session.capacity ? `${t("capacity")}: ${session.capacity}` : null,
   ].filter(Boolean);
 
+  const renderRow = (p: SessionParticipant) => (
+    <li
+      key={p.player_id}
+      className="flex items-center justify-between gap-3 py-2"
+    >
+      <span className="flex items-center gap-2">
+        <span className={p.is_me ? "font-medium" : undefined}>
+          {pairingName(p)}
+        </span>
+        <ArchetypeIcons
+          p={p}
+          chips={chips}
+          canSee={p.archetype_public || p.is_me || admin}
+        />
+      </span>
+      {admin && (
+        <form action={adminRemoveParticipantAction}>
+          <input type="hidden" name="session_id" value={id} />
+          <input type="hidden" name="player_id" value={p.player_id} />
+          <Button type="submit" variant="ghost" size="sm">
+            {t("remove")}
+          </Button>
+        </form>
+      )}
+    </li>
+  );
+
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
       <div className="flex flex-col gap-2">
@@ -74,9 +147,7 @@ export default async function SessionPage({
           <h1 className="text-2xl font-semibold tracking-tight">
             {session.name ?? formatDateTime(session.starts_at) ?? t("session")}
           </h1>
-          <Badge
-            variant={session.status === "active" ? "default" : "secondary"}
-          >
+          <Badge variant={session.status === "active" ? "default" : "secondary"}>
             {t(`status_${session.status}`)}
           </Badge>
         </div>
@@ -88,10 +159,12 @@ export default async function SessionPage({
       {/* Self join / leave */}
       {user && !isComplete && (
         <div className="flex items-center gap-3">
-          {myStatus ? (
+          {myPart ? (
             <>
-              <Badge variant={myStatus === "registered" ? "default" : "secondary"}>
-                {myStatus === "registered"
+              <Badge
+                variant={myPart.status === "registered" ? "default" : "secondary"}
+              >
+                {myPart.status === "registered"
                   ? t("youAreIn")
                   : t("youAreWaitlisted")}
               </Badge>
@@ -111,6 +184,38 @@ export default async function SessionPage({
         </div>
       )}
 
+      {/* My archetypes */}
+      {myPart && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("myArchetypes")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ArchetypePicker
+              sessionId={id}
+              customs={activeCustoms}
+              initial={{
+                a1: myPart.archetype1 ?? "",
+                a2: myPart.archetype2 ?? "",
+                isPublic: myPart.archetype_public,
+              }}
+              labels={{
+                title: t("myArchetypes"),
+                hint: t("archHint"),
+                slot1: t("arch1"),
+                slot2: t("arch2"),
+                placeholder: t("archPlaceholder"),
+                search: t("archSearch"),
+                clear: t("archClear"),
+                publicLabel: t("archPublic"),
+                save: t("archSave"),
+                saved: t("archSaved"),
+              }}
+            />
+          </CardContent>
+        </Card>
+      )}
+
       {/* Participants */}
       <Card>
         <CardHeader>
@@ -122,27 +227,7 @@ export default async function SessionPage({
           {registered.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("noParticipants")}</p>
           ) : (
-            <ul className="flex flex-col divide-y">
-              {registered.map((p) => (
-                <li
-                  key={p.player_id}
-                  className="flex items-center justify-between gap-3 py-2"
-                >
-                  <span className={p.is_me ? "font-medium" : undefined}>
-                    {pairingName(p)}
-                  </span>
-                  {admin && (
-                    <form action={adminRemoveParticipantAction}>
-                      <input type="hidden" name="session_id" value={id} />
-                      <input type="hidden" name="player_id" value={p.player_id} />
-                      <Button type="submit" variant="ghost" size="sm">
-                        {t("remove")}
-                      </Button>
-                    </form>
-                  )}
-                </li>
-              ))}
-            </ul>
+            <ul className="flex flex-col divide-y">{registered.map(renderRow)}</ul>
           )}
 
           {waitlisted.length > 0 && (
@@ -151,29 +236,7 @@ export default async function SessionPage({
                 {t("waitlist")} ({waitlisted.length})
               </span>
               <ul className="flex flex-col divide-y">
-                {waitlisted.map((p) => (
-                  <li
-                    key={p.player_id}
-                    className="flex items-center justify-between gap-3 py-2"
-                  >
-                    <span className={p.is_me ? "font-medium" : undefined}>
-                      {pairingName(p)}
-                    </span>
-                    {admin && (
-                      <form action={adminRemoveParticipantAction}>
-                        <input type="hidden" name="session_id" value={id} />
-                        <input
-                          type="hidden"
-                          name="player_id"
-                          value={p.player_id}
-                        />
-                        <Button type="submit" variant="ghost" size="sm">
-                          {t("remove")}
-                        </Button>
-                      </form>
-                    )}
-                  </li>
-                ))}
+                {waitlisted.map(renderRow)}
               </ul>
             </div>
           )}
@@ -205,9 +268,7 @@ export default async function SessionPage({
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <span className="text-sm font-medium">
-                    {t("createPlayer")}
-                  </span>
+                  <span className="text-sm font-medium">{t("createPlayer")}</span>
                   <p className="text-sm text-muted-foreground">
                     {t("createPlayerHint")}
                   </p>

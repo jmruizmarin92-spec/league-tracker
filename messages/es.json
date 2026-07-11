@@ -12,6 +12,7 @@
     "settings": "Ajustes",
     "admin": "Admin",
     "adminArea": "Administración",
+    "archetypes": "Arquetipos",
     "leagues": "Ligas"
   },
   "leagues": {
@@ -65,7 +66,29 @@
     "newPlayerPlaceholder": "Nombre / alias",
     "createPlayerCta": "Crear y añadir",
     "completeNoAdd": "Esta sesión está finalizada; no se pueden añadir jugadores.",
-    "statusLabel": "Estado"
+    "statusLabel": "Estado",
+    "myArchetypes": "Mis arquetipos",
+    "archHint": "Elige hasta dos Pokémon (o un arquetipo personalizado) para mostrar como tu arquetipo.",
+    "arch1": "Arquetipo 1",
+    "arch2": "Arquetipo 2",
+    "archPlaceholder": "Sin elegir",
+    "archSearch": "Buscar…",
+    "archClear": "Ninguno",
+    "archPublic": "Mostrar públicamente",
+    "archSave": "Guardar arquetipos",
+    "archSaved": "Guardado."
+  },
+  "archetypesAdmin": {
+    "title": "Arquetipos personalizados",
+    "hint": "Los Pokémon ya están disponibles. Añade aquí arquetipos personalizados (p. ej. un mazo de TCG) para cada juego.",
+    "empty": "Sin arquetipos personalizados.",
+    "inactive": "Oculto",
+    "hide": "Ocultar",
+    "show": "Mostrar",
+    "delete": "Eliminar",
+    "fieldName": "Nombre",
+    "fieldIconUrl": "URL del icono (opcional)",
+    "add": "Añadir"
   },
   "leagueAdmin": {
     "title": "Administrar liga",

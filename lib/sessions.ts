@@ -50,6 +50,9 @@ export type SessionParticipant = {
   display_name: string;
   first_name: string | null;
   last_name: string | null;
+  archetype1: string | null;
+  archetype2: string | null;
+  archetype_public: boolean;
   is_me: boolean;
 };
 
@@ -57,6 +60,9 @@ type ParticipantRow = {
   player_id: string;
   status: "registered" | "waitlisted";
   created_at: string;
+  archetype1: string | null;
+  archetype2: string | null;
+  archetype_public: boolean;
   players: {
     id: string;
     display_name: string;
@@ -74,7 +80,7 @@ export async function listParticipants(
   const { data } = await supabase
     .from("session_participants")
     .select(
-      "player_id, status, created_at, players(id, display_name, first_name, last_name, user_id)",
+      "player_id, status, created_at, archetype1, archetype2, archetype_public, players(id, display_name, first_name, last_name, user_id)",
     )
     .eq("session_id", sessionId)
     .order("created_at");
@@ -86,14 +92,24 @@ export async function listParticipants(
     display_name: r.players?.display_name ?? "—",
     first_name: r.players?.first_name ?? null,
     last_name: r.players?.last_name ?? null,
+    archetype1: r.archetype1,
+    archetype2: r.archetype2,
+    archetype_public: r.archetype_public,
     is_me: !!user && r.players?.user_id === user.id,
   }));
 }
 
-// The current user's participation status in a session (or null).
+export type MyParticipation = {
+  status: "registered" | "waitlisted";
+  archetype1: string | null;
+  archetype2: string | null;
+  archetype_public: boolean;
+};
+
+// The current user's participation in a session (or null).
 export async function getMyParticipation(
   sessionId: string,
-): Promise<"registered" | "waitlisted" | null> {
+): Promise<MyParticipation | null> {
   const user = await getUser();
   if (!user) return null;
   const supabase = await createClient();
@@ -105,9 +121,9 @@ export async function getMyParticipation(
   if (!player) return null;
   const { data } = await supabase
     .from("session_participants")
-    .select("status")
+    .select("status, archetype1, archetype2, archetype_public")
     .eq("session_id", sessionId)
     .eq("player_id", (player as { id: string }).id)
     .maybeSingle();
-  return (data as { status: "registered" | "waitlisted" } | null)?.status ?? null;
+  return (data as MyParticipation | null) ?? null;
 }

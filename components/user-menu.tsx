@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { User, Settings, LogOut, Shield } from "lucide-react";
+import { User, Settings, LogOut, Shield, Sparkles } from "lucide-react";
 import { signOut } from "@/app/actions/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ export function UserMenu({
     signOut: string;
     admin: string;
     adminArea: string;
+    archetypes: string;
   };
 }) {
   const initials =
@@ -72,12 +73,20 @@ export function UserMenu({
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {isAdmin && (
-          <DropdownMenuItem asChild>
-            <Link href="/admin/players">
-              <Shield className="mr-2 h-4 w-4" />
-              {labels.adminArea}
-            </Link>
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuItem asChild>
+              <Link href="/admin/players">
+                <Shield className="mr-2 h-4 w-4" />
+                {labels.adminArea}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/admin/arquetipos">
+                <Sparkles className="mr-2 h-4 w-4" />
+                {labels.archetypes}
+              </Link>
+            </DropdownMenuItem>
+          </>
         )}
         <DropdownMenuItem asChild>
           <Link href="/me">
