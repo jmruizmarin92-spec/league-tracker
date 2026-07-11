@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { Calendar, MapPin, Euro } from "lucide-react";
+import { Calendar, MapPin, Coins } from "lucide-react";
 import { getLeagueBySlug, isLeagueAdmin, formatLabel } from "@/lib/leagues";
 import { listSessions } from "@/lib/sessions";
 import { formatDateTime, formatCost, formatMonthRange } from "@/lib/format";
@@ -131,7 +131,7 @@ export default async function LeaguePage({
                           </span>
                         )}
                         <span className="flex items-center gap-1">
-                          <Euro className="h-3.5 w-3.5" />
+                          <Coins className="h-3.5 w-3.5" />
                           {formatCost(s.cost)}
                         </span>
                       </span>

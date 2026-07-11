@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { Calendar, MapPin, Euro } from "lucide-react";
+import { Calendar, MapPin, Coins } from "lucide-react";
 import { listActiveLeagues } from "@/lib/leagues";
 import { getUpcoming } from "@/lib/agenda";
 import { formatDateTime, formatCost } from "@/lib/format";
@@ -151,7 +151,7 @@ export default async function Home({
                         </span>
                       )}
                       <span className="flex items-center gap-1">
-                        <Euro className="h-3.5 w-3.5" />
+                        <Coins className="h-3.5 w-3.5" />
                         {formatCost(u.cost)}
                       </span>
                     </span>
