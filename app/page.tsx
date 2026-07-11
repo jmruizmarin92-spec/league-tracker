@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { Calendar, MapPin, Euro } from "lucide-react";
 import { listActiveLeagues } from "@/lib/leagues";
 import { getUpcoming } from "@/lib/agenda";
 import { formatDateTime, formatCost } from "@/lib/format";
@@ -133,15 +134,26 @@ export default async function Home({
                         <Badge variant="outline">{t("session")}</Badge>
                       )}
                     </span>
-                    <span className="text-sm text-muted-foreground">
-                      {[
-                        formatDateTime(u.startsAt),
-                        u.subtitle,
-                        u.location,
-                        formatCost(u.cost),
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
+                    <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-muted-foreground">
+                      {u.subtitle && u.subtitle !== u.name && (
+                        <span className="font-medium">{u.subtitle}</span>
+                      )}
+                      {formatDateTime(u.startsAt) && (
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5" />
+                          {formatDateTime(u.startsAt)}
+                        </span>
+                      )}
+                      {u.location && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3.5 w-3.5" />
+                          {u.location}
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1">
+                        <Euro className="h-3.5 w-3.5" />
+                        {formatCost(u.cost)}
+                      </span>
                     </span>
                   </span>
                 </Link>
