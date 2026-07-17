@@ -4,6 +4,7 @@ import { useActionState, useMemo, useState, useTransition } from "react";
 import {
   setMyArchetypesAction,
   setArchetypeVisibilityAction,
+  adminSetParticipantArchetypesAction,
   type ActionState,
 } from "@/app/actions/sessions";
 import { POKEDEX, spriteUrl } from "@/lib/pokedex";
@@ -121,11 +122,15 @@ function ArchetypeCombobox({
 
 export function ArchetypePicker({
   sessionId,
+  playerId,
   customs,
   initial,
   labels,
 }: {
   sessionId: string;
+  // When set, this edits another participant's picks as a league admin
+  // (via admin_set_participant_archetypes) instead of the caller's own.
+  playerId?: string;
   customs: { id: string; name: string; icon_url: string | null }[];
   initial: { a1: string; a2: string; isPublic: boolean };
   labels: {
@@ -143,7 +148,7 @@ export function ArchetypePicker({
   };
 }) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
-    setMyArchetypesAction,
+    playerId ? adminSetParticipantArchetypesAction : setMyArchetypesAction,
     {},
   );
   const [a1, setA1] = useState(initial.a1);
@@ -168,6 +173,7 @@ export function ArchetypePicker({
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="session_id" value={sessionId} />
+      {playerId && <input type="hidden" name="player_id" value={playerId} />}
       <input type="hidden" name="a1" value={a1} />
       <input type="hidden" name="a2" value={a2} />
       <input type="hidden" name="is_public" value={String(isPublic)} />
@@ -207,7 +213,11 @@ export function ArchetypePicker({
           checked={isPublic}
           onCheckedChange={(v) => {
             setIsPublic(v);
-            startTransition(() => setArchetypeVisibilityAction(sessionId, v));
+            // Self mode gets an instant live toggle; in admin mode the switch
+            // just feeds the form and takes effect on save.
+            if (!playerId) {
+              startTransition(() => setArchetypeVisibilityAction(sessionId, v));
+            }
           }}
         />
         <label htmlFor="arch-public" className="text-sm">

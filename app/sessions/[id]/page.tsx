@@ -27,6 +27,7 @@ import { generateRoundAction } from "@/app/actions/rounds";
 import { AddParticipantForm } from "@/components/add-participant-form";
 import { EditSessionForm } from "@/components/edit-session-form";
 import { ArchetypePicker } from "@/components/archetype-picker";
+import { ParticipantArchetypeEditor } from "@/components/participant-archetype-editor";
 import { StandingsTable } from "@/components/standings-table";
 import { RoundsTabs, type RoundView } from "@/components/rounds-tabs";
 import { MyMatchCard, type MyMatch } from "@/components/my-match-card";
@@ -186,25 +187,60 @@ export default async function SessionPage({
     session.capacity ? `${t("capacity")}: ${session.capacity}` : null,
   ].filter(Boolean);
 
-  const renderRow = (p: SessionParticipant) => (
-    <li
-      key={p.player_id}
-      className="flex items-center justify-between gap-3 py-2"
-    >
-      <span className={p.is_me ? "font-medium" : undefined}>
-        {pairingName(p)}
-      </span>
-      {admin && (
-        <form action={adminRemoveParticipantAction}>
-          <input type="hidden" name="session_id" value={id} />
-          <input type="hidden" name="player_id" value={p.player_id} />
-          <Button type="submit" variant="ghost" size="sm">
-            {t("remove")}
-          </Button>
-        </form>
-      )}
-    </li>
-  );
+  const renderRow = (p: SessionParticipant) => {
+    const partChips = [p.archetype1, p.archetype2]
+      .filter((k): k is string => !!k)
+      .map((k) => chips.get(k))
+      .filter((c): c is ArchetypeChip => !!c);
+
+    return (
+      <li key={p.player_id} className="flex flex-col gap-2 py-2">
+        <div className="flex items-center justify-between gap-3">
+          <span className={p.is_me ? "font-medium" : undefined}>
+            {pairingName(p)}
+          </span>
+          {admin && (
+            <form action={adminRemoveParticipantAction}>
+              <input type="hidden" name="session_id" value={id} />
+              <input type="hidden" name="player_id" value={p.player_id} />
+              <Button type="submit" variant="ghost" size="sm">
+                {t("remove")}
+              </Button>
+            </form>
+          )}
+        </div>
+        {admin && (
+          <ParticipantArchetypeEditor
+            sessionId={id}
+            playerId={p.player_id}
+            customs={activeCustoms}
+            initial={{
+              a1: p.archetype1 ?? "",
+              a2: p.archetype2 ?? "",
+              isPublic: p.archetype_public,
+            }}
+            chips={partChips}
+            labels={{
+              edit: t("archEditCta"),
+              close: t("archEditClose"),
+              none: t("archNone"),
+              title: t("myArchetypes"),
+              hint: t("archHint"),
+              slot1: t("arch1"),
+              slot2: t("arch2"),
+              placeholder: t("archPlaceholder"),
+              search: t("archSearch"),
+              clear: t("archClear"),
+              noResults: t("archNoResults"),
+              publicLabel: t("archPublic"),
+              save: t("archSave"),
+              saved: t("archSaved"),
+            }}
+          />
+        )}
+      </li>
+    );
+  };
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">

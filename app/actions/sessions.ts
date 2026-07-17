@@ -110,6 +110,31 @@ export async function setMyArchetypesAction(
   return { ok: true };
 }
 
+// Admin: set another participant's archetype picks (e.g. a managed player,
+// or correcting/entering one on someone's behalf during a session).
+export async function adminSetParticipantArchetypesAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const id = String(formData.get("session_id") ?? "");
+  const player = String(formData.get("player_id") ?? "");
+  const a1 = String(formData.get("a1") ?? "");
+  const a2 = String(formData.get("a2") ?? "");
+  const isPublic = String(formData.get("is_public") ?? "true") === "true";
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("admin_set_participant_archetypes", {
+    p_session: id,
+    p_player: player,
+    p_a1: a1,
+    p_a2: a2,
+    p_public: isPublic,
+  });
+  if (error) return { error: error.message };
+  revalidatePath(`/sessions/${id}`);
+  return { ok: true };
+}
+
 export async function setArchetypeVisibilityAction(
   sessionId: string,
   isPublic: boolean,

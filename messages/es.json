@@ -19,7 +19,11 @@
     "event": "Torneo",
     "prevPage": "Anterior",
     "nextPage": "Siguiente",
-    "pageOf": "Página {page} de {total}"
+    "pageOf": "Página {page} de {total}",
+    "playerIdPromptTitle": "Añade tu ID de Pokémon",
+    "playerIdPromptDesc": "Nos falta tu ID de Pokémon. Añádelo para que podamos identificarte en los torneos.",
+    "playerIdPromptPlaceholder": "ID de Pokémon",
+    "save": "Guardar"
   },
   "nav": {
     "signIn": "Entrar",
@@ -233,6 +237,9 @@
     "archPublic": "Mostrar públicamente",
     "archSave": "Guardar arquetipos",
     "archSaved": "Guardado.",
+    "archEditCta": "Editar arquetipos",
+    "archEditClose": "Cerrar",
+    "archNone": "Sin arquetipos",
     "standings": "Clasificación",
     "rank": "#",
     "player": "Jugador",

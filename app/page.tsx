@@ -3,11 +3,14 @@ import { getTranslations } from "next-intl/server";
 import { Calendar, MapPin, Coins } from "lucide-react";
 import { formatLabel } from "@/lib/leagues";
 import { getUpcoming } from "@/lib/agenda";
+import { getMyPlayer } from "@/lib/players";
+import { updateMyPokemonIdAction } from "@/app/actions/players";
 import { formatDateTime, formatCost } from "@/lib/format";
 import { CATEGORIES } from "@/lib/event-category";
 import { buildFilterHref, ACTIVE_FILTER_CLASS } from "@/lib/filter-href";
 import { CategoryBadge } from "@/components/category-badge";
 import { GameBadge } from "@/components/game-badge";
+import { PlayerIdPrompt } from "@/components/player-id-prompt";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -23,6 +26,7 @@ export default async function Home({
   const gameFilter = sp.game === "tcg" || sp.game === "vgc" ? sp.game : null;
   const typeFilter = sp.type ?? null;
 
+  const player = await getMyPlayer();
   const allUpcoming = await getUpcoming();
   const upcoming = allUpcoming.filter((u) => {
     if (gameFilter && u.game !== gameFilter) return false;
@@ -47,6 +51,18 @@ export default async function Home({
         <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
         <p className="text-muted-foreground">{t("subtitle")}</p>
       </div>
+
+      {player && !player.pokemon_id && (
+        <PlayerIdPrompt
+          action={updateMyPokemonIdAction}
+          labels={{
+            title: t("playerIdPromptTitle"),
+            description: t("playerIdPromptDesc"),
+            placeholder: t("playerIdPromptPlaceholder"),
+            save: t("save"),
+          }}
+        />
+      )}
 
       {/* Upcoming sessions + events */}
       <section className="flex flex-col gap-3">

@@ -47,6 +47,31 @@ export async function updateMyPlayerAction(
   return { ok: true };
 }
 
+// Self-service: the caller sets their own Pokémon ID from the landing page
+// prompt. Scoped to the caller's own linked player, nothing else editable.
+export async function updateMyPokemonIdAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "No autenticado." };
+
+  const pokemonId = capTextOrNull(String(formData.get("pokemon_id") ?? ""), NAME_MAX);
+  if (!pokemonId) return { error: "Introduce tu ID de Pokémon." };
+
+  const { error } = await supabase
+    .from("players")
+    .update({ pokemon_id: pokemonId })
+    .eq("user_id", user.id);
+
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
 // Admin: edit any player's profile fields (managed or linked). Ownership
 // fields (user_id/created_by) are never touched here.
 export async function updatePlayerAction(
