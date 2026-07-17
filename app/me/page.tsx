@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { requireUser } from "@/lib/auth";
 import { getMyPlayer, getMyClaims, listUnclaimedPlayers } from "@/lib/players";
-import { requestClaimAction } from "@/app/actions/players";
+import { requestClaimAction, updateMyPlayerAction } from "@/app/actions/players";
 import { pairingName } from "@/lib/player-name";
 import { PlayerFieldsForm } from "@/components/player-fields-form";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,7 @@ export default async function MePage() {
           </CardHeader>
           <CardContent>
             <PlayerFieldsForm
+              action={updateMyPlayerAction}
               defaults={{
                 display_name: player.display_name ?? "",
                 first_name: player.first_name ?? "",

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getProfile } from "@/lib/auth";
 import { capText, capTextOrNull } from "@/lib/validation";
 
 export type ActionState = { error?: string; ok?: boolean };
@@ -42,6 +43,40 @@ export async function updateMyPlayerAction(
     .eq("user_id", user.id);
 
   if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+// Admin: edit any player's profile fields (managed or linked). Ownership
+// fields (user_id/created_by) are never touched here.
+export async function updatePlayerAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const profile = await getProfile();
+  if (!profile?.is_admin) return { error: "Solo administradores." };
+
+  const supabase = await createClient();
+  const playerId = String(formData.get("player_id") ?? "");
+  if (!playerId) return { error: "Jugador no encontrado." };
+
+  const alias = capText(String(formData.get("display_name") ?? ""), NAME_MAX);
+  if (!alias) return { error: "El alias es obligatorio." };
+
+  const { error } = await supabase
+    .from("players")
+    .update({
+      display_name: alias,
+      first_name: capTextOrNull(String(formData.get("first_name") ?? ""), NAME_MAX),
+      last_name: capTextOrNull(String(formData.get("last_name") ?? ""), NAME_MAX),
+      pokemon_id: capTextOrNull(String(formData.get("pokemon_id") ?? ""), NAME_MAX),
+      game_id: capTextOrNull(String(formData.get("game_id") ?? ""), NAME_MAX),
+    })
+    .eq("id", playerId);
+
+  if (error) return { error: error.message };
+  revalidatePath("/admin/players");
+  revalidatePath(`/players/${playerId}`);
   revalidatePath("/", "layout");
   return { ok: true };
 }

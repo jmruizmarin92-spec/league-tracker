@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { updateMyPlayerAction, type ActionState } from "@/app/actions/players";
+import type { ActionState } from "@/app/actions/players";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -14,9 +14,13 @@ type Values = {
 };
 
 export function PlayerFieldsForm({
+  action,
+  playerId,
   defaults,
   labels,
 }: {
+  action: (prev: ActionState, fd: FormData) => Promise<ActionState>;
+  playerId?: string;
   defaults: Values;
   labels: {
     alias: string;
@@ -29,7 +33,7 @@ export function PlayerFieldsForm({
   };
 }) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
-    updateMyPlayerAction,
+    action,
     {},
   );
 
@@ -50,6 +54,7 @@ export function PlayerFieldsForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
+      {playerId && <input type="hidden" name="player_id" value={playerId} />}
       {field("display_name", labels.alias, defaults.display_name, true)}
       <div className="grid gap-4 sm:grid-cols-2">
         {field("first_name", labels.firstName, defaults.first_name)}

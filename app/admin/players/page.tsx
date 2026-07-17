@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
 import { listPlayers, listPendingClaims } from "@/lib/players";
@@ -114,18 +115,23 @@ export default async function AdminPlayersPage() {
                       {p.user_id ? t("badgeLinked") : t("badgeManaged")}
                     </Badge>
                   </span>
-                  {!p.user_id && (
-                    <form action={deletePlayerAction}>
-                      <input type="hidden" name="player_id" value={p.id} />
-                      <ConfirmDeleteButton
-                        confirmMessage={t("confirmDeletePlayer", {
-                          name: p.display_name,
-                        })}
-                      >
-                        {t("delete")}
-                      </ConfirmDeleteButton>
-                    </form>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <Button asChild size="sm" variant="outline">
+                      <Link href={`/admin/players/${p.id}`}>{t("edit")}</Link>
+                    </Button>
+                    {!p.user_id && (
+                      <form action={deletePlayerAction}>
+                        <input type="hidden" name="player_id" value={p.id} />
+                        <ConfirmDeleteButton
+                          confirmMessage={t("confirmDeletePlayer", {
+                            name: p.display_name,
+                          })}
+                        >
+                          {t("delete")}
+                        </ConfirmDeleteButton>
+                      </form>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
