@@ -107,7 +107,10 @@ export default async function SessionDisplayPage({
           ) : (
             <ul className="flex flex-col gap-2">
               {currentMatches.map((m) => {
-                const decided = m.result === "p1_win" || m.result === "p2_win";
+                const decided =
+                  m.result === "p1_win" ||
+                  m.result === "p2_win" ||
+                  m.result === "loss";
                 const nameClass = (won: boolean) =>
                   won
                     ? "font-bold text-primary"
@@ -136,6 +139,10 @@ export default async function SessionDisplayPage({
                             {name(m.player2_id)}
                           </span>
                         </>
+                      ) : m.result === "loss" ? (
+                        <Badge variant="outline" className="text-base">
+                          {t("loss")}
+                        </Badge>
                       ) : (
                         <Badge variant="secondary" className="text-base">
                           {t("bye")}

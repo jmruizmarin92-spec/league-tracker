@@ -7,7 +7,13 @@ export const WIN_POINTS = 3;
 export const DRAW_POINTS = 1;
 export const LOSS_POINTS = 0;
 
-export type MatchResult = "pending" | "p1_win" | "p2_win" | "draw" | "bye";
+export type MatchResult =
+  | "pending"
+  | "p1_win"
+  | "p2_win"
+  | "draw"
+  | "bye"
+  | "loss"; // solo loss (player2 null): player1 lost a round they weren't there for
 
 export type MatchInput = {
   player1: string;
@@ -69,6 +75,15 @@ export function computeStandings(
 
   for (const m of matches) {
     if (m.result === "pending") continue;
+
+    // Solo loss for a missed round: 0 pts, counts as played, no opponent.
+    // Checked before the bye branch because a loss also has player2 === null.
+    if (m.result === "loss") {
+      const p = ensure(m.player1);
+      p.losses += 1;
+      p.played += 1;
+      continue;
+    }
 
     if (m.result === "bye" || m.player2 === null) {
       const p = ensure(m.player1);

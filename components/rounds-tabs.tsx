@@ -10,7 +10,7 @@ export type MatchView = {
   id: string;
   p1Name: string;
   p2Name: string | null; // null = bye
-  result: "pending" | "p1_win" | "p2_win" | "draw" | "bye";
+  result: "pending" | "p1_win" | "p2_win" | "draw" | "bye" | "loss";
   canReport: boolean;
   isMine: boolean;
 };
@@ -35,6 +35,7 @@ export function RoundsTabs({
     roundWord: string;
     deleteRound: string;
     bye: string;
+    loss: string;
     draw: string;
     pending: string;
     winPrefix: string;
@@ -75,7 +76,10 @@ export function RoundsTabs({
           )}
           <ul className="flex flex-col gap-1">
             {round.matches.map((m) => {
-              const decided = m.result === "p1_win" || m.result === "p2_win";
+              const decided =
+                m.result === "p1_win" ||
+                m.result === "p2_win" ||
+                m.result === "loss";
               return (
                 <li
                   key={m.id}
@@ -100,6 +104,8 @@ export function RoundsTabs({
                           {m.p2Name}
                         </span>
                       </>
+                    ) : m.result === "loss" ? (
+                      <Badge variant="outline">{labels.loss}</Badge>
                     ) : (
                       <Badge variant="secondary">{labels.bye}</Badge>
                     )}

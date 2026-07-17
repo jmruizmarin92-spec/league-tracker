@@ -279,6 +279,7 @@ export default async function SessionPage({
                   roundWord: t("roundWord"),
                   deleteRound: t("deleteRound"),
                   bye: t("bye"),
+                  loss: t("loss"),
                   draw: t("draw"),
                   pending: t("pending"),
                   winPrefix: t("winPrefix"),
@@ -372,7 +373,17 @@ export default async function SessionPage({
                   <AddParticipantForm
                     sessionId={id}
                     players={addable}
-                    labels={{ placeholder: t("choosePlayer"), cta: t("add") }}
+                    roundsStarted={lastRoundNumber > 0}
+                    labels={{
+                      placeholder: t("choosePlayer"),
+                      cta: t("add"),
+                      lateTitle: t("lateTitle"),
+                      lateHint: t("lateHint"),
+                      missedNone: t("lateMissedNone"),
+                      missedLoss: t("lateMissedLoss"),
+                      entryNext: t("lateEntryNext"),
+                      entryCurrent: t("lateEntryCurrent"),
+                    }}
                   />
                 </div>
 

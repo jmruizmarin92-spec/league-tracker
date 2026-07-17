@@ -36,6 +36,31 @@ describe("computeStandings", () => {
     expect(a.played).toBe(1);
   });
 
+  it("counts a solo loss as a played loss worth 0 (not a bye)", () => {
+    const s = computeStandings(
+      ["a"],
+      [{ player1: "a", player2: null, result: "loss" }],
+    );
+    const a = s[0];
+    expect(a.points).toBe(0);
+    expect(a.losses).toBe(1);
+    expect(a.wins).toBe(0);
+    expect(a.byes).toBe(0);
+    expect(a.played).toBe(1);
+  });
+
+  it("keeps a late joiner's missed-round losses out of opponents' Buchholz", () => {
+    // b's only played game is a loss for a missed round (no opponent), so it
+    // must not add b to anyone's Buchholz.
+    const matches: MatchInput[] = [
+      { player1: "a", player2: "c", result: "p1_win" },
+      { player1: "b", player2: null, result: "loss" },
+    ];
+    const s = computeStandings(["a", "b", "c"], matches);
+    const a = s.find((r) => r.playerId === "a")!;
+    expect(a.buchholz).toBe(0); // opponent c has 0 pts; b never faced anyone
+  });
+
   it("ignores pending matches", () => {
     const s = computeStandings(
       ["a", "b"],
