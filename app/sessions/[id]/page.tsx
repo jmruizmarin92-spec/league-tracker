@@ -235,6 +235,14 @@ export default async function SessionPage({
         >
           {t("openDisplay")}
         </Link>
+        {session.league && (
+          <Link
+            href={`/leagues/${session.league.slug}/clasificacion`}
+            className="w-fit text-sm text-primary hover:underline"
+          >
+            {t("leagueStandingsLink")}
+          </Link>
+        )}
       </div>
 
       {/* Self join / leave */}

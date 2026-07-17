@@ -262,7 +262,8 @@
     "myMatchYouWon": "Ganaste",
     "myMatchYouLost": "Perdiste",
     "myMatchYouDrew": "Empate",
-    "openDisplay": "Abrir pantalla completa ↗"
+    "openDisplay": "Abrir pantalla completa ↗",
+    "leagueStandingsLink": "Ver clasificación de la liga"
   },
   "display": {
     "session": "Sesión",
