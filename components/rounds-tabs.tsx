@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Trophy } from "lucide-react";
 import { reportMatchAction, deleteRoundAction } from "@/app/actions/rounds";
 import { Button } from "@/components/ui/button";
@@ -43,7 +44,14 @@ export function RoundsTabs({
     vs: string;
   };
 }) {
-  const defaultRound = rounds[rounds.length - 1]?.id;
+  // Always land on the latest round. Controlled state (not defaultValue) so a
+  // soft re-render — realtime update or a newly generated round — snaps back to
+  // the latest tab; manual selection within the same set of rounds is kept.
+  const latestRound = rounds[rounds.length - 1]?.id;
+  const [active, setActive] = useState(latestRound);
+  useEffect(() => {
+    setActive(latestRound);
+  }, [latestRound]);
 
   const nameClass = (won: boolean, decided: boolean) =>
     won
@@ -53,7 +61,7 @@ export function RoundsTabs({
         : undefined;
 
   return (
-    <Tabs defaultValue={defaultRound} className="gap-4">
+    <Tabs value={active} onValueChange={setActive} className="gap-4">
       <div className="overflow-x-auto">
         <TabsList>
           {rounds.map((r) => (
