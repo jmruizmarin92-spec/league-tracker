@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { startOfTodayIso } from "@/lib/format";
 import type { Game } from "@/lib/leagues";
 
 export type UpcomingItem = {
@@ -35,12 +36,14 @@ type EventRow = {
   subtitle: string | null;
 };
 
-// Every upcoming session + independent event (future, not yet complete).
-// Small-scale app — no pagination; filtering (by game/category) happens
+// Every upcoming session + independent event (today onward, not yet complete).
+// The cutoff is the start of today (local time), so a session/event stays on
+// the landing page for the whole day it runs instead of vanishing at its start
+// time. Small-scale app — no pagination; filtering (by game/category) happens
 // after this, so nothing here should be truncated.
 export async function getUpcoming(): Promise<UpcomingItem[]> {
   const supabase = await createClient();
-  const nowIso = new Date().toISOString();
+  const cutoffIso = startOfTodayIso();
 
   const [{ data: sessions }, { data: events }] = await Promise.all([
     supabase
@@ -48,13 +51,13 @@ export async function getUpcoming(): Promise<UpcomingItem[]> {
       .select(
         "id, name, starts_at, location, cost, status, league:leagues(name, slug, game, format)",
       )
-      .gte("starts_at", nowIso)
+      .gte("starts_at", cutoffIso)
       .neq("status", "complete")
       .order("starts_at"),
     supabase
       .from("events")
       .select("slug, name, starts_at, location, cost, game, category, subtitle")
-      .gte("starts_at", nowIso)
+      .gte("starts_at", cutoffIso)
       .neq("status", "complete")
       .order("starts_at"),
   ]);

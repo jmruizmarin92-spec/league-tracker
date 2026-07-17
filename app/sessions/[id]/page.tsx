@@ -29,6 +29,7 @@ import { EditSessionForm } from "@/components/edit-session-form";
 import { ArchetypePicker } from "@/components/archetype-picker";
 import { StandingsTable } from "@/components/standings-table";
 import { RoundsTabs, type RoundView } from "@/components/rounds-tabs";
+import { CopyPokemonIds } from "@/components/copy-pokemon-ids";
 import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -65,6 +66,16 @@ export default async function SessionPage({
   const registered = participants.filter((p) => p.status === "registered");
   const waitlisted = participants.filter((p) => p.status === "waitlisted");
   const isComplete = session.status === "complete";
+
+  // Pokémon IDs of every participant (registered + waitlist) for tournament
+  // upload; players without an ID on their profile are omitted from the copy
+  // list but surfaced separately so admins can chase them down.
+  const pokemonIds = participants
+    .map((p) => p.pokemon_id?.trim())
+    .filter((v): v is string => !!v);
+  const missingPokemonIds = participants
+    .filter((p) => !p.pokemon_id?.trim())
+    .map((p) => pairingName(p));
 
   // Rounds, matches, standings.
   const [rounds, matches] = await Promise.all([
@@ -349,6 +360,28 @@ export default async function SessionPage({
                 </ul>
               </div>
             )}
+
+            {participants.length > 0 && (
+              <div className="flex flex-col gap-2 border-t pt-4">
+                <span className="text-sm font-medium">{t("pokemonIdsTitle")}</span>
+                <CopyPokemonIds
+                  ids={pokemonIds}
+                  labels={{
+                    copy: t("pokemonIdsCopy"),
+                    copied: t("pokemonIdsCopied"),
+                    empty: t("pokemonIdsEmpty"),
+                  }}
+                />
+                {missingPokemonIds.length > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    {t("pokemonIdsMissing", {
+                      count: missingPokemonIds.length,
+                      names: missingPokemonIds.join(", "),
+                    })}
+                  </p>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -383,6 +416,7 @@ export default async function SessionPage({
                       missedLoss: t("lateMissedLoss"),
                       entryNext: t("lateEntryNext"),
                       entryCurrent: t("lateEntryCurrent"),
+                      entryBye: t("lateEntryBye"),
                     }}
                   />
                 </div>

@@ -137,12 +137,15 @@ export async function adminAddParticipantAction(formData: FormData) {
   // Late-join options (only meaningful once rounds exist; the RPC ignores them
   // otherwise). Absent fields default to a penalty-free next-round entry.
   const missed = formData.get("missed") === "loss" ? "loss" : "none";
-  const joinCurrent = formData.get("join_current") === "current";
+  const entryRaw = String(formData.get("entry") ?? "next");
+  // 'current' fills an existing bye; 'bye' hands the late player a free win.
+  const entry =
+    entryRaw === "current" || entryRaw === "bye" ? entryRaw : "next";
   await rpc("admin_add_late_participant", {
     p_session: id,
     p_player: player,
     p_missed: missed,
-    p_join_current: joinCurrent,
+    p_entry: entry,
   });
   revalidatePath(`/sessions/${id}`);
 }

@@ -30,6 +30,7 @@ export function AddParticipantForm({
     missedLoss: string;
     entryNext: string;
     entryCurrent: string;
+    entryBye: string;
   };
 }) {
   const [player, setPlayer] = useState("");
@@ -79,8 +80,9 @@ export function AddParticipantForm({
             {radio("missed", "loss", labels.missedLoss, false)}
           </div>
           <div className="flex flex-col gap-1 border-t pt-2">
-            {radio("join_current", "next", labels.entryNext, true)}
-            {radio("join_current", "current", labels.entryCurrent, false)}
+            {radio("entry", "next", labels.entryNext, true)}
+            {radio("entry", "current", labels.entryCurrent, false)}
+            {radio("entry", "bye", labels.entryBye, false)}
           </div>
         </fieldset>
       )}
