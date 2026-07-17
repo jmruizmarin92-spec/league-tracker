@@ -14,10 +14,12 @@ import { mergePlayersAction, type ActionState } from "@/app/actions/players";
 type Option = { id: string; label: string };
 
 export function MergePlayersForm({
-  players,
+  fromPlayers,
+  intoPlayers,
   labels,
 }: {
-  players: Option[];
+  fromPlayers: Option[];
+  intoPlayers: Option[];
   labels: {
     from: string;
     into: string;
@@ -47,7 +49,7 @@ export function MergePlayersForm({
               <SelectValue placeholder={labels.fromPlaceholder} />
             </SelectTrigger>
             <SelectContent>
-              {players.map((p) => (
+              {fromPlayers.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
                   {p.label}
                 </SelectItem>
@@ -63,7 +65,7 @@ export function MergePlayersForm({
               <SelectValue placeholder={labels.intoPlaceholder} />
             </SelectTrigger>
             <SelectContent>
-              {players.map((p) => (
+              {intoPlayers.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
                   {p.label}
                 </SelectItem>

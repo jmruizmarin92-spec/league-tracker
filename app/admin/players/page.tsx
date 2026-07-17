@@ -24,10 +24,15 @@ export default async function AdminPlayersPage() {
     listPendingClaims(),
   ]);
 
-  const mergeOptions = players.map((p) => ({
-    id: p.id,
-    label: p.user_id ? `${p.display_name} ✓` : p.display_name,
-  }));
+  // Merge always folds an admin-created player (has history, no login) INTO a
+  // logged-in user (keeps their login, gains the history). Filter each picklist
+  // accordingly so the direction can't be reversed by mistake.
+  const fromPlayers = players
+    .filter((p) => !p.user_id)
+    .map((p) => ({ id: p.id, label: p.display_name }));
+  const intoPlayers = players
+    .filter((p) => p.user_id)
+    .map((p) => ({ id: p.id, label: `${p.display_name} ✓` }));
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
@@ -140,7 +145,7 @@ export default async function AdminPlayersPage() {
       </Card>
 
       {/* Merge */}
-      {players.length >= 2 && (
+      {fromPlayers.length >= 1 && intoPlayers.length >= 1 && (
         <Card>
           <CardHeader>
             <CardTitle>{t("mergeTitle")}</CardTitle>
@@ -148,7 +153,8 @@ export default async function AdminPlayersPage() {
           <CardContent className="flex flex-col gap-3">
             <p className="text-sm text-muted-foreground">{t("mergeDesc")}</p>
             <MergePlayersForm
-              players={mergeOptions}
+              fromPlayers={fromPlayers}
+              intoPlayers={intoPlayers}
               labels={{
                 from: t("mergeFrom"),
                 into: t("mergeInto"),
