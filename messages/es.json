@@ -390,6 +390,9 @@
   },
   "adminPlayers": {
     "title": "Jugadores",
+    "tabGeneral": "General",
+    "tabPlayers": "Jugadores",
+    "quickEditHint": "Edita el Pokémon ID y el Game ID directamente en la lista.",
     "pendingTitle": "Solicitudes pendientes",
     "noPending": "No hay solicitudes pendientes.",
     "wantsToClaim": "quiere vincularse a",

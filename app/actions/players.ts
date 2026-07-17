@@ -81,6 +81,34 @@ export async function updatePlayerAction(
   return { ok: true };
 }
 
+// Admin: quick inline edit of just the game IDs from the players list, without
+// touching the alias/name fields (and without the alias being required).
+export async function updatePlayerQuickIdsAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const profile = await getProfile();
+  if (!profile?.is_admin) return { error: "Solo administradores." };
+
+  const supabase = await createClient();
+  const playerId = String(formData.get("player_id") ?? "");
+  if (!playerId) return { error: "Jugador no encontrado." };
+
+  const { error } = await supabase
+    .from("players")
+    .update({
+      pokemon_id: capTextOrNull(String(formData.get("pokemon_id") ?? ""), NAME_MAX),
+      game_id: capTextOrNull(String(formData.get("game_id") ?? ""), NAME_MAX),
+    })
+    .eq("id", playerId);
+
+  if (error) return { error: error.message };
+  revalidatePath("/admin/players");
+  revalidatePath(`/players/${playerId}`);
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
 export async function createManagedPlayerAction(
   _prev: ActionState,
   formData: FormData,
