@@ -1,7 +1,13 @@
 // Pure session-scoring logic (no DB). Unit-tested in scoring.test.ts.
 //
 // Within a session: Win = 3, Draw = 1, Loss = 0. A bye counts as a win.
-// Standings order: points, then Buchholz (sum of opponents' points), then wins.
+// Standings order: points, then Opponents' Win % (OWP), then wins.
+//
+// OWP (the first tiebreaker) is the standard Pokémon metric: the average, over
+// every opponent actually faced, of that opponent's match-win rate. Following
+// official rules, each opponent's win rate excludes their byes and is floored
+// at 25%, so a single winless opponent can't tank the tiebreaker. Byes and
+// solo losses have no opponent, so they add nobody to the average.
 
 export const WIN_POINTS = 3;
 export const DRAW_POINTS = 1;
@@ -29,9 +35,19 @@ export type StandingRow = {
   draws: number;
   byes: number;
   played: number;
-  buchholz: number;
+  oppWinRate: number; // Opponents' Win % (OWP), 0..1
   rank: number;
 };
+
+// Official Pokémon OWP floors each opponent's win rate at 25% and excludes
+// their byes from the calculation.
+const MIN_WIN_RATE = 0.25;
+
+function winRate(row: StandingRow): number {
+  const games = row.played - row.byes; // real games only (byes excluded)
+  if (games <= 0) return MIN_WIN_RATE;
+  return Math.max(MIN_WIN_RATE, (row.wins - row.byes) / games);
+}
 
 export function computeStandings(
   playerIds: string[],
@@ -49,7 +65,7 @@ export function computeStandings(
       draws: 0,
       byes: 0,
       played: 0,
-      buchholz: 0,
+      oppWinRate: 0,
       rank: 0,
     });
     opponents.set(id, []);
@@ -65,7 +81,7 @@ export function computeStandings(
         draws: 0,
         byes: 0,
         played: 0,
-        buchholz: 0,
+        oppWinRate: 0,
         rank: 0,
       });
       opponents.set(id, []);
@@ -117,16 +133,19 @@ export function computeStandings(
     }
   }
 
-  // Buchholz = sum of the points of opponents actually faced (byes excluded).
+  // OWP = average win rate of the opponents actually faced (byes excluded).
   for (const [id, opps] of opponents) {
     const row = rows.get(id)!;
-    row.buchholz = opps.reduce((sum, o) => sum + (rows.get(o)?.points ?? 0), 0);
+    row.oppWinRate =
+      opps.length === 0
+        ? 0
+        : opps.reduce((sum, o) => sum + winRate(rows.get(o)!), 0) / opps.length;
   }
 
   const ordered = [...rows.values()].sort(
     (a, b) =>
       b.points - a.points ||
-      b.buchholz - a.buchholz ||
+      b.oppWinRate - a.oppWinRate ||
       b.wins - a.wins ||
       a.playerId.localeCompare(b.playerId),
   );

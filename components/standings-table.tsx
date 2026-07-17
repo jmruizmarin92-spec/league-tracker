@@ -17,7 +17,7 @@ export function StandingsTable({
     player: string;
     points: string;
     record: string;
-    buchholz: string;
+    oppWinRate: string;
   };
 }) {
   return (
@@ -29,7 +29,9 @@ export function StandingsTable({
             <th className="py-2 pr-2 font-medium">{labels.player}</th>
             <th className="py-2 pr-2 text-right font-medium">{labels.points}</th>
             <th className="py-2 pr-2 text-right font-medium">{labels.record}</th>
-            <th className="py-2 text-right font-medium">{labels.buchholz}</th>
+            <th className="py-2 text-right font-medium">
+              {labels.oppWinRate}
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -67,7 +69,7 @@ export function StandingsTable({
                 {r.wins}-{r.losses}-{r.draws}
               </td>
               <td className="py-2 text-right tabular-nums text-muted-foreground">
-                {r.buchholz}
+                {(r.oppWinRate * 100).toFixed(1)}%
               </td>
             </tr>
           ))}

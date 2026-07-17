@@ -250,7 +250,7 @@ export default async function SessionPage({
                 player: t("player"),
                 points: t("points"),
                 record: t("record"),
-                buchholz: t("buchholz"),
+                oppWinRate: t("oppWinRate"),
               }}
             />
           </CardContent>

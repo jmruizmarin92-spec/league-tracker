@@ -238,7 +238,7 @@
     "player": "Jugador",
     "points": "Puntos",
     "record": "Results",
-    "buchholz": "%Opp Winrate",
+    "oppWinRate": "%Opp Winrate",
     "rounds": "Rondas",
     "noRounds": "Aún no hay rondas.",
     "round": "Ronda {n}",
