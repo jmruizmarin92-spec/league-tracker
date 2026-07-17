@@ -123,6 +123,11 @@ export default async function SessionDisplayPage({
                     className="flex items-center justify-between gap-3 rounded-lg border bg-card px-5 py-4"
                   >
                     <span className="flex flex-wrap items-center gap-2 text-xl">
+                      {m.table_number != null && (
+                        <span className="mr-1 min-w-9 rounded-md bg-muted px-2 py-0.5 text-center text-base font-semibold tabular-nums text-muted-foreground">
+                          {m.table_number}
+                        </span>
+                      )}
                       {m.result === "p1_win" && (
                         <Trophy className="h-5 w-5 text-primary" />
                       )}

@@ -15,6 +15,8 @@ export function pairKey(a: string, b: string): string {
  * Greedy: pair from the top, each player with the highest-ranked opponent they
  * haven't met; fall back to a rematch only if every remaining option was met.
  * On an odd count, the lowest-ranked player without a prior bye gets the bye.
+ * The bye is returned last so it lands on the highest table number / bottom of
+ * the pairings list.
  */
 export function generateSwissPairings(
   ordered: string[],
@@ -23,6 +25,7 @@ export function generateSwissPairings(
 ): Pairing[] {
   const pool = [...ordered];
   const pairings: Pairing[] = [];
+  let byePlayer: string | null = null;
 
   // Odd field → assign a bye to the lowest-ranked bye-eligible player.
   if (pool.length % 2 === 1) {
@@ -34,8 +37,7 @@ export function generateSwissPairings(
       }
     }
     if (byeIndex === -1) byeIndex = pool.length - 1; // everyone had one; give it to last
-    const [byePlayer] = pool.splice(byeIndex, 1);
-    pairings.push({ player1: byePlayer, player2: null });
+    [byePlayer] = pool.splice(byeIndex, 1);
   }
 
   const used = new Array(pool.length).fill(false);
@@ -66,6 +68,11 @@ export function generateSwissPairings(
       used[opp] = true;
       pairings.push({ player1: pool[i], player2: pool[opp] });
     }
+  }
+
+  // Bye goes last: highest table number, bottom of the list.
+  if (byePlayer !== null) {
+    pairings.push({ player1: byePlayer, player2: null });
   }
 
   return pairings;

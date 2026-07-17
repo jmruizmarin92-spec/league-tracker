@@ -14,6 +14,7 @@ export type MatchView = {
   result: "pending" | "p1_win" | "p2_win" | "draw" | "bye" | "loss";
   canReport: boolean;
   isMine: boolean;
+  table: number | null;
 };
 
 export type RoundView = {
@@ -42,6 +43,7 @@ export function RoundsTabs({
     winPrefix: string;
     mine: string;
     vs: string;
+    tableLabel: string;
   };
 }) {
   // Always land on the latest round. Controlled state (not defaultValue) so a
@@ -100,6 +102,11 @@ export function RoundsTabs({
                     m.isMine ? "bg-accent/60" : ""
                   }`}
                 >
+                  {m.table != null && (
+                    <div className="mb-1.5 text-center text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      {labels.tableLabel} {m.table}
+                    </div>
+                  )}
                   {m.p2Name ? (
                     // Three equal columns: player 1 | VS | player 2, each cell
                     // stacking the name over its result button.

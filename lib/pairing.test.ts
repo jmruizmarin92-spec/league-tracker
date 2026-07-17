@@ -19,6 +19,11 @@ describe("generateSwissPairings", () => {
     expect(p).toContainEqual({ player1: "a", player2: "b" });
   });
 
+  it("returns the bye as the last pairing", () => {
+    const p = generateSwissPairings(["a", "b", "c"]);
+    expect(p.at(-1)).toEqual({ player1: "c", player2: null });
+  });
+
   it("avoids rematches when possible", () => {
     const played = new Set([pairKey("a", "b"), pairKey("c", "d")]);
     const p = generateSwissPairings(["a", "b", "c", "d"], played);

@@ -29,6 +29,7 @@ import { EditSessionForm } from "@/components/edit-session-form";
 import { ArchetypePicker } from "@/components/archetype-picker";
 import { StandingsTable } from "@/components/standings-table";
 import { RoundsTabs, type RoundView } from "@/components/rounds-tabs";
+import { MyMatchCard, type MyMatch } from "@/components/my-match-card";
 import { CopyPokemonIds } from "@/components/copy-pokemon-ids";
 import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
 import { Button } from "@/components/ui/button";
@@ -137,9 +138,39 @@ export default async function SessionPage({
           result: m.result,
           canReport: admin || mine,
           isMine: mine,
+          table: m.table_number,
         };
       }),
   }));
+
+  // The logged-in player's own match in the latest round, surfaced at the very
+  // top of the page so they can report it without scrolling.
+  const latestRound = rounds.at(-1);
+  const myMatchRow =
+    myPlayerId != null && latestRound
+      ? matches.find(
+          (m) =>
+            m.round_id === latestRound.id &&
+            (m.player1_id === myPlayerId || m.player2_id === myPlayerId),
+        )
+      : undefined;
+  const myMatch: MyMatch | null =
+    myMatchRow && latestRound
+      ? {
+          id: myMatchRow.id,
+          roundNumber: latestRound.number,
+          table: myMatchRow.table_number,
+          iAmP1: myMatchRow.player1_id === myPlayerId,
+          opponentName: (() => {
+            const oppId =
+              myMatchRow.player1_id === myPlayerId
+                ? myMatchRow.player2_id
+                : myMatchRow.player1_id;
+            return oppId ? displayName(oppId) : null;
+          })(),
+          result: myMatchRow.result,
+        }
+      : null;
 
   const participantIds = new Set(participants.map((p) => p.player_id));
   const addable = admin
@@ -234,6 +265,28 @@ export default async function SessionPage({
         </div>
       )}
 
+      {/* Your match this round — pinned above the standings */}
+      {myMatch && (
+        <MyMatchCard
+          sessionId={id}
+          match={myMatch}
+          labels={{
+            title: t("myMatchTitle"),
+            roundWord: t("roundWord"),
+            tableLabel: t("tableLabel"),
+            vs: t("vs"),
+            win: t("myMatchWin"),
+            draw: t("draw"),
+            lose: t("myMatchLose"),
+            bye: t("bye"),
+            loss: t("loss"),
+            youWon: t("myMatchYouWon"),
+            youLost: t("myMatchYouLost"),
+            youDrew: t("myMatchYouDrew"),
+          }}
+        />
+      )}
+
       {/* Standings */}
       {standings.length > 0 && (
         <Card>
@@ -296,6 +349,7 @@ export default async function SessionPage({
                   winPrefix: t("winPrefix"),
                   mine: t("mine"),
                   vs: t("vs"),
+                  tableLabel: t("tableLabel"),
                 }}
               />
             )}

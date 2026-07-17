@@ -255,6 +255,13 @@
     "vs": "VS",
     "win1": "Gana 1",
     "win2": "Gana 2",
+    "tableLabel": "Mesa",
+    "myMatchTitle": "Tu partida de esta ronda",
+    "myMatchWin": "Gano",
+    "myMatchLose": "Pierdo",
+    "myMatchYouWon": "Ganaste",
+    "myMatchYouLost": "Perdiste",
+    "myMatchYouDrew": "Empate",
     "openDisplay": "Abrir pantalla completa ↗"
   },
   "display": {

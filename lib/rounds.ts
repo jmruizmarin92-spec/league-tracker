@@ -10,6 +10,7 @@ export type DbMatch = {
   player1_id: string;
   player2_id: string | null;
   result: MatchResult;
+  table_number: number | null;
 };
 
 export async function getRounds(sessionId: string): Promise<DbRound[]> {
@@ -26,8 +27,12 @@ export async function getSessionMatches(sessionId: string): Promise<DbMatch[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("matches")
-    .select("id, round_id, session_id, player1_id, player2_id, result")
-    .eq("session_id", sessionId);
+    .select("id, round_id, session_id, player1_id, player2_id, result, table_number")
+    // Stable order: by table number, byes/losses (null) last, then by creation
+    // so the list never reshuffles as results are reported.
+    .eq("session_id", sessionId)
+    .order("table_number", { nullsFirst: false })
+    .order("created_at");
   return (data as DbMatch[] | null) ?? [];
 }
 
