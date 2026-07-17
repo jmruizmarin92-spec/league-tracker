@@ -40,6 +40,7 @@ export function RoundsTabs({
     pending: string;
     winPrefix: string;
     mine: string;
+    vs: string;
   };
 }) {
   const defaultRound = rounds[rounds.length - 1]?.id;
@@ -74,78 +75,125 @@ export function RoundsTabs({
               </Button>
             </form>
           )}
-          <ul className="flex flex-col gap-1">
+          <ul className="flex flex-col gap-2">
             {round.matches.map((m) => {
               const decided =
                 m.result === "p1_win" ||
                 m.result === "p2_win" ||
                 m.result === "loss";
+              // Two-player matches: players report only their own pending game;
+              // admins can set or correct the result on any round.
+              const canInput =
+                !!m.p2Name && (m.result === "pending" ? m.canReport : admin);
               return (
                 <li
                   key={m.id}
-                  className={`flex flex-col gap-2 rounded-md px-2 py-2 sm:flex-row sm:items-center sm:justify-between ${
+                  className={`rounded-md border px-2 py-2 ${
                     m.isMine ? "bg-accent/60" : ""
                   }`}
                 >
-                  <span className="flex flex-wrap items-center gap-1.5 text-sm">
-                    {m.result === "p1_win" && (
-                      <Trophy className="h-3.5 w-3.5 text-primary" />
-                    )}
-                    <span className={nameClass(m.result === "p1_win", decided)}>
-                      {m.p1Name}
-                    </span>
-                    {m.p2Name ? (
-                      <>
-                        <span className="text-muted-foreground">vs</span>
-                        {m.result === "p2_win" && (
-                          <Trophy className="h-3.5 w-3.5 text-primary" />
-                        )}
-                        <span className={nameClass(m.result === "p2_win", decided)}>
-                          {m.p2Name}
+                  {m.p2Name ? (
+                    // Three equal columns: player 1 | VS | player 2, each cell
+                    // stacking the name over its result button.
+                    <div className="grid grid-cols-3 items-stretch gap-2 text-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <span className="flex items-center gap-1 text-sm">
+                          {m.result === "p1_win" && (
+                            <Trophy className="h-3.5 w-3.5 shrink-0 text-primary" />
+                          )}
+                          <span className={nameClass(m.result === "p1_win", decided)}>
+                            {m.p1Name}
+                          </span>
                         </span>
-                      </>
-                    ) : m.result === "loss" ? (
-                      <Badge variant="outline">{labels.loss}</Badge>
-                    ) : (
-                      <Badge variant="secondary">{labels.bye}</Badge>
-                    )}
-                    {m.result === "draw" && (
-                      <Badge variant="outline">{labels.draw}</Badge>
-                    )}
-                    {m.isMine && (
-                      <Badge variant="outline" className="ml-1">
-                        {labels.mine}
-                      </Badge>
-                    )}
-                  </span>
+                        {canInput && (
+                          <form action={reportMatchAction} className="w-full">
+                            <input type="hidden" name="session_id" value={sessionId} />
+                            <input type="hidden" name="match_id" value={m.id} />
+                            <input type="hidden" name="result" value="p1_win" />
+                            <Button
+                              type="submit"
+                              variant={m.result === "p1_win" ? "default" : "outline"}
+                              size="sm"
+                              className="w-full"
+                            >
+                              {labels.winPrefix}
+                            </Button>
+                          </form>
+                        )}
+                      </div>
 
-                  {m.result === "pending" && m.p2Name && m.canReport && (
-                    <div className="flex flex-wrap gap-1">
-                      <form action={reportMatchAction}>
-                        <input type="hidden" name="session_id" value={sessionId} />
-                        <input type="hidden" name="match_id" value={m.id} />
-                        <input type="hidden" name="result" value="p1_win" />
-                        <Button type="submit" variant="outline" size="sm">
-                          {labels.winPrefix} {m.p1Name}
-                        </Button>
-                      </form>
-                      <form action={reportMatchAction}>
-                        <input type="hidden" name="session_id" value={sessionId} />
-                        <input type="hidden" name="match_id" value={m.id} />
-                        <input type="hidden" name="result" value="draw" />
-                        <Button type="submit" variant="outline" size="sm">
-                          {labels.draw}
-                        </Button>
-                      </form>
-                      <form action={reportMatchAction}>
-                        <input type="hidden" name="session_id" value={sessionId} />
-                        <input type="hidden" name="match_id" value={m.id} />
-                        <input type="hidden" name="result" value="p2_win" />
-                        <Button type="submit" variant="outline" size="sm">
-                          {labels.winPrefix} {m.p2Name}
-                        </Button>
-                      </form>
+                      <div className="flex flex-col items-center gap-2">
+                        {m.result === "draw" && !canInput ? (
+                          <Badge variant="outline">{labels.draw}</Badge>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">
+                            {labels.vs}
+                          </span>
+                        )}
+                        {canInput && (
+                          <form action={reportMatchAction} className="w-full">
+                            <input type="hidden" name="session_id" value={sessionId} />
+                            <input type="hidden" name="match_id" value={m.id} />
+                            <input type="hidden" name="result" value="draw" />
+                            <Button
+                              type="submit"
+                              variant={m.result === "draw" ? "default" : "outline"}
+                              size="sm"
+                              className="w-full"
+                            >
+                              {labels.draw}
+                            </Button>
+                          </form>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col items-center gap-2">
+                        <span className="flex items-center gap-1 text-sm">
+                          {m.result === "p2_win" && (
+                            <Trophy className="h-3.5 w-3.5 shrink-0 text-primary" />
+                          )}
+                          <span className={nameClass(m.result === "p2_win", decided)}>
+                            {m.p2Name}
+                          </span>
+                        </span>
+                        {canInput && (
+                          <form action={reportMatchAction} className="w-full">
+                            <input type="hidden" name="session_id" value={sessionId} />
+                            <input type="hidden" name="match_id" value={m.id} />
+                            <input type="hidden" name="result" value="p2_win" />
+                            <Button
+                              type="submit"
+                              variant={m.result === "p2_win" ? "default" : "outline"}
+                              size="sm"
+                              className="w-full"
+                            >
+                              {labels.winPrefix}
+                            </Button>
+                          </form>
+                        )}
+                      </div>
+
+                      {m.isMine && (
+                        <div className="col-span-3 flex justify-center">
+                          <Badge variant="outline">{labels.mine}</Badge>
+                        </div>
+                      )}
                     </div>
+                  ) : (
+                    // Bye / loss: single player, no result buttons.
+                    <span className="flex flex-wrap items-center gap-1.5 text-sm">
+                      <span>{m.p1Name}</span>
+                      {m.result === "loss" ? (
+                        <Badge variant="outline">{labels.loss}</Badge>
+                      ) : (
+                        <Badge variant="secondary">{labels.bye}</Badge>
+                      )}
+                      {m.isMine && (
+                        <Badge variant="outline" className="ml-1">
+                          {labels.mine}
+                        </Badge>
+                      )}
+                    </span>
                   )}
                 </li>
               );

@@ -75,7 +75,7 @@ export default async function SessionPage({
     .filter((v): v is string => !!v);
   const missingPokemonIds = participants
     .filter((p) => !p.pokemon_id?.trim())
-    .map((p) => pairingName(p));
+    .map((p) => ({ id: p.player_id, name: pairingName(p) }));
 
   // Rounds, matches, standings.
   const [rounds, matches] = await Promise.all([
@@ -295,6 +295,7 @@ export default async function SessionPage({
                   pending: t("pending"),
                   winPrefix: t("winPrefix"),
                   mine: t("mine"),
+                  vs: t("vs"),
                 }}
               />
             )}
@@ -376,8 +377,18 @@ export default async function SessionPage({
                   <p className="text-sm text-muted-foreground">
                     {t("pokemonIdsMissing", {
                       count: missingPokemonIds.length,
-                      names: missingPokemonIds.join(", "),
-                    })}
+                    })}{" "}
+                    {missingPokemonIds.map((p, i) => (
+                      <span key={p.id}>
+                        {i > 0 && ", "}
+                        <Link
+                          href={`/admin/players/${p.id}`}
+                          className="text-primary hover:underline"
+                        >
+                          {p.name}
+                        </Link>
+                      </span>
+                    ))}
                   </p>
                 )}
               </div>

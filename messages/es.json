@@ -190,7 +190,7 @@
     "pokemonIdsCopy": "Copiar IDs",
     "pokemonIdsCopied": "¡Copiado!",
     "pokemonIdsEmpty": "Ningún participante tiene un ID de Pokémon.",
-    "pokemonIdsMissing": "Sin ID ({count}): {names}",
+    "pokemonIdsMissing": "Sin ID ({count}):",
     "adminTitle": "Gestión de la sesión",
     "addParticipant": "Añadir participante",
     "choosePlayer": "Elige un jugador",
@@ -252,6 +252,7 @@
     "bye": "Bye",
     "draw": "Empate",
     "pending": "Pendiente",
+    "vs": "VS",
     "win1": "Gana 1",
     "win2": "Gana 2",
     "openDisplay": "Abrir pantalla completa ↗"
