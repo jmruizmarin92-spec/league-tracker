@@ -193,7 +193,7 @@ export default async function Home({
                 >
                   <Link
                     href={buildFilterHref("/", sp, {
-                      game: g || undefined,
+                      game: g || "all",
                       page: undefined,
                     })}
                   >
