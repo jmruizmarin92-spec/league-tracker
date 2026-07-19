@@ -18,6 +18,7 @@ export type UpcomingItem = {
 type SessionRow = {
   id: string;
   name: string | null;
+  slug: string;
   starts_at: string;
   location: string | null;
   cost: number;
@@ -49,7 +50,7 @@ export async function getUpcoming(): Promise<UpcomingItem[]> {
     supabase
       .from("sessions")
       .select(
-        "id, name, starts_at, location, cost, status, league:leagues(name, slug, game, format)",
+        "id, name, slug, starts_at, location, cost, status, league:leagues(name, slug, game, format)",
       )
       .gte("starts_at", cutoffIso)
       .neq("status", "complete")
@@ -68,7 +69,7 @@ export async function getUpcoming(): Promise<UpcomingItem[]> {
     if (!s.starts_at || !s.league) continue;
     items.push({
       kind: "session",
-      href: `/sessions/${s.id}`,
+      href: `/leagues/${s.league.slug}/sessions/${s.slug}`,
       name: s.name ?? s.league.name,
       game: s.league.game,
       format: s.league.format,

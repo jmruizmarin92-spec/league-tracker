@@ -99,6 +99,7 @@ export async function getLeagueConfigs(
 
 export type ArchetypeHistoryEntry = {
   sessionId: string;
+  sessionSlug: string;
   leagueName: string;
   leagueSlug: string;
   game: Game | null;
@@ -117,7 +118,7 @@ export async function getArchetypeHistory(
   const { data } = await supabase
     .from("session_participants")
     .select(
-      "session_id, archetype1, archetype2, archetype_public, sessions(starts_at, leagues(name, slug, game))",
+      "session_id, archetype1, archetype2, archetype_public, sessions(slug, starts_at, leagues(name, slug, game))",
     )
     .eq("player_id", playerId)
     .or("archetype1.not.is.null,archetype2.not.is.null");
@@ -128,6 +129,7 @@ export async function getArchetypeHistory(
     archetype2: string | null;
     archetype_public: boolean;
     sessions: {
+      slug: string;
       starts_at: string | null;
       leagues: { name: string; slug: string; game: Game } | null;
     } | null;
@@ -143,6 +145,7 @@ export async function getArchetypeHistory(
   return rows
     .map((r) => ({
       sessionId: r.session_id,
+      sessionSlug: r.sessions?.slug ?? "",
       leagueName: r.sessions?.leagues?.name ?? "—",
       leagueSlug: r.sessions?.leagues?.slug ?? "",
       game: r.sessions?.leagues?.game ?? null,

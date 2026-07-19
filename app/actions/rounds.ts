@@ -56,22 +56,60 @@ export async function generateRoundAction(formData: FormData) {
     p_session: sessionId,
     p_pairings: pairings,
   });
-  revalidatePath(`/sessions/${sessionId}`);
+  revalidatePath("/leagues/[slug]/sessions/[sessionSlug]", "page");
 }
 
 export async function reportMatchAction(formData: FormData) {
-  const sessionId = String(formData.get("session_id") ?? "");
   const matchId = String(formData.get("match_id") ?? "");
   const result = String(formData.get("result") ?? "");
   const supabase = await createClient();
   await supabase.rpc("report_match", { p_match: matchId, p_result: result });
-  revalidatePath(`/sessions/${sessionId}`);
+  revalidatePath("/leagues/[slug]/sessions/[sessionSlug]", "page");
 }
 
 export async function deleteRoundAction(formData: FormData) {
-  const sessionId = String(formData.get("session_id") ?? "");
   const roundId = String(formData.get("round_id") ?? "");
   const supabase = await createClient();
   await supabase.rpc("delete_round", { p_round: roundId });
-  revalidatePath(`/sessions/${sessionId}`);
+  revalidatePath("/leagues/[slug]/sessions/[sessionSlug]", "page");
+}
+
+export async function startRoundTimerAction(formData: FormData) {
+  const roundId = String(formData.get("round_id") ?? "");
+  const durationSeconds = Number(formData.get("duration_seconds") ?? 0);
+  if (!roundId || !durationSeconds || durationSeconds <= 0) return;
+  const supabase = await createClient();
+  await supabase.rpc("start_round_timer", {
+    p_round: roundId,
+    p_duration_seconds: durationSeconds,
+  });
+  revalidatePath("/leagues/[slug]/sessions/[sessionSlug]", "page");
+  revalidatePath("/leagues/[slug]/sessions/[sessionSlug]/display", "page");
+}
+
+export async function pauseRoundTimerAction(formData: FormData) {
+  const roundId = String(formData.get("round_id") ?? "");
+  if (!roundId) return;
+  const supabase = await createClient();
+  await supabase.rpc("pause_round_timer", { p_round: roundId });
+  revalidatePath("/leagues/[slug]/sessions/[sessionSlug]", "page");
+  revalidatePath("/leagues/[slug]/sessions/[sessionSlug]/display", "page");
+}
+
+export async function resumeRoundTimerAction(formData: FormData) {
+  const roundId = String(formData.get("round_id") ?? "");
+  if (!roundId) return;
+  const supabase = await createClient();
+  await supabase.rpc("resume_round_timer", { p_round: roundId });
+  revalidatePath("/leagues/[slug]/sessions/[sessionSlug]", "page");
+  revalidatePath("/leagues/[slug]/sessions/[sessionSlug]/display", "page");
+}
+
+export async function clearRoundTimerAction(formData: FormData) {
+  const roundId = String(formData.get("round_id") ?? "");
+  if (!roundId) return;
+  const supabase = await createClient();
+  await supabase.rpc("clear_round_timer", { p_round: roundId });
+  revalidatePath("/leagues/[slug]/sessions/[sessionSlug]", "page");
+  revalidatePath("/leagues/[slug]/sessions/[sessionSlug]/display", "page");
 }

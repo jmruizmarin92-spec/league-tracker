@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import {
-  getSession,
+  getSessionBySlug,
   listParticipants,
   getMyParticipation,
   type SessionParticipant,
@@ -15,6 +15,7 @@ import { formatDateTime, formatCost } from "@/lib/format";
 import { resolveArchetypes, listCustoms, type ArchetypeChip } from "@/lib/archetypes";
 import { getRounds, getSessionMatches } from "@/lib/rounds";
 import { computeStandings, type MatchInput } from "@/lib/scoring";
+import { recommendedRoundCount } from "@/lib/pairing";
 import {
   joinSessionAction,
   leaveSessionAction,
@@ -41,11 +42,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export default async function SessionPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string; sessionSlug: string }>;
 }) {
-  const { id } = await params;
-  const session = await getSession(id);
+  const { slug: leagueSlug, sessionSlug } = await params;
+  const session = await getSessionBySlug(leagueSlug, sessionSlug);
   if (!session) notFound();
+  const id = session.id;
 
   const t = await getTranslations("session");
   const game = session.league?.game;
@@ -68,6 +70,19 @@ export default async function SessionPage({
   const registered = participants.filter((p) => p.status === "registered");
   const waitlisted = participants.filter((p) => p.status === "waitlisted");
   const isComplete = session.status === "complete";
+
+  // Once the session is complete, a player can no longer edit an archetype
+  // they already recorded — only add one if they never set anything (mirrors
+  // the set_participant_archetypes RPC's own lock, 0034_lock_archetypes.sql).
+  // Admin edits stay unrestricted (ParticipantArchetypeEditor below).
+  const myArchLocked =
+    isComplete && !!myPart && (!!myPart.archetype1 || !!myPart.archetype2);
+  const myChips = myPart
+    ? [myPart.archetype1, myPart.archetype2]
+        .filter((k): k is string => !!k)
+        .map((k) => chips.get(k))
+        .filter((c): c is ArchetypeChip => !!c)
+    : [];
 
   // Pokémon IDs of every participant (registered + waitlist) for tournament
   // upload; players without an ID on their profile are omitted from the copy
@@ -121,6 +136,7 @@ export default async function SessionPage({
   const hasPending = matches.some((m) => m.result === "pending");
   const lastRoundNumber = rounds.at(-1)?.number ?? 0;
   const nextRoundNumber = lastRoundNumber + 1;
+  const recommendedRounds = recommendedRoundCount(registered.length);
 
   const roundViews: RoundView[] = rounds.map((r) => ({
     id: r.id,
@@ -142,6 +158,11 @@ export default async function SessionPage({
           table: m.table_number,
         };
       }),
+    timer: {
+      durationSeconds: r.timer_duration_seconds,
+      endsAt: r.timer_ends_at,
+      remainingSeconds: r.timer_remaining_seconds,
+    },
   }));
 
   // The logged-in player's own match in the latest round, surfaced at the very
@@ -265,7 +286,7 @@ export default async function SessionPage({
           <p className="text-sm text-muted-foreground">{meta.join(" · ")}</p>
         )}
         <Link
-          href={`/sessions/${id}/display`}
+          href={`/leagues/${leagueSlug}/sessions/${sessionSlug}/display`}
           target="_blank"
           className="w-fit text-sm text-primary hover:underline"
         >
@@ -277,6 +298,14 @@ export default async function SessionPage({
             className="w-fit text-sm text-primary hover:underline"
           >
             {t("leagueStandingsLink")}
+          </Link>
+        )}
+        {session.league && (
+          <Link
+            href={`/leagues/${session.league.slug}/arquetipos`}
+            className="w-fit text-sm text-primary hover:underline"
+          >
+            {t("leagueArchetypesLink")}
           </Link>
         )}
       </div>
@@ -361,12 +390,19 @@ export default async function SessionPage({
             <div className="flex items-center justify-between gap-2">
               <CardTitle>{t("rounds")}</CardTitle>
               {admin && !isComplete && (
-                <form action={generateRoundAction}>
-                  <input type="hidden" name="session_id" value={id} />
-                  <Button type="submit" size="sm" disabled={hasPending}>
-                    {t("generateRound", { n: nextRoundNumber })}
-                  </Button>
-                </form>
+                <div className="flex flex-col items-end gap-1">
+                  <form action={generateRoundAction}>
+                    <input type="hidden" name="session_id" value={id} />
+                    <Button type="submit" size="sm" disabled={hasPending}>
+                      {t("generateRound", { n: nextRoundNumber })}
+                    </Button>
+                  </form>
+                  {recommendedRounds > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      {t("recommendedRounds", { n: recommendedRounds })}
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           </CardHeader>
@@ -394,6 +430,13 @@ export default async function SessionPage({
                   mine: t("mine"),
                   vs: t("vs"),
                   tableLabel: t("tableLabel"),
+                  timerMinutesPlaceholder: t("timerMinutesPlaceholder"),
+                  timerStart: t("timerStart"),
+                  timerPause: t("timerPause"),
+                  timerResume: t("timerResume"),
+                  timerReset: t("timerReset"),
+                  timerPaused: t("timerPaused"),
+                  timerTimeUp: t("timerTimeUp"),
                 }}
               />
             )}
@@ -407,29 +450,48 @@ export default async function SessionPage({
           <CardHeader>
             <CardTitle>{t("myArchetypes")}</CardTitle>
           </CardHeader>
-          <CardContent>
-            <ArchetypePicker
-              sessionId={id}
-              customs={activeCustoms}
-              initial={{
-                a1: myPart.archetype1 ?? "",
-                a2: myPart.archetype2 ?? "",
-                isPublic: myPart.archetype_public,
-              }}
-              labels={{
-                title: t("myArchetypes"),
-                hint: t("archHint"),
-                slot1: t("arch1"),
-                slot2: t("arch2"),
-                placeholder: t("archPlaceholder"),
-                search: t("archSearch"),
-                clear: t("archClear"),
-                noResults: t("archNoResults"),
-                publicLabel: t("archPublic"),
-                save: t("archSave"),
-                saved: t("archSaved"),
-              }}
-            />
+          <CardContent className="flex flex-col gap-3">
+            {myArchLocked ? (
+              <>
+                <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                  {myChips.map((c) => (
+                    <span key={c.key} className="flex items-center gap-1">
+                      {c.icon && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={c.icon} alt="" className="h-5 w-5" />
+                      )}
+                      {c.name}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {t("archLocked")}
+                </p>
+              </>
+            ) : (
+              <ArchetypePicker
+                sessionId={id}
+                customs={activeCustoms}
+                initial={{
+                  a1: myPart.archetype1 ?? "",
+                  a2: myPart.archetype2 ?? "",
+                  isPublic: myPart.archetype_public,
+                }}
+                labels={{
+                  title: t("myArchetypes"),
+                  hint: t("archHint"),
+                  slot1: t("arch1"),
+                  slot2: t("arch2"),
+                  placeholder: t("archPlaceholder"),
+                  search: t("archSearch"),
+                  clear: t("archClear"),
+                  noResults: t("archNoResults"),
+                  publicLabel: t("archPublic"),
+                  save: t("archSave"),
+                  saved: t("archSaved"),
+                }}
+              />
+            )}
           </CardContent>
         </Card>
       )}

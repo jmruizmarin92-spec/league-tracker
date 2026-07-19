@@ -1,7 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import type { MatchResult } from "@/lib/scoring";
 
-export type DbRound = { id: string; number: number; status: string };
+export type DbRound = {
+  id: string;
+  number: number;
+  status: string;
+  timer_duration_seconds: number | null;
+  timer_ends_at: string | null;
+  timer_remaining_seconds: number | null;
+};
 
 export type DbMatch = {
   id: string;
@@ -17,7 +24,9 @@ export async function getRounds(sessionId: string): Promise<DbRound[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("rounds")
-    .select("id, number, status")
+    .select(
+      "id, number, status, timer_duration_seconds, timer_ends_at, timer_remaining_seconds",
+    )
     .eq("session_id", sessionId)
     .order("number");
   return (data as DbRound[] | null) ?? [];

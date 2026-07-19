@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getUser } from "@/lib/auth";
-import type { Game } from "@/lib/leagues";
+import { getLeagueBySlug, type Game } from "@/lib/leagues";
 
 export type SessionStatus = "setup" | "active" | "complete";
 
@@ -9,6 +9,7 @@ export type Session = {
   id: string;
   league_id: string;
   name: string | null;
+  slug: string;
   starts_at: string | null;
   location: string | null;
   cost: number;
@@ -38,13 +39,19 @@ export async function listSessions(leagueId: string): Promise<Session[]> {
   return (data as Session[] | null) ?? [];
 }
 
-export const getSession = cache(
-  async (id: string): Promise<SessionWithLeague | null> => {
+export const getSessionBySlug = cache(
+  async (
+    leagueSlug: string,
+    sessionSlug: string,
+  ): Promise<SessionWithLeague | null> => {
+    const league = await getLeagueBySlug(leagueSlug);
+    if (!league) return null;
     const supabase = await createClient();
     const { data } = await supabase
       .from("sessions")
       .select("*, league:leagues(id, name, slug, game, locations)")
-      .eq("id", id)
+      .eq("league_id", league.id)
+      .eq("slug", sessionSlug)
       .maybeSingle();
     return data as SessionWithLeague | null;
   },

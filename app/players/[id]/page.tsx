@@ -183,7 +183,7 @@ export default async function PlayerProfilePage({
                 >
                   <span className="flex flex-col">
                     <Link
-                      href={`/sessions/${entry.sessionId}`}
+                      href={`/leagues/${entry.leagueSlug}/sessions/${entry.sessionSlug}`}
                       className="text-sm font-medium hover:text-primary"
                     >
                       {entry.leagueName}

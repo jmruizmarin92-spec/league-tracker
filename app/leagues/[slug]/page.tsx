@@ -70,6 +70,11 @@ export default async function LeaguePage({
               {t("standingsLink")}
             </Link>
           </Button>
+          <Button asChild variant="outline">
+            <Link href={`/leagues/${slug}/arquetipos`}>
+              {t("archetypesLink")}
+            </Link>
+          </Button>
           {admin && (
             <Button asChild variant="outline">
               <Link href={`/leagues/${slug}/admin`}>{t("manage")}</Link>
@@ -90,7 +95,7 @@ export default async function LeaguePage({
               {sessions.map((s) => (
                 <li key={s.id}>
                   <Link
-                    href={`/sessions/${s.id}`}
+                    href={`/leagues/${slug}/sessions/${s.slug}`}
                     className="flex items-center justify-between gap-3 py-3 transition-colors hover:text-primary"
                   >
                     <span className="flex flex-col gap-0.5">

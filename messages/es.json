@@ -154,6 +154,7 @@
   "league": {
     "manage": "Administrar",
     "standingsLink": "Clasificación",
+    "archetypesLink": "Arquetipos",
     "archivedBadge": "Finalizada",
     "sessionsTitle": "Sesiones",
     "noSessions": "Aún no hay sesiones.",
@@ -240,6 +241,7 @@
     "archEditCta": "Editar arquetipos",
     "archEditClose": "Cerrar",
     "archNone": "Sin arquetipos",
+    "archLocked": "Esta sesión está finalizada; tu arquetipo ya no se puede editar. Si necesitas corregirlo, contacta con un administrador.",
     "standings": "Clasificación",
     "rank": "#",
     "player": "Jugador",
@@ -251,6 +253,7 @@
     "round": "Ronda {n}",
     "roundWord": "Ronda",
     "generateRound": "Generar ronda {n}",
+    "recommendedRounds": "Recomendado: {n} rondas",
     "deleteRound": "Eliminar",
     "loss": "Derrota",
     "winPrefix": "Gana",
@@ -263,6 +266,13 @@
     "win1": "Gana 1",
     "win2": "Gana 2",
     "tableLabel": "Mesa",
+    "timerMinutesPlaceholder": "Minutos",
+    "timerStart": "Iniciar",
+    "timerPause": "Pausar",
+    "timerResume": "Reanudar",
+    "timerReset": "Reiniciar",
+    "timerPaused": "En pausa",
+    "timerTimeUp": "¡Tiempo!",
     "myMatchTitle": "Tu partida de esta ronda",
     "myMatchWin": "Gano",
     "myMatchLose": "Pierdo",
@@ -270,7 +280,8 @@
     "myMatchYouLost": "Perdiste",
     "myMatchYouDrew": "Empate",
     "openDisplay": "Abrir pantalla completa ↗",
-    "leagueStandingsLink": "Ver clasificación de la liga"
+    "leagueStandingsLink": "Ver clasificación de la liga",
+    "leagueArchetypesLink": "Ver estadísticas de arquetipos"
   },
   "display": {
     "session": "Sesión",
@@ -287,7 +298,14 @@
     "rank": "#",
     "player": "Jugador",
     "points": "Pts",
-    "record": "V-D-E"
+    "record": "V-D-E",
+    "timerMinutesPlaceholder": "Minutos",
+    "timerStart": "Iniciar",
+    "timerPause": "Pausar",
+    "timerResume": "Reanudar",
+    "timerReset": "Reiniciar",
+    "timerPaused": "En pausa",
+    "timerTimeUp": "¡Tiempo!"
   },
   "archetypesAdmin": {
     "title": "Arquetipos personalizados",
@@ -311,6 +329,16 @@
     "points": "Puntos",
     "wins": "Victorias",
     "attended": "Asistencias"
+  },
+  "leagueArchetypes": {
+    "title": "Estadísticas de arquetipos",
+    "hint": "Arquetipos públicos usados en la liga, con su ratio de victorias.",
+    "empty": "Aún no hay arquetipos públicos registrados en esta liga.",
+    "archetype": "Arquetipo",
+    "players": "Jugadores",
+    "games": "Partidas",
+    "record": "V-D-E",
+    "winRate": "% Victorias"
   },
   "leagueAdmin": {
     "title": "Administrar liga",

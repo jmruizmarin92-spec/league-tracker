@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { generateSwissPairings, pairKey } from "./pairing";
+import { generateSwissPairings, pairKey, recommendedRoundCount } from "./pairing";
 
 describe("generateSwissPairings", () => {
   it("pairs an even field top-down", () => {
@@ -54,5 +54,36 @@ describe("generateSwissPairings", () => {
     const seen = p.flatMap((x) => [x.player1, x.player2].filter(Boolean));
     expect(new Set(seen).size).toBe(6);
     expect(p).toHaveLength(3);
+  });
+});
+
+describe("recommendedRoundCount", () => {
+  it("returns 0 for an empty or single-player field", () => {
+    expect(recommendedRoundCount(0)).toBe(0);
+    expect(recommendedRoundCount(1)).toBe(0);
+  });
+
+  it("falls back to a full round-robin below the official table", () => {
+    expect(recommendedRoundCount(2)).toBe(1);
+    expect(recommendedRoundCount(3)).toBe(2);
+  });
+
+  it("matches the official Play! Pokémon Swiss table", () => {
+    expect(recommendedRoundCount(4)).toBe(3);
+    expect(recommendedRoundCount(8)).toBe(3);
+    expect(recommendedRoundCount(9)).toBe(4);
+    expect(recommendedRoundCount(16)).toBe(4);
+    expect(recommendedRoundCount(17)).toBe(5);
+    expect(recommendedRoundCount(32)).toBe(5);
+    expect(recommendedRoundCount(33)).toBe(6);
+    expect(recommendedRoundCount(64)).toBe(6);
+    expect(recommendedRoundCount(65)).toBe(7);
+    expect(recommendedRoundCount(128)).toBe(7);
+    expect(recommendedRoundCount(226)).toBe(8);
+    expect(recommendedRoundCount(409)).toBe(9);
+  });
+
+  it("extrapolates beyond the table with log2", () => {
+    expect(recommendedRoundCount(2507)).toBe(Math.ceil(Math.log2(2507)) + 4);
   });
 });

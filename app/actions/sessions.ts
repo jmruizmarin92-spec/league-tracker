@@ -7,6 +7,13 @@ import { capText } from "@/lib/validation";
 
 export type ActionState = { error?: string; ok?: boolean };
 
+// Session pages are keyed by league+session slug rather than the session id,
+// so a plain revalidatePath needs the route pattern (any league/session)
+// rather than a literal path built from the id these actions receive.
+function revalidateSession() {
+  revalidatePath("/leagues/[slug]/sessions/[sessionSlug]", "page");
+}
+
 export async function createSessionAction(
   _prev: ActionState,
   formData: FormData,
@@ -37,8 +44,14 @@ export async function createSessionAction(
   });
   if (error) return { error: error.message };
 
+  const { data: created } = await supabase
+    .from("sessions")
+    .select("slug")
+    .eq("id", id)
+    .single();
+
   revalidatePath(`/leagues/${slug}`);
-  redirect(`/sessions/${id}`);
+  redirect(`/leagues/${slug}/sessions/${created?.slug}`);
 }
 
 export async function updateSessionAction(
@@ -68,7 +81,7 @@ export async function updateSessionAction(
   });
   if (error) return { error: error.message };
 
-  revalidatePath(`/sessions/${id}`);
+  revalidateSession();
   return { ok: true };
 }
 
@@ -80,13 +93,13 @@ async function rpc(fn: string, args: Record<string, unknown>) {
 export async function joinSessionAction(formData: FormData) {
   const id = String(formData.get("session_id") ?? "");
   await rpc("join_session", { p_session: id });
-  revalidatePath(`/sessions/${id}`);
+  revalidateSession();
 }
 
 export async function leaveSessionAction(formData: FormData) {
   const id = String(formData.get("session_id") ?? "");
   await rpc("leave_session", { p_session: id });
-  revalidatePath(`/sessions/${id}`);
+  revalidateSession();
 }
 
 export async function setMyArchetypesAction(
@@ -106,7 +119,7 @@ export async function setMyArchetypesAction(
     p_public: isPublic,
   });
   if (error) return { error: error.message };
-  revalidatePath(`/sessions/${id}`);
+  revalidateSession();
   return { ok: true };
 }
 
@@ -131,7 +144,7 @@ export async function adminSetParticipantArchetypesAction(
     p_public: isPublic,
   });
   if (error) return { error: error.message };
-  revalidatePath(`/sessions/${id}`);
+  revalidateSession();
   return { ok: true };
 }
 
@@ -144,7 +157,7 @@ export async function setArchetypeVisibilityAction(
     p_session: sessionId,
     p_public: isPublic,
   });
-  revalidatePath(`/sessions/${sessionId}`);
+  revalidateSession();
 }
 
 export async function createSessionPlayerAction(formData: FormData) {
@@ -152,7 +165,7 @@ export async function createSessionPlayerAction(formData: FormData) {
   const name = capText(String(formData.get("name") ?? ""), 60);
   if (!id || !name) return;
   await rpc("create_session_player", { p_session: id, p_name: name });
-  revalidatePath(`/sessions/${id}`);
+  revalidateSession();
 }
 
 export async function adminAddParticipantAction(formData: FormData) {
@@ -172,21 +185,21 @@ export async function adminAddParticipantAction(formData: FormData) {
     p_missed: missed,
     p_entry: entry,
   });
-  revalidatePath(`/sessions/${id}`);
+  revalidateSession();
 }
 
 export async function adminRemoveParticipantAction(formData: FormData) {
   const id = String(formData.get("session_id") ?? "");
   const player = String(formData.get("player_id") ?? "");
   await rpc("admin_remove_participant", { p_session: id, p_player: player });
-  revalidatePath(`/sessions/${id}`);
+  revalidateSession();
 }
 
 export async function setSessionStatusAction(formData: FormData) {
   const id = String(formData.get("session_id") ?? "");
   const status = String(formData.get("status") ?? "");
   await rpc("set_session_status", { p_session: id, p_status: status });
-  revalidatePath(`/sessions/${id}`);
+  revalidateSession();
 }
 
 export async function deleteSessionAction(formData: FormData) {

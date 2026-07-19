@@ -6,6 +6,35 @@ export function pairKey(a: string, b: string): string {
   return a < b ? `${a}|${b}` : `${b}|${a}`;
 }
 
+// Official Play! Pokémon Swiss round count by attendance (upper bound → rounds).
+const SWISS_ROUND_TABLE: [number, number][] = [
+  [8, 3],
+  [16, 4],
+  [32, 5],
+  [64, 6],
+  [128, 7],
+  [226, 8],
+  [409, 9],
+  [729, 10],
+  [1338, 11],
+  [2506, 12],
+];
+
+/**
+ * Recommended total round count for a Swiss session, from player count.
+ * Below the table's floor (4 players) there's no official guidance, so we
+ * fall back to a full round-robin (n - 1); above its ceiling we extrapolate
+ * with log2(n), since round counts roughly double the field each round.
+ */
+export function recommendedRoundCount(playerCount: number): number {
+  if (playerCount <= 1) return 0;
+  if (playerCount <= 3) return playerCount - 1;
+  for (const [max, rounds] of SWISS_ROUND_TABLE) {
+    if (playerCount <= max) return rounds;
+  }
+  return Math.ceil(Math.log2(playerCount)) + 4;
+}
+
 /**
  * Generate the next round's pairings.
  * @param ordered  Active player ids, best-standing first.

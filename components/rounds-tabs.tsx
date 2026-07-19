@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Trophy } from "lucide-react";
 import { reportMatchAction, deleteRoundAction } from "@/app/actions/rounds";
+import { RoundTimer, type RoundTimerState } from "@/components/round-timer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,6 +23,7 @@ export type RoundView = {
   number: number;
   isLast: boolean;
   matches: MatchView[];
+  timer: RoundTimerState;
 };
 
 export function RoundsTabs({
@@ -44,6 +46,13 @@ export function RoundsTabs({
     mine: string;
     vs: string;
     tableLabel: string;
+    timerMinutesPlaceholder: string;
+    timerStart: string;
+    timerPause: string;
+    timerResume: string;
+    timerReset: string;
+    timerPaused: string;
+    timerTimeUp: string;
   };
 }) {
   // Always land on the latest round. Controlled state (not defaultValue) so a
@@ -76,15 +85,36 @@ export function RoundsTabs({
 
       {rounds.map((round) => (
         <TabsContent key={round.id} value={round.id} className="flex flex-col gap-2">
-          {admin && round.isLast && (
-            <form action={deleteRoundAction} className="self-end">
-              <input type="hidden" name="session_id" value={sessionId} />
-              <input type="hidden" name="round_id" value={round.id} />
-              <Button type="submit" variant="ghost" size="sm">
-                {labels.deleteRound}
-              </Button>
-            </form>
-          )}
+          {round.isLast &&
+            (admin ||
+              round.timer.endsAt != null ||
+              round.timer.remainingSeconds != null) && (
+              <div className="flex items-center justify-between gap-2">
+                <RoundTimer
+                  roundId={round.id}
+                  admin={admin}
+                  timer={round.timer}
+                  labels={{
+                    minutesPlaceholder: labels.timerMinutesPlaceholder,
+                    start: labels.timerStart,
+                    pause: labels.timerPause,
+                    resume: labels.timerResume,
+                    reset: labels.timerReset,
+                    paused: labels.timerPaused,
+                    timeUp: labels.timerTimeUp,
+                  }}
+                />
+                {admin && (
+                  <form action={deleteRoundAction}>
+                    <input type="hidden" name="session_id" value={sessionId} />
+                    <input type="hidden" name="round_id" value={round.id} />
+                    <Button type="submit" variant="ghost" size="sm">
+                      {labels.deleteRound}
+                    </Button>
+                  </form>
+                )}
+              </div>
+            )}
           <ul className="flex flex-col gap-2">
             {round.matches.map((m) => {
               const decided =

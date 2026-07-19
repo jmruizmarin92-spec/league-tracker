@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Trophy } from "lucide-react";
-import { getSession, listParticipants } from "@/lib/sessions";
+import { getSessionBySlug, listParticipants } from "@/lib/sessions";
 import { getRounds, getSessionMatches } from "@/lib/rounds";
 import { computeStandings, type MatchInput } from "@/lib/scoring";
 import { getPlayersByIds } from "@/lib/players";
@@ -9,16 +9,18 @@ import { pairingName } from "@/lib/player-name";
 import { resolveArchetypes, type ArchetypeChip } from "@/lib/archetypes";
 import { formatDateTime } from "@/lib/format";
 import { RealtimeRefresher } from "@/components/realtime-refresher";
+import { RoundTimer } from "@/components/round-timer";
 import { Badge } from "@/components/ui/badge";
 
 export default async function SessionDisplayPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string; sessionSlug: string }>;
 }) {
-  const { id } = await params;
-  const session = await getSession(id);
+  const { slug: leagueSlug, sessionSlug } = await params;
+  const session = await getSessionBySlug(leagueSlug, sessionSlug);
   if (!session) notFound();
+  const id = session.id;
 
   const t = await getTranslations("display");
 
@@ -99,9 +101,32 @@ export default async function SessionDisplayPage({
       <div className="grid flex-1 grid-cols-1 gap-8 lg:grid-cols-5">
         {/* Current round pairings */}
         <section className="flex flex-col gap-4 lg:col-span-3">
-          <h2 className="text-2xl font-semibold">
-            {currentRound ? t("round", { n: currentRound.number }) : t("rounds")}
-          </h2>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <h2 className="text-2xl font-semibold">
+              {currentRound ? t("round", { n: currentRound.number }) : t("rounds")}
+            </h2>
+            {currentRound && (
+              <RoundTimer
+                roundId={currentRound.id}
+                admin={false}
+                large
+                timer={{
+                  durationSeconds: currentRound.timer_duration_seconds,
+                  endsAt: currentRound.timer_ends_at,
+                  remainingSeconds: currentRound.timer_remaining_seconds,
+                }}
+                labels={{
+                  minutesPlaceholder: t("timerMinutesPlaceholder"),
+                  start: t("timerStart"),
+                  pause: t("timerPause"),
+                  resume: t("timerResume"),
+                  reset: t("timerReset"),
+                  paused: t("timerPaused"),
+                  timeUp: t("timerTimeUp"),
+                }}
+              />
+            )}
+          </div>
           {currentMatches.length === 0 ? (
             <p className="text-xl text-muted-foreground">{t("waitingRound")}</p>
           ) : (
