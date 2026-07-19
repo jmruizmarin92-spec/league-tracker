@@ -25,6 +25,12 @@ export async function SiteHeader() {
           >
             {t("leagues")}
           </Link>
+          <Link
+            href="/arquetipos"
+            className="shrink-0 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {t("archetypes")}
+          </Link>
           {myPlayer && (
             <Link
               href={`/players/${myPlayer.id}`}

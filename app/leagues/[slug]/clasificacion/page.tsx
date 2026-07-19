@@ -3,27 +3,57 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { getLeagueBySlug, getLeagueMatchesBySession } from "@/lib/leagues";
 import { computeLeagueStandings } from "@/lib/league-standings";
+import { ALL_TRIMESTRES, currentTrimestre, trimestreOf, type Trimestre } from "@/lib/trimestre";
 import { getPlayersByIds } from "@/lib/players";
 import { pairingName } from "@/lib/player-name";
+import { buildFilterHref, ACTIVE_FILTER_CLASS } from "@/lib/filter-href";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 export default async function LeagueStandingsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ trimestre?: string }>;
 }) {
   const { slug } = await params;
   const league = await getLeagueBySlug(slug);
   if (!league) notFound();
 
   const t = await getTranslations("leagueStandings");
+  const tb = await getTranslations("breadcrumbs");
+  const sp = await searchParams;
 
   const sessions = await getLeagueMatchesBySession(league.id);
-  const rows = computeLeagueStandings(sessions, {
-    winValue: league.win_value,
-    drawValue: league.draw_value,
-    attendanceValue: league.attendance_value,
-  });
+  const availableTrimestres = ALL_TRIMESTRES.filter((tr) =>
+    sessions.some((s) => trimestreOf(s.startsAt) === tr),
+  );
+
+  const requested = sp.trimestre;
+  const requestedTrimestre =
+    requested && requested !== "general" ? (Number(requested) as Trimestre) : null;
+  const selected: Trimestre | "general" =
+    requestedTrimestre && availableTrimestres.includes(requestedTrimestre)
+      ? requestedTrimestre
+      : !requested && availableTrimestres.includes(currentTrimestre())
+        ? currentTrimestre()
+        : "general";
+
+  const scopedSessions =
+    selected === "general"
+      ? sessions
+      : sessions.filter((s) => trimestreOf(s.startsAt) === selected);
+
+  const rows = computeLeagueStandings(
+    scopedSessions.map((s) => s.matches),
+    {
+      winValue: league.win_value,
+      drawValue: league.draw_value,
+      attendanceValue: league.attendance_value,
+    },
+  );
   const nameMap = await getPlayersByIds(rows.map((r) => r.playerId));
   const name = (id: string) => {
     const p = nameMap.get(id);
@@ -33,12 +63,13 @@ export default async function LeagueStandingsPage({
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
       <div className="flex flex-col gap-1">
-        <Link
-          href={`/leagues/${slug}`}
-          className="text-sm text-muted-foreground hover:text-foreground"
-        >
-          ← {league.name}
-        </Link>
+        <Breadcrumbs
+          items={[
+            { label: tb("home"), href: "/" },
+            { label: league.name, href: `/leagues/${slug}` },
+            { label: t("title") },
+          ]}
+        />
         <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">
           {t("formula", {
@@ -52,6 +83,34 @@ export default async function LeagueStandingsPage({
           </p>
         )}
       </div>
+
+      {availableTrimestres.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          {availableTrimestres.map((tr) => (
+            <Button
+              key={tr}
+              asChild
+              size="sm"
+              variant="outline"
+              className={selected === tr ? ACTIVE_FILTER_CLASS : undefined}
+            >
+              <Link href={buildFilterHref(`/leagues/${slug}/clasificacion`, sp, { trimestre: String(tr) })}>
+                {t("trimestre", { n: tr })}
+              </Link>
+            </Button>
+          ))}
+          <Button
+            asChild
+            size="sm"
+            variant="outline"
+            className={selected === "general" ? ACTIVE_FILTER_CLASS : undefined}
+          >
+            <Link href={buildFilterHref(`/leagues/${slug}/clasificacion`, sp, { trimestre: "general" })}>
+              {t("overall")}
+            </Link>
+          </Button>
+        </div>
+      )}
 
       <Card>
         <CardContent className="pt-6">

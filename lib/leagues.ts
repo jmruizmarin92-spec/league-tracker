@@ -114,20 +114,25 @@ export async function isLeagueAdmin(leagueId: string): Promise<boolean> {
   return !!data;
 }
 
-// Every match in a league, grouped by session (for league standings).
+export type SessionMatches = {
+  startsAt: string | null;
+  matches: MatchInput[];
+};
+
+// Every match in a league, grouped by session (for league standings), along
+// with each session's date so callers can scope standings to a trimestre.
 export async function getLeagueMatchesBySession(
   leagueId: string,
-): Promise<MatchInput[][]> {
+): Promise<SessionMatches[]> {
   const supabase = await createClient();
   const { data: sessions } = await supabase
     .from("sessions")
-    .select("id")
+    .select("id, starts_at")
     .eq("league_id", leagueId);
-  const sessionIds = ((sessions as { id: string }[] | null) ?? []).map(
-    (s) => s.id,
-  );
-  if (sessionIds.length === 0) return [];
+  const sessionRows = (sessions as { id: string; starts_at: string | null }[] | null) ?? [];
+  if (sessionRows.length === 0) return [];
 
+  const sessionIds = sessionRows.map((s) => s.id);
   const { data: matches } = await supabase
     .from("matches")
     .select("session_id, player1_id, player2_id, result")
@@ -149,7 +154,10 @@ export async function getLeagueMatchesBySession(
       result: m.result,
     });
   }
-  return [...bySession.values()];
+  return sessionRows.map((s) => ({
+    startsAt: s.starts_at,
+    matches: bySession.get(s.id) ?? [],
+  }));
 }
 
 // Registered users not already admins of this league (for the add-admin picker).

@@ -1,12 +1,7 @@
 "use client";
 
 import { useActionState, useMemo, useState, useTransition } from "react";
-import {
-  setMyArchetypesAction,
-  setArchetypeVisibilityAction,
-  adminSetParticipantArchetypesAction,
-  type ActionState,
-} from "@/app/actions/sessions";
+import type { ActionState } from "@/app/actions/sessions";
 import { POKEDEX, spriteUrl } from "@/lib/pokedex";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -121,18 +116,34 @@ function ArchetypeCombobox({
 }
 
 export function ArchetypePicker({
-  sessionId,
+  contextId,
+  contextIdField,
   playerId,
   customs,
   initial,
+  action,
+  adminAction,
+  onVisibilityChange,
+  extraFields,
   labels,
 }: {
-  sessionId: string;
-  // When set, this edits another participant's picks as a league admin
-  // (via admin_set_participant_archetypes) instead of the caller's own.
+  // The session/event id this picker edits, and the hidden-field name the
+  // server action expects it under (e.g. "session_id" or "event_id").
+  contextId: string;
+  contextIdField: string;
+  // When set, this edits another participant's picks as an admin (via
+  // adminAction) instead of the caller's own (via action).
   playerId?: string;
   customs: { id: string; name: string; icon_url: string | null }[];
   initial: { a1: string; a2: string; isPublic: boolean };
+  action: (prev: ActionState, formData: FormData) => Promise<ActionState>;
+  adminAction?: (prev: ActionState, formData: FormData) => Promise<ActionState>;
+  // Self mode gets an instant live visibility toggle; called with the new
+  // value. Admin mode just feeds the form and takes effect on save.
+  onVisibilityChange?: (isPublic: boolean) => void;
+  // Extra hidden fields the action needs beyond contextId/playerId/a1/a2/is_public
+  // (e.g. a slug for revalidatePath).
+  extraFields?: Record<string, string>;
   labels: {
     title: string;
     hint: string;
@@ -148,7 +159,7 @@ export function ArchetypePicker({
   };
 }) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
-    playerId ? adminSetParticipantArchetypesAction : setMyArchetypesAction,
+    playerId ? adminAction! : action,
     {},
   );
   const [a1, setA1] = useState(initial.a1);
@@ -172,11 +183,15 @@ export function ArchetypePicker({
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <input type="hidden" name="session_id" value={sessionId} />
+      <input type="hidden" name={contextIdField} value={contextId} />
       {playerId && <input type="hidden" name="player_id" value={playerId} />}
       <input type="hidden" name="a1" value={a1} />
       <input type="hidden" name="a2" value={a2} />
       <input type="hidden" name="is_public" value={String(isPublic)} />
+      {extraFields &&
+        Object.entries(extraFields).map(([name, value]) => (
+          <input key={name} type="hidden" name={name} value={value} />
+        ))}
 
       <p className="text-sm text-muted-foreground">{labels.hint}</p>
 
@@ -215,8 +230,8 @@ export function ArchetypePicker({
             setIsPublic(v);
             // Self mode gets an instant live toggle; in admin mode the switch
             // just feeds the form and takes effect on save.
-            if (!playerId) {
-              startTransition(() => setArchetypeVisibilityAction(sessionId, v));
+            if (!playerId && onVisibilityChange) {
+              startTransition(() => onVisibilityChange(v));
             }
           }}
         />

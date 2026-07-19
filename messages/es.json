@@ -8,6 +8,10 @@
   "landing": {
     "title": "Torneos Pokémon Granada",
     "subtitle": "Próximas sesiones de liga y torneos.",
+    "todayTitle": "Hoy",
+    "todayBadge": "HOY",
+    "thisWeekTitle": "Esta semana",
+    "thisWeekBadge": "ESTA SEMANA",
     "upcoming": "Próximos",
     "noUpcoming": "No hay sesiones ni eventos próximos.",
     "noMatches": "Nada coincide con el filtro.",
@@ -24,6 +28,9 @@
     "playerIdPromptDesc": "Nos falta tu ID de Pokémon. Añádelo para que podamos identificarte en los torneos.",
     "playerIdPromptPlaceholder": "ID de Pokémon",
     "save": "Guardar"
+  },
+  "breadcrumbs": {
+    "home": "Inicio"
   },
   "nav": {
     "signIn": "Entrar",
@@ -71,7 +78,6 @@
     "status_complete": "Finalizado"
   },
   "event": {
-    "allEvents": "Inicio",
     "capacity": "Aforo",
     "fSubtitle": "Subtítulo",
     "subtitleHint": "Información breve (opcional)",
@@ -104,6 +110,7 @@
     "noParticipants": "Aún no hay inscritos.",
     "listSubmitted": "Lista enviada",
     "viewList": "Ver lista",
+    "openList": "Abrir pokepaste",
     "waitlist": "Lista de espera",
     "remove": "Quitar",
     "staffTitle": "Staff",
@@ -135,7 +142,23 @@
     "dangerZone": "Zona peligrosa",
     "deleteEventHint": "Elimina el evento y todas sus inscripciones y listas.",
     "deleteEvent": "Eliminar evento",
-    "confirmDeleteEvent": "¿Eliminar este evento por completo? Se borrarán todas las inscripciones y listas. No se puede deshacer."
+    "confirmDeleteEvent": "¿Eliminar este evento por completo? Se borrarán todas las inscripciones y listas. No se puede deshacer.",
+    "myArchetypes": "Mis arquetipos",
+    "archHint": "Elige hasta dos Pokémon (o un arquetipo personalizado) para mostrar como tu arquetipo.",
+    "arch1": "Arquetipo 1",
+    "arch2": "Arquetipo 2",
+    "archPlaceholder": "Sin elegir",
+    "archSearch": "Buscar…",
+    "archClear": "Ninguno",
+    "archNoResults": "Sin resultados.",
+    "archPublic": "Mostrar públicamente",
+    "archSave": "Guardar arquetipos",
+    "archSaved": "Guardado.",
+    "archEditCta": "Editar arquetipos",
+    "archEditClose": "Cerrar",
+    "archNone": "Sin arquetipos",
+    "archLocked": "Este evento está finalizado; tu arquetipo ya no se puede editar. Si necesitas corregirlo, contacta con la organización.",
+    "archetypesLink": "Ver estadísticas de arquetipos"
   },
   "leagues": {
     "title": "Ligas",
@@ -323,6 +346,8 @@
     "title": "Clasificación de la liga",
     "formula": "Puntos = {win} por victoria + {attendance} por asistencia.",
     "prizes": "Premios",
+    "trimestre": "Trimestre {n}",
+    "overall": "General",
     "empty": "Aún no hay resultados en esta liga.",
     "rank": "#",
     "player": "Jugador",
@@ -339,6 +364,22 @@
     "games": "Partidas",
     "record": "V-D-E",
     "winRate": "% Victorias"
+  },
+  "eventArchetypes": {
+    "title": "Estadísticas de arquetipos",
+    "hint": "Arquetipos públicos declarados por los inscritos a este evento.",
+    "empty": "Aún no hay arquetipos públicos registrados en este evento.",
+    "archetype": "Arquetipo",
+    "players": "Jugadores",
+    "percentage": "% del campo"
+  },
+  "overallArchetypes": {
+    "title": "Arquetipos",
+    "hint": "Estadísticas de arquetipos públicos en toda la web, por juego.",
+    "sectionLeagues": "En ligas",
+    "sectionEvents": "En eventos",
+    "emptyLeagues": "Aún no hay arquetipos públicos registrados en ninguna liga.",
+    "emptyEvents": "Aún no hay arquetipos públicos registrados en ningún evento."
   },
   "leagueAdmin": {
     "title": "Administrar liga",

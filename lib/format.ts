@@ -1,4 +1,4 @@
-const TZ = "Europe/Madrid";
+export const TZ = "Europe/Madrid";
 
 export function formatDateTime(iso: string | null): string | null {
   if (!iso) return null;
@@ -40,6 +40,54 @@ export function startOfTodayIso(): string {
   const asUtc = Date.UTC(+p.year, +p.month - 1, +p.day, hour, +p.minute, +p.second);
   const offset = asUtc - utcMidnight.getTime();
   return new Date(utcMidnight.getTime() - offset).toISOString();
+}
+
+// Whether an ISO instant falls on today's calendar date in the app's timezone.
+export function isToday(iso: string | null): boolean {
+  if (!iso) return false;
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  return fmt.format(new Date(iso)) === fmt.format(new Date());
+}
+
+// Whether an ISO instant falls later this calendar week (Mon–Sun, app
+// timezone) than today — i.e. strictly after today and on or before the
+// coming Sunday. Excludes today itself so it doesn't overlap isToday().
+export function isThisWeek(iso: string | null): boolean {
+  if (!iso) return false;
+  const now = new Date();
+  const ymdFmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const todayYmd = ymdFmt.format(now);
+  const itemYmd = ymdFmt.format(new Date(iso));
+  if (itemYmd <= todayYmd) return false;
+
+  const weekdayFmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: TZ,
+    weekday: "short",
+  });
+  const weekdayIndex: Record<string, number> = {
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+    Sun: 7,
+  };
+  const daysUntilSunday = 7 - weekdayIndex[weekdayFmt.format(now)];
+  const endOfWeek = new Date(now.getTime() + daysUntilSunday * 86_400_000);
+  const endOfWeekYmd = ymdFmt.format(endOfWeek);
+
+  return itemYmd <= endOfWeekYmd;
 }
 
 export function formatCost(cost: number): string {

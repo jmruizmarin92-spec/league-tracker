@@ -66,6 +66,9 @@ export type EventParticipant = {
   display_name: string;
   first_name: string | null;
   last_name: string | null;
+  archetype1: string | null;
+  archetype2: string | null;
+  archetype_public: boolean;
 };
 
 type RegRow = {
@@ -73,6 +76,9 @@ type RegRow = {
   status: "registered" | "waitlisted";
   has_list: boolean;
   registered_at: string;
+  archetype1: string | null;
+  archetype2: string | null;
+  archetype_public: boolean;
   players: {
     display_name: string;
     first_name: string | null;
@@ -87,7 +93,7 @@ export async function listRegistrations(
   const { data } = await supabase
     .from("event_registrations")
     .select(
-      "player_id, status, has_list, registered_at, players(display_name, first_name, last_name)",
+      "player_id, status, has_list, registered_at, archetype1, archetype2, archetype_public, players(display_name, first_name, last_name)",
     )
     .eq("event_id", eventId)
     .order("registered_at");
@@ -98,6 +104,9 @@ export async function listRegistrations(
     display_name: r.players?.display_name ?? "—",
     first_name: r.players?.first_name ?? null,
     last_name: r.players?.last_name ?? null,
+    archetype1: r.archetype1,
+    archetype2: r.archetype2,
+    archetype_public: r.archetype_public,
   }));
 }
 
@@ -106,6 +115,9 @@ export type MyRegistration = {
   has_list: boolean;
   content: string | null;
   url: string | null;
+  archetype1: string | null;
+  archetype2: string | null;
+  archetype_public: boolean;
 } | null;
 
 export async function getMyRegistration(eventId: string): Promise<MyRegistration> {
@@ -122,7 +134,7 @@ export async function getMyRegistration(eventId: string): Promise<MyRegistration
 
   const { data: reg } = await supabase
     .from("event_registrations")
-    .select("status, has_list")
+    .select("status, has_list, archetype1, archetype2, archetype_public")
     .eq("event_id", eventId)
     .eq("player_id", pid)
     .maybeSingle();
@@ -135,13 +147,22 @@ export async function getMyRegistration(eventId: string): Promise<MyRegistration
     .eq("player_id", pid)
     .maybeSingle();
 
-  const r = reg as { status: "registered" | "waitlisted"; has_list: boolean };
+  const r = reg as {
+    status: "registered" | "waitlisted";
+    has_list: boolean;
+    archetype1: string | null;
+    archetype2: string | null;
+    archetype_public: boolean;
+  };
   const l = list as { content: string | null; url: string | null } | null;
   return {
     status: r.status,
     has_list: r.has_list,
     content: l?.content ?? null,
     url: l?.url ?? null,
+    archetype1: r.archetype1,
+    archetype2: r.archetype2,
+    archetype_public: r.archetype_public,
   };
 }
 

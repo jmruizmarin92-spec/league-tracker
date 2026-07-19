@@ -1,23 +1,23 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { getLeagueBySlug } from "@/lib/leagues";
-import { computeLeagueArchetypeStats } from "@/lib/archetype-standings";
+import { getEventBySlug } from "@/lib/events";
+import { computeEventArchetypeStats } from "@/lib/archetype-standings";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ArchetypeStatsTable } from "@/components/archetype-stats-table";
 import { Card, CardContent } from "@/components/ui/card";
 
-export default async function LeagueArchetypeStatsPage({
+export default async function EventArchetypeStatsPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const league = await getLeagueBySlug(slug);
-  if (!league) notFound();
+  const event = await getEventBySlug(slug);
+  if (!event) notFound();
 
-  const t = await getTranslations("leagueArchetypes");
+  const t = await getTranslations("eventArchetypes");
   const tb = await getTranslations("breadcrumbs");
-  const rows = await computeLeagueArchetypeStats(league.id);
+  const rows = await computeEventArchetypeStats(event.id);
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
@@ -25,7 +25,7 @@ export default async function LeagueArchetypeStatsPage({
         <Breadcrumbs
           items={[
             { label: tb("home"), href: "/" },
-            { label: league.name, href: `/leagues/${slug}` },
+            { label: event.name, href: `/events/${slug}` },
             { label: t("title") },
           ]}
         />
@@ -37,13 +37,12 @@ export default async function LeagueArchetypeStatsPage({
         <CardContent className="pt-6">
           <ArchetypeStatsTable
             rows={rows}
+            showRecord={false}
             labels={{
               empty: t("empty"),
               archetype: t("archetype"),
               players: t("players"),
-              games: t("games"),
-              record: t("record"),
-              winRate: t("winRate"),
+              percentage: t("percentage"),
             }}
           />
         </CardContent>

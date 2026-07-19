@@ -13,21 +13,29 @@ import { listPlayers } from "@/lib/players";
 import { getUser, getProfile } from "@/lib/auth";
 import { pairingName } from "@/lib/player-name";
 import { formatDateTime, formatCost } from "@/lib/format";
+import { resolveArchetypes, listCustoms, type ArchetypeChip } from "@/lib/archetypes";
 import {
   adminRemoveRegistrationAction,
   setEventStatusAction,
   deleteEventAction,
   removeEventStaffAction,
   createEventStaffPlayerAction,
+  setMyEventArchetypesAction,
+  adminSetEventParticipantArchetypesAction,
+  setEventArchetypeVisibilityAction,
 } from "@/app/actions/events";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { EventRegister } from "@/components/event-register";
 import { EditEventForm } from "@/components/edit-event-form";
 import { AddStaffForm } from "@/components/add-staff-form";
+import { ArchetypePicker } from "@/components/archetype-picker";
+import { ParticipantArchetypeEditor } from "@/components/participant-archetype-editor";
 import { CategoryBadge } from "@/components/category-badge";
 import { GameBadge } from "@/components/game-badge";
 import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -41,13 +49,15 @@ export default async function EventPage({
   if (!event) notFound();
 
   const t = await getTranslations("event");
-  const [admin, regs, myReg, user, viewerProfile, staff] = await Promise.all([
+  const tb = await getTranslations("breadcrumbs");
+  const [admin, regs, myReg, user, viewerProfile, staff, customsAll] = await Promise.all([
     isEventAdmin(event.id),
     listRegistrations(event.id),
     getMyRegistration(event.id),
     getUser(),
     getProfile(),
     listEventStaff(event.id),
+    listCustoms(event.game),
   ]);
   const isSiteAdmin = !!viewerProfile?.is_admin;
   const lists = admin ? await getEventLists(event.id) : new Map();
@@ -63,6 +73,26 @@ export default async function EventPage({
   const waitlisted = regs.filter((r) => r.status === "waitlisted");
   const isTcg = event.game === "tcg";
 
+  const activeCustoms = customsAll
+    .filter((c) => c.active)
+    .map((c) => ({ id: c.id, name: c.name, icon_url: c.icon_url }));
+  const chips = await resolveArchetypes(
+    regs.flatMap((r) => [r.archetype1, r.archetype2]),
+  );
+  const isComplete = event.status === "complete";
+  // Once the event is complete, a player can no longer edit an archetype they
+  // already recorded — only add one if they never set anything (mirrors
+  // set_event_archetypes' own lock, 0036_event_archetypes.sql). Admin edits
+  // stay unrestricted (ParticipantArchetypeEditor below).
+  const myArchLocked =
+    isComplete && !!myReg && (!!myReg.archetype1 || !!myReg.archetype2);
+  const myChips = myReg
+    ? [myReg.archetype1, myReg.archetype2]
+        .filter((k): k is string => !!k)
+        .map((k) => chips.get(k))
+        .filter((c): c is ArchetypeChip => !!c)
+    : [];
+
   const meta = [
     formatDateTime(event.starts_at),
     event.location,
@@ -73,9 +103,9 @@ export default async function EventPage({
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
       <div className="flex flex-col gap-2">
-        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
-          ← {t("allEvents")}
-        </Link>
+        <Breadcrumbs
+          items={[{ label: tb("home"), href: "/" }, { label: event.name }]}
+        />
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="truncate text-2xl font-semibold tracking-tight">
             {event.name}
@@ -94,10 +124,17 @@ export default async function EventPage({
         {event.external_url && (
           <Button asChild variant="outline" className="w-fit">
             <a href={event.external_url} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="size-3.5" />
               {t("externalLink")}
             </a>
           </Button>
         )}
+        <Link
+          href={`/events/${slug}/arquetipos`}
+          className="w-fit text-sm text-primary hover:underline"
+        >
+          {t("archetypesLink")}
+        </Link>
       </div>
 
       {event.prizes && (
@@ -152,6 +189,62 @@ export default async function EventPage({
         <p className="text-sm text-muted-foreground">{t("signInToRegister")}</p>
       )}
 
+      {/* My archetypes */}
+      {myReg && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("myArchetypes")}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            {myArchLocked ? (
+              <>
+                <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                  {myChips.map((c) => (
+                    <span key={c.key} className="flex items-center gap-1">
+                      {c.icon && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={c.icon} alt="" className="h-5 w-5" />
+                      )}
+                      {c.name}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground">{t("archLocked")}</p>
+              </>
+            ) : (
+              <ArchetypePicker
+                contextId={event.id}
+                contextIdField="event_id"
+                customs={activeCustoms}
+                initial={{
+                  a1: myReg.archetype1 ?? "",
+                  a2: myReg.archetype2 ?? "",
+                  isPublic: myReg.archetype_public,
+                }}
+                action={setMyEventArchetypesAction}
+                extraFields={{ slug }}
+                onVisibilityChange={(v) =>
+                  setEventArchetypeVisibilityAction(event.id, slug, v)
+                }
+                labels={{
+                  title: t("myArchetypes"),
+                  hint: t("archHint"),
+                  slot1: t("arch1"),
+                  slot2: t("arch2"),
+                  placeholder: t("archPlaceholder"),
+                  search: t("archSearch"),
+                  clear: t("archClear"),
+                  noResults: t("archNoResults"),
+                  publicLabel: t("archPublic"),
+                  save: t("archSave"),
+                  saved: t("archSaved"),
+                }}
+              />
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Participants */}
       <Card>
         <CardHeader>
@@ -166,6 +259,10 @@ export default async function EventPage({
             <ul className="flex flex-col divide-y">
               {registered.map((r) => {
                 const list = lists.get(r.player_id);
+                const partChips = [r.archetype1, r.archetype2]
+                  .filter((k): k is string => !!k)
+                  .map((k) => chips.get(k))
+                  .filter((c): c is ArchetypeChip => !!c);
                 return (
                   <li key={r.player_id} className="flex flex-col gap-1 py-2">
                     <div className="flex items-center justify-between gap-3">
@@ -186,6 +283,39 @@ export default async function EventPage({
                         </form>
                       )}
                     </div>
+                    {admin && (
+                      <ParticipantArchetypeEditor
+                        contextId={event.id}
+                        contextIdField="event_id"
+                        playerId={r.player_id}
+                        customs={activeCustoms}
+                        initial={{
+                          a1: r.archetype1 ?? "",
+                          a2: r.archetype2 ?? "",
+                          isPublic: r.archetype_public,
+                        }}
+                        chips={partChips}
+                        action={setMyEventArchetypesAction}
+                        adminAction={adminSetEventParticipantArchetypesAction}
+                        extraFields={{ slug }}
+                        labels={{
+                          edit: t("archEditCta"),
+                          close: t("archEditClose"),
+                          none: t("archNone"),
+                          title: t("myArchetypes"),
+                          hint: t("archHint"),
+                          slot1: t("arch1"),
+                          slot2: t("arch2"),
+                          placeholder: t("archPlaceholder"),
+                          search: t("archSearch"),
+                          clear: t("archClear"),
+                          noResults: t("archNoResults"),
+                          publicLabel: t("archPublic"),
+                          save: t("archSave"),
+                          saved: t("archSaved"),
+                        }}
+                      />
+                    )}
                     {admin && list && (list.content || list.url) && (
                       <details className="text-sm">
                         <summary className="cursor-pointer text-muted-foreground">
@@ -201,9 +331,10 @@ export default async function EventPage({
                             href={list.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-primary underline"
+                            className="mt-1 inline-flex w-fit items-center gap-1 text-primary hover:underline"
                           >
-                            {list.url}
+                            <ExternalLink className="size-3.5" />
+                            {t("openList")}
                           </a>
                         )}
                       </details>

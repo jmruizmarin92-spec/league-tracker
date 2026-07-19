@@ -23,8 +23,12 @@ import {
   setSessionStatusAction,
   createSessionPlayerAction,
   deleteSessionAction,
+  setMyArchetypesAction,
+  adminSetParticipantArchetypesAction,
+  setArchetypeVisibilityAction,
 } from "@/app/actions/sessions";
 import { generateRoundAction } from "@/app/actions/rounds";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { AddParticipantForm } from "@/components/add-participant-form";
 import { EditSessionForm } from "@/components/edit-session-form";
 import { ArchetypePicker } from "@/components/archetype-picker";
@@ -50,7 +54,10 @@ export default async function SessionPage({
   const id = session.id;
 
   const t = await getTranslations("session");
+  const tb = await getTranslations("breadcrumbs");
   const game = session.league?.game;
+  const sessionLabel =
+    session.name ?? formatDateTime(session.starts_at) ?? t("session");
 
   const [admin, participants, myPart, user, customsAll] = await Promise.all([
     session.league ? isLeagueAdmin(session.league.id) : Promise.resolve(false),
@@ -232,7 +239,8 @@ export default async function SessionPage({
         </div>
         {admin && (
           <ParticipantArchetypeEditor
-            sessionId={id}
+            contextId={id}
+            contextIdField="session_id"
             playerId={p.player_id}
             customs={activeCustoms}
             initial={{
@@ -241,6 +249,8 @@ export default async function SessionPage({
               isPublic: p.archetype_public,
             }}
             chips={partChips}
+            action={setMyArchetypesAction}
+            adminAction={adminSetParticipantArchetypesAction}
             labels={{
               edit: t("archEditCta"),
               close: t("archEditClose"),
@@ -266,17 +276,18 @@ export default async function SessionPage({
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
       <div className="flex flex-col gap-2">
-        {session.league && (
-          <Link
-            href={`/leagues/${session.league.slug}`}
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            ← {session.league.name}
-          </Link>
-        )}
+        <Breadcrumbs
+          items={[
+            { label: tb("home"), href: "/" },
+            ...(session.league
+              ? [{ label: session.league.name, href: `/leagues/${session.league.slug}` }]
+              : []),
+            { label: sessionLabel },
+          ]}
+        />
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="truncate text-2xl font-semibold tracking-tight">
-            {session.name ?? formatDateTime(session.starts_at) ?? t("session")}
+            {sessionLabel}
           </h1>
           <Badge variant={session.status === "active" ? "default" : "secondary"}>
             {t(`status_${session.status}`)}
@@ -329,12 +340,12 @@ export default async function SessionPage({
                 </Button>
               </form>
             </>
-          ) : (
+          ) : session.status === "setup" ? (
             <form action={joinSessionAction}>
               <input type="hidden" name="session_id" value={id} />
               <Button type="submit">{t("join")}</Button>
             </form>
-          )}
+          ) : null}
         </div>
       )}
 
@@ -470,13 +481,16 @@ export default async function SessionPage({
               </>
             ) : (
               <ArchetypePicker
-                sessionId={id}
+                contextId={id}
+                contextIdField="session_id"
                 customs={activeCustoms}
                 initial={{
                   a1: myPart.archetype1 ?? "",
                   a2: myPart.archetype2 ?? "",
                   isPublic: myPart.archetype_public,
                 }}
+                action={setMyArchetypesAction}
+                onVisibilityChange={(v) => setArchetypeVisibilityAction(id, v)}
                 labels={{
                   title: t("myArchetypes"),
                   hint: t("archHint"),

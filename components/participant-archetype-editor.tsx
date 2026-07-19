@@ -4,22 +4,31 @@ import { useState } from "react";
 import { ArchetypePicker } from "@/components/archetype-picker";
 import { Button } from "@/components/ui/button";
 import type { ArchetypeChip } from "@/lib/archetypes";
+import type { ActionState } from "@/app/actions/sessions";
 
 // Admin-only inline editor for a single participant's archetype picks,
 // shown collapsed as a chip summary with an "edit" toggle.
 export function ParticipantArchetypeEditor({
-  sessionId,
+  contextId,
+  contextIdField,
   playerId,
   customs,
   initial,
   chips,
+  action,
+  adminAction,
+  extraFields,
   labels,
 }: {
-  sessionId: string;
+  contextId: string;
+  contextIdField: string;
   playerId: string;
   customs: { id: string; name: string; icon_url: string | null }[];
   initial: { a1: string; a2: string; isPublic: boolean };
   chips: ArchetypeChip[];
+  action: (prev: ActionState, formData: FormData) => Promise<ActionState>;
+  adminAction: (prev: ActionState, formData: FormData) => Promise<ActionState>;
+  extraFields?: Record<string, string>;
   labels: {
     edit: string;
     close: string;
@@ -68,10 +77,14 @@ export function ParticipantArchetypeEditor({
       </div>
       {open && (
         <ArchetypePicker
-          sessionId={sessionId}
+          contextId={contextId}
+          contextIdField={contextIdField}
           playerId={playerId}
           customs={customs}
           initial={initial}
+          action={action}
+          adminAction={adminAction}
+          extraFields={extraFields}
           labels={labels}
         />
       )}

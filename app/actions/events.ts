@@ -157,6 +157,67 @@ export async function submitListAction(
   return { ok: true };
 }
 
+export async function setMyEventArchetypesAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const slug = String(formData.get("slug") ?? "");
+  const eventId = String(formData.get("event_id") ?? "");
+  const a1 = String(formData.get("a1") ?? "");
+  const a2 = String(formData.get("a2") ?? "");
+  const isPublic = String(formData.get("is_public") ?? "true") === "true";
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_event_archetypes", {
+    p_event: eventId,
+    p_a1: a1,
+    p_a2: a2,
+    p_public: isPublic,
+  });
+  if (error) return { error: error.message };
+  revalidatePath(`/events/${slug}`);
+  return { ok: true };
+}
+
+// Admin: set another registrant's archetype picks (e.g. a managed player, or
+// correcting/entering one on someone's behalf).
+export async function adminSetEventParticipantArchetypesAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const slug = String(formData.get("slug") ?? "");
+  const eventId = String(formData.get("event_id") ?? "");
+  const player = String(formData.get("player_id") ?? "");
+  const a1 = String(formData.get("a1") ?? "");
+  const a2 = String(formData.get("a2") ?? "");
+  const isPublic = String(formData.get("is_public") ?? "true") === "true";
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("admin_set_event_archetypes", {
+    p_event: eventId,
+    p_player: player,
+    p_a1: a1,
+    p_a2: a2,
+    p_public: isPublic,
+  });
+  if (error) return { error: error.message };
+  revalidatePath(`/events/${slug}`);
+  return { ok: true };
+}
+
+export async function setEventArchetypeVisibilityAction(
+  eventId: string,
+  slug: string,
+  isPublic: boolean,
+) {
+  const supabase = await createClient();
+  await supabase.rpc("set_event_archetype_visibility", {
+    p_event: eventId,
+    p_public: isPublic,
+  });
+  revalidatePath(`/events/${slug}`);
+}
+
 export async function unregisterEventAction(formData: FormData) {
   const slug = String(formData.get("slug") ?? "");
   const eventId = String(formData.get("event_id") ?? "");
