@@ -490,7 +490,7 @@ export default async function SessionPage({
                   isPublic: myPart.archetype_public,
                 }}
                 action={setMyArchetypesAction}
-                onVisibilityChange={(v) => setArchetypeVisibilityAction(id, v)}
+                onVisibilityChange={setArchetypeVisibilityAction.bind(null, id)}
                 labels={{
                   title: t("myArchetypes"),
                   hint: t("archHint"),

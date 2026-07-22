@@ -223,9 +223,11 @@ export default async function EventPage({
                 }}
                 action={setMyEventArchetypesAction}
                 extraFields={{ slug }}
-                onVisibilityChange={(v) =>
-                  setEventArchetypeVisibilityAction(event.id, slug, v)
-                }
+                onVisibilityChange={setEventArchetypeVisibilityAction.bind(
+                  null,
+                  event.id,
+                  slug,
+                )}
                 labels={{
                   title: t("myArchetypes"),
                   hint: t("archHint"),
