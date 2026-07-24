@@ -142,11 +142,14 @@ export function RoundsTabs({
                     // stacking the name over its result button.
                     <div className="grid grid-cols-3 items-stretch gap-2 text-center">
                       <div className="flex flex-col items-center gap-2">
-                        <span className="flex items-center gap-1 text-sm">
+                        <span className="flex w-full min-w-0 items-center justify-center gap-1 text-sm">
                           {m.result === "p1_win" && (
                             <Trophy className="h-3.5 w-3.5 shrink-0 text-primary" />
                           )}
-                          <span className={nameClass(m.result === "p1_win", decided)}>
+                          <span
+                            className={`min-w-0 truncate ${nameClass(m.result === "p1_win", decided) ?? ""}`}
+                            title={m.p1Name}
+                          >
                             {m.p1Name}
                           </span>
                         </span>
@@ -193,11 +196,14 @@ export function RoundsTabs({
                       </div>
 
                       <div className="flex flex-col items-center gap-2">
-                        <span className="flex items-center gap-1 text-sm">
+                        <span className="flex w-full min-w-0 items-center justify-center gap-1 text-sm">
                           {m.result === "p2_win" && (
                             <Trophy className="h-3.5 w-3.5 shrink-0 text-primary" />
                           )}
-                          <span className={nameClass(m.result === "p2_win", decided)}>
+                          <span
+                            className={`min-w-0 truncate ${nameClass(m.result === "p2_win", decided) ?? ""}`}
+                            title={m.p2Name ?? undefined}
+                          >
                             {m.p2Name}
                           </span>
                         </span>
@@ -227,7 +233,9 @@ export function RoundsTabs({
                   ) : (
                     // Bye / loss: single player, no result buttons.
                     <span className="flex flex-wrap items-center gap-1.5 text-sm">
-                      <span>{m.p1Name}</span>
+                      <span className="min-w-0 flex-1 truncate" title={m.p1Name}>
+                        {m.p1Name}
+                      </span>
                       {m.result === "loss" ? (
                         <Badge variant="outline">{labels.loss}</Badge>
                       ) : (

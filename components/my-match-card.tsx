@@ -92,7 +92,10 @@ export function MyMatchCard({
             <p className="flex flex-wrap items-center gap-2 text-lg">
               <span className="text-muted-foreground">{labels.vs}</span>
               {iLost && <Trophy className="h-4 w-4 text-primary" />}
-              <span className={iWon ? "text-muted-foreground" : "font-semibold"}>
+              <span
+                className={`min-w-0 flex-1 truncate ${iWon ? "text-muted-foreground" : "font-semibold"}`}
+                title={opponentName}
+              >
                 {opponentName}
               </span>
             </p>

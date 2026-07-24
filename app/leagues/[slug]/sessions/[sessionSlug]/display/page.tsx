@@ -156,7 +156,10 @@ export default async function SessionDisplayPage({
                       {m.result === "p1_win" && (
                         <Trophy className="h-5 w-5 text-primary" />
                       )}
-                      <span className={nameClass(m.result === "p1_win")}>
+                      <span
+                        className={`min-w-0 flex-1 truncate ${nameClass(m.result === "p1_win")}`}
+                        title={name(m.player1_id)}
+                      >
                         {name(m.player1_id)}
                       </span>
                       {m.player2_id ? (
@@ -165,7 +168,10 @@ export default async function SessionDisplayPage({
                           {m.result === "p2_win" && (
                             <Trophy className="h-5 w-5 text-primary" />
                           )}
-                          <span className={nameClass(m.result === "p2_win")}>
+                          <span
+                            className={`min-w-0 flex-1 truncate ${nameClass(m.result === "p2_win")}`}
+                            title={name(m.player2_id)}
+                          >
                             {name(m.player2_id)}
                           </span>
                         </>
