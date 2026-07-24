@@ -2,8 +2,18 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Calendar, MapPin, Coins } from "lucide-react";
-import { getLeagueBySlug, isLeagueAdmin, formatLabel } from "@/lib/leagues";
+import {
+  getLeagueBySlug,
+  getLeagueMatchesBySession,
+  isLeagueAdmin,
+  formatLabel,
+} from "@/lib/leagues";
 import { listSessions } from "@/lib/sessions";
+import { computeLeagueStandings } from "@/lib/league-standings";
+import { computePrizePool, QUARTER_POOL_SIZE, YEAR_POOL_SIZE } from "@/lib/prize-pool";
+import { currentTrimestre, trimestreOf } from "@/lib/trimestre";
+import { getPlayersByIds } from "@/lib/players";
+import { pairingName } from "@/lib/player-name";
 import { formatDateTime, formatCost, formatMonthRange } from "@/lib/format";
 import { weekdayLabel, formatTimeOfDay } from "@/lib/weekday";
 import { CreateSessionForm } from "@/components/create-session-form";
@@ -28,10 +38,37 @@ export default async function LeaguePage({
   if (!league) notFound();
 
   const t = await getTranslations("league");
-  const [admin, sessions] = await Promise.all([
+  const tp = await getTranslations("leaguePrizes");
+  const [admin, sessions, matchSessions] = await Promise.all([
     isLeagueAdmin(league.id),
     listSessions(league.id),
+    getLeagueMatchesBySession(league.id),
   ]);
+
+  const pointCfg = {
+    winValue: league.win_value,
+    drawValue: league.draw_value,
+    attendanceValue: league.attendance_value,
+  };
+  const quarterSessions = matchSessions.filter(
+    (s) => trimestreOf(s.startsAt) === currentTrimestre(),
+  );
+  const yearRows = computeLeagueStandings(matchSessions.map((s) => s.matches), pointCfg);
+  const quarterRows = computeLeagueStandings(quarterSessions.map((s) => s.matches), pointCfg);
+  const yearLeaderId = yearRows[0]?.playerId;
+  const quarterLeaderId = quarterRows[0]?.playerId;
+  const leaderNames = await getPlayersByIds(
+    [yearLeaderId, quarterLeaderId].filter((id): id is string => !!id),
+  );
+  const leaderName = (id: string | undefined) => {
+    if (!id) return null;
+    const p = leaderNames.get(id);
+    return p ? pairingName(p) : null;
+  };
+  const yearPool = computePrizePool(yearRows, YEAR_POOL_SIZE);
+  const quarterPool = computePrizePool(quarterRows, QUARTER_POOL_SIZE);
+  const yearLeaderName = leaderName(yearLeaderId);
+  const quarterLeaderName = leaderName(quarterLeaderId);
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
@@ -82,6 +119,46 @@ export default async function LeaguePage({
           )}
         </div>
       </div>
+
+      {(quarterRows.length > 0 || yearRows.length > 0) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{tp("title")}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3 sm:flex-row sm:gap-6">
+            {quarterRows.length > 0 && (
+              <div className="flex flex-1 flex-col gap-1">
+                <span className="text-sm text-muted-foreground">
+                  {tp("quarterTitle", { n: currentTrimestre() })}
+                </span>
+                <span className="font-medium">{tp("pool", { n: quarterPool })}</span>
+                {quarterLeaderName && (
+                  <Link
+                    href={`/players/${quarterLeaderId}`}
+                    className="text-sm text-muted-foreground hover:text-primary hover:underline"
+                  >
+                    {tp("leader", { name: quarterLeaderName })}
+                  </Link>
+                )}
+              </div>
+            )}
+            {yearRows.length > 0 && (
+              <div className="flex flex-1 flex-col gap-1">
+                <span className="text-sm text-muted-foreground">{tp("yearTitle")}</span>
+                <span className="font-medium">{tp("pool", { n: yearPool })}</span>
+                {yearLeaderName && (
+                  <Link
+                    href={`/players/${yearLeaderId}`}
+                    className="text-sm text-muted-foreground hover:text-primary hover:underline"
+                  >
+                    {tp("leader", { name: yearLeaderName })}
+                  </Link>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
