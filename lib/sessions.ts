@@ -67,6 +67,7 @@ export type SessionParticipant = {
   archetype1: string | null;
   archetype2: string | null;
   archetype_public: boolean;
+  checked_in: boolean;
   is_me: boolean;
 };
 
@@ -77,6 +78,7 @@ type ParticipantRow = {
   archetype1: string | null;
   archetype2: string | null;
   archetype_public: boolean;
+  checked_in: boolean;
   players: {
     id: string;
     display_name: string;
@@ -95,7 +97,7 @@ export async function listParticipants(
   const { data } = await supabase
     .from("session_participants")
     .select(
-      "player_id, status, created_at, archetype1, archetype2, archetype_public, players(id, display_name, first_name, last_name, pokemon_id, user_id)",
+      "player_id, status, created_at, archetype1, archetype2, archetype_public, checked_in, players(id, display_name, first_name, last_name, pokemon_id, user_id)",
     )
     .eq("session_id", sessionId)
     .order("created_at");
@@ -111,6 +113,7 @@ export async function listParticipants(
     archetype1: r.archetype1,
     archetype2: r.archetype2,
     archetype_public: r.archetype_public,
+    checked_in: r.checked_in,
     is_me: !!user && r.players?.user_id === user.id,
   }));
 }

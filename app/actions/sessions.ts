@@ -195,6 +195,19 @@ export async function adminRemoveParticipantAction(formData: FormData) {
   revalidateSession();
 }
 
+export async function adminSetCheckedInAction(
+  sessionId: string,
+  playerId: string,
+  checkedIn: boolean,
+) {
+  await rpc("admin_set_checked_in", {
+    p_session: sessionId,
+    p_player: playerId,
+    p_checked_in: checkedIn,
+  });
+  revalidateSession();
+}
+
 export async function setSessionStatusAction(formData: FormData) {
   const id = String(formData.get("session_id") ?? "");
   const status = String(formData.get("status") ?? "");

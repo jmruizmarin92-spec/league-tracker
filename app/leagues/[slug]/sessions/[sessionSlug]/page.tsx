@@ -26,6 +26,7 @@ import {
   setMyArchetypesAction,
   adminSetParticipantArchetypesAction,
   setArchetypeVisibilityAction,
+  adminSetCheckedInAction,
 } from "@/app/actions/sessions";
 import { generateRoundAction } from "@/app/actions/rounds";
 import { Breadcrumbs } from "@/components/breadcrumbs";
@@ -33,6 +34,7 @@ import { AddParticipantForm } from "@/components/add-participant-form";
 import { EditSessionForm } from "@/components/edit-session-form";
 import { ArchetypePicker } from "@/components/archetype-picker";
 import { ParticipantArchetypeEditor } from "@/components/participant-archetype-editor";
+import { CheckedInToggle } from "@/components/checked-in-toggle";
 import { StandingsTable } from "@/components/standings-table";
 import { RoundsTabs, type RoundView } from "@/components/rounds-tabs";
 import { MyMatchCard, type MyMatch } from "@/components/my-match-card";
@@ -237,6 +239,15 @@ export default async function SessionPage({
             </form>
           )}
         </div>
+        {admin && (
+          <CheckedInToggle
+            sessionId={id}
+            playerId={p.player_id}
+            initial={p.checked_in}
+            action={adminSetCheckedInAction}
+            label={t("checkedIn")}
+          />
+        )}
         {admin && (
           <ParticipantArchetypeEditor
             contextId={id}
@@ -515,7 +526,11 @@ export default async function SessionPage({
         <Card>
           <CardHeader>
             <CardTitle>
-              {t("participants")} ({registered.length})
+              {t("participants")} ({registered.length}) ·{" "}
+              {t("checkedInCount", {
+                n: registered.filter((p) => p.checked_in).length,
+                total: registered.length,
+              })}
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">

@@ -214,6 +214,8 @@
     "noParticipants": "Aún no hay participantes.",
     "waitlist": "Lista de espera",
     "remove": "Quitar",
+    "checkedIn": "Presente y con premio",
+    "checkedInCount": "{n}/{total} presentes",
     "pokemonIdsTitle": "IDs de Pokémon",
     "pokemonIdsCopy": "Copiar IDs",
     "pokemonIdsCopied": "¡Copiado!",
@@ -341,6 +343,13 @@
     "fieldName": "Nombre",
     "fieldIconUrl": "URL del icono (opcional)",
     "add": "Añadir"
+  },
+  "leaguePrizes": {
+    "title": "Premios",
+    "quarterTitle": "Trimestre {n}",
+    "yearTitle": "Anual",
+    "pool": "{n, plural, one {# sobre en juego} other {# sobres en juego}}",
+    "leader": "Va primero/a {name}"
   },
   "leagueStandings": {
     "title": "Clasificación de la liga",
