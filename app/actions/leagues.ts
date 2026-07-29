@@ -297,6 +297,47 @@ export async function removeLeagueAdminAction(formData: FormData) {
   revalidatePath(`/leagues/${slug}/admin`);
 }
 
+// --- Quarterly/yearly prize pool award tracking (admin-only bookkeeping) ---
+
+const PRIZE_SCOPES = ["q1", "q2", "q3", "q4", "year"];
+
+export async function awardLeaguePrizeAction(formData: FormData) {
+  const leagueId = String(formData.get("league_id") ?? "");
+  const slug = String(formData.get("slug") ?? "");
+  const scope = String(formData.get("scope") ?? "");
+  const winnerPlayerId = String(formData.get("winner_player_id") ?? "") || null;
+  const packs = Number(formData.get("packs"));
+  if (!leagueId || !PRIZE_SCOPES.includes(scope)) return;
+  if (!Number.isInteger(packs) || packs < 0) return;
+
+  const supabase = await createClient();
+  await supabase.from("league_prize_awards").upsert(
+    {
+      league_id: leagueId,
+      scope,
+      winner_player_id: winnerPlayerId,
+      packs,
+    },
+    { onConflict: "league_id,scope" },
+  );
+  revalidatePath(`/leagues/${slug}/admin`);
+}
+
+export async function revokeLeaguePrizeAction(formData: FormData) {
+  const leagueId = String(formData.get("league_id") ?? "");
+  const slug = String(formData.get("slug") ?? "");
+  const scope = String(formData.get("scope") ?? "");
+  if (!leagueId || !PRIZE_SCOPES.includes(scope)) return;
+
+  const supabase = await createClient();
+  await supabase
+    .from("league_prize_awards")
+    .delete()
+    .eq("league_id", leagueId)
+    .eq("scope", scope);
+  revalidatePath(`/leagues/${slug}/admin`);
+}
+
 export async function deleteLeagueAction(formData: FormData) {
   const id = String(formData.get("league_id") ?? "");
   if (!id) return;

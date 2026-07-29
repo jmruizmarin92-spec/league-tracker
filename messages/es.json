@@ -349,7 +349,10 @@
     "quarterTitle": "Trimestre {n}",
     "yearTitle": "Anual",
     "pool": "{n, plural, one {# sobre en juego} other {# sobres en juego}}",
-    "leader": "Va primero/a {name}"
+    "leader": "Va primero/a {name}",
+    "markAwarded": "Marcar como entregado",
+    "awardedTo": "Entregado a {name} ({packs, plural, one {# sobre} other {# sobres}})",
+    "undo": "Deshacer"
   },
   "leagueStandings": {
     "title": "Clasificación de la liga",
@@ -392,6 +395,7 @@
   },
   "leagueAdmin": {
     "title": "Administrar liga",
+    "noPrizeData": "Sin datos todavía",
     "detailsTitle": "Detalles de la liga",
     "fieldName": "Nombre",
     "fieldSubtitle": "Subtítulo",

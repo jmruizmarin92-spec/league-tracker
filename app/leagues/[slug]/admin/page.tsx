@@ -2,17 +2,26 @@ import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import {
   getLeagueBySlug,
+  getLeagueMatchesBySession,
   isLeagueAdmin,
   listLeagueAdmins,
   listAddableUsers,
 } from "@/lib/leagues";
 import { getProfile } from "@/lib/auth";
+import { computeLeagueStandings } from "@/lib/league-standings";
+import { computePrizePool, QUARTER_POOL_SIZE, YEAR_POOL_SIZE } from "@/lib/prize-pool";
+import { getLeaguePrizeAwards, type PrizeScope } from "@/lib/prize-awards";
+import { ALL_TRIMESTRES, trimestreOf } from "@/lib/trimestre";
+import { getPlayersByIds } from "@/lib/players";
+import { pairingName } from "@/lib/player-name";
 import {
   removeLeagueAdminAction,
   addLeagueLocationAction,
   removeLeagueLocationAction,
   setDefaultLocationAction,
   setLeagueArchivedAction,
+  awardLeaguePrizeAction,
+  revokeLeaguePrizeAction,
   deleteLeagueAction,
 } from "@/app/actions/leagues";
 import { Input } from "@/components/ui/input";
@@ -39,12 +48,61 @@ export default async function LeagueAdminPage({
   if (!(await isLeagueAdmin(league.id))) redirect(`/leagues/${slug}`);
 
   const t = await getTranslations("leagueAdmin");
-  const [admins, addable, viewerProfile] = await Promise.all([
+  const tp = await getTranslations("leaguePrizes");
+  const [admins, addable, viewerProfile, matchSessions, awards] = await Promise.all([
     listLeagueAdmins(league.id),
     listAddableUsers(league.id),
     getProfile(),
+    getLeagueMatchesBySession(league.id),
+    getLeaguePrizeAwards(league.id),
   ]);
   const isSiteAdmin = !!viewerProfile?.is_admin;
+
+  const pointCfg = {
+    winValue: league.win_value,
+    drawValue: league.draw_value,
+    attendanceValue: league.attendance_value,
+  };
+  const prizeScopes: {
+    scope: PrizeScope;
+    label: string;
+    rows: ReturnType<typeof computeLeagueStandings>;
+    pool: number;
+  }[] = [
+    ...ALL_TRIMESTRES.map((tr) => {
+      const rows = computeLeagueStandings(
+        matchSessions
+          .filter((s) => trimestreOf(s.startsAt) === tr)
+          .map((s) => s.matches),
+        pointCfg,
+      );
+      return {
+        scope: `q${tr}` as PrizeScope,
+        label: tp("quarterTitle", { n: tr }),
+        rows,
+        pool: computePrizePool(rows, QUARTER_POOL_SIZE),
+      };
+    }),
+    {
+      scope: "year" as PrizeScope,
+      label: tp("yearTitle"),
+      rows: computeLeagueStandings(matchSessions.map((s) => s.matches), pointCfg),
+      pool: computePrizePool(
+        computeLeagueStandings(matchSessions.map((s) => s.matches), pointCfg),
+        YEAR_POOL_SIZE,
+      ),
+    },
+  ];
+  const prizePlayerIds = [
+    ...prizeScopes.map((s) => s.rows[0]?.playerId),
+    ...[...awards.values()].map((a) => a.winnerPlayerId ?? undefined),
+  ].filter((id): id is string => !!id);
+  const prizeNames = await getPlayersByIds(prizePlayerIds);
+  const prizeName = (id: string | undefined) => {
+    if (!id) return null;
+    const p = prizeNames.get(id);
+    return p ? pairingName(p) : null;
+  };
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
@@ -108,6 +166,71 @@ export default async function LeagueAdminPage({
               hint: t("pointsHint"),
             }}
           />
+        </CardContent>
+      </Card>
+
+      {/* Prize pool award tracking */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{tp("title")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="flex flex-col divide-y">
+            {prizeScopes.map(({ scope, label, rows, pool }) => {
+              const leaderId = rows[0]?.playerId;
+              const leaderName = prizeName(leaderId);
+              const award = awards.get(scope);
+              return (
+                <li
+                  key={scope}
+                  className="flex flex-wrap items-center justify-between gap-3 py-3"
+                >
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-medium">{label}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {leaderName ? tp("leader", { name: leaderName }) : t("noPrizeData")}
+                      {" · "}
+                      {tp("pool", { n: pool })}
+                    </span>
+                  </div>
+                  {award ? (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">
+                        {tp("awardedTo", {
+                          name: prizeName(award.winnerPlayerId ?? undefined) ?? "—",
+                          packs: award.packs,
+                        })}
+                      </Badge>
+                      <form action={revokeLeaguePrizeAction}>
+                        <input type="hidden" name="league_id" value={league.id} />
+                        <input type="hidden" name="slug" value={slug} />
+                        <input type="hidden" name="scope" value={scope} />
+                        <Button type="submit" variant="ghost" size="sm">
+                          {tp("undo")}
+                        </Button>
+                      </form>
+                    </div>
+                  ) : (
+                    <form action={awardLeaguePrizeAction}>
+                      <input type="hidden" name="league_id" value={league.id} />
+                      <input type="hidden" name="slug" value={slug} />
+                      <input type="hidden" name="scope" value={scope} />
+                      <input type="hidden" name="winner_player_id" value={leaderId ?? ""} />
+                      <input type="hidden" name="packs" value={pool} />
+                      <Button
+                        type="submit"
+                        variant="outline"
+                        size="sm"
+                        disabled={rows.length === 0}
+                      >
+                        {tp("markAwarded")}
+                      </Button>
+                    </form>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
         </CardContent>
       </Card>
 
