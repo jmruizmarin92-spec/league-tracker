@@ -33,12 +33,15 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { AddParticipantForm } from "@/components/add-participant-form";
 import { EditSessionForm } from "@/components/edit-session-form";
 import { ArchetypePicker } from "@/components/archetype-picker";
-import { ParticipantArchetypeEditor } from "@/components/participant-archetype-editor";
-import { CheckedInToggle } from "@/components/checked-in-toggle";
+import {
+  ParticipantsList,
+  type ParticipantRowData,
+} from "@/components/participants-list";
 import { StandingsTable } from "@/components/standings-table";
 import { RoundsTabs, type RoundView } from "@/components/rounds-tabs";
 import { MyMatchCard, type MyMatch } from "@/components/my-match-card";
 import { CopyPokemonIds } from "@/components/copy-pokemon-ids";
+import { RealtimeRefresher } from "@/components/realtime-refresher";
 import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -217,75 +220,64 @@ export default async function SessionPage({
     session.capacity ? `${t("capacity")}: ${session.capacity}` : null,
   ].filter(Boolean);
 
-  const renderRow = (p: SessionParticipant) => {
-    const partChips = [p.archetype1, p.archetype2]
+  const toRow = (p: SessionParticipant): ParticipantRowData => ({
+    playerId: p.player_id,
+    checkedIn: p.checked_in,
+    name: (
+      <span className={p.is_me ? "font-medium" : undefined}>
+        {pairingName(p)}
+      </span>
+    ),
+    chips: [p.archetype1, p.archetype2]
       .filter((k): k is string => !!k)
       .map((k) => chips.get(k))
-      .filter((c): c is ArchetypeChip => !!c);
+      .filter((c): c is ArchetypeChip => !!c),
+    initial: {
+      a1: p.archetype1 ?? "",
+      a2: p.archetype2 ?? "",
+      isPublic: p.archetype_public,
+    },
+    actions: (
+      <form action={adminRemoveParticipantAction}>
+        <input type="hidden" name="session_id" value={id} />
+        <input type="hidden" name="player_id" value={p.player_id} />
+        <Button type="submit" variant="ghost" size="sm">
+          {t("remove")}
+        </Button>
+      </form>
+    ),
+  });
 
-    return (
-      <li key={p.player_id} className="flex flex-col gap-2 py-2">
-        <div className="flex items-center justify-between gap-3">
-          <span className={p.is_me ? "font-medium" : undefined}>
-            {pairingName(p)}
-          </span>
-          {admin && (
-            <form action={adminRemoveParticipantAction}>
-              <input type="hidden" name="session_id" value={id} />
-              <input type="hidden" name="player_id" value={p.player_id} />
-              <Button type="submit" variant="ghost" size="sm">
-                {t("remove")}
-              </Button>
-            </form>
-          )}
-        </div>
-        {admin && (
-          <CheckedInToggle
-            sessionId={id}
-            playerId={p.player_id}
-            initial={p.checked_in}
-            action={adminSetCheckedInAction}
-            label={t("checkedIn")}
-          />
-        )}
-        {admin && (
-          <ParticipantArchetypeEditor
-            contextId={id}
-            contextIdField="session_id"
-            playerId={p.player_id}
-            customs={activeCustoms}
-            initial={{
-              a1: p.archetype1 ?? "",
-              a2: p.archetype2 ?? "",
-              isPublic: p.archetype_public,
-            }}
-            chips={partChips}
-            action={setMyArchetypesAction}
-            adminAction={adminSetParticipantArchetypesAction}
-            labels={{
-              edit: t("archEditCta"),
-              close: t("archEditClose"),
-              none: t("archNone"),
-              title: t("myArchetypes"),
-              hint: t("archHint"),
-              slot1: t("arch1"),
-              slot2: t("arch2"),
-              placeholder: t("archPlaceholder"),
-              search: t("archSearch"),
-              clear: t("archClear"),
-              noResults: t("archNoResults"),
-              publicLabel: t("archPublic"),
-              save: t("archSave"),
-              saved: t("archSaved"),
-            }}
-          />
-        )}
-      </li>
-    );
+  const rosterProps = {
+    sessionId: id,
+    customs: activeCustoms,
+    action: setMyArchetypesAction,
+    adminAction: adminSetParticipantArchetypesAction,
+    setCheckedInAction: adminSetCheckedInAction,
+    labels: {
+      checkedIn: t("checkedIn"),
+      edit: t("archEditCta"),
+      close: t("archEditClose"),
+      none: t("archNone"),
+      title: t("myArchetypes"),
+      hint: t("archHint"),
+      slot1: t("arch1"),
+      slot2: t("arch2"),
+      placeholder: t("archPlaceholder"),
+      search: t("archSearch"),
+      clear: t("archClear"),
+      noResults: t("archNoResults"),
+      publicLabel: t("archPublic"),
+      save: t("archSave"),
+      saved: t("archSaved"),
+    },
   };
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
+      {/* Players now read the round clock off their own match card, so the page
+          has to pick up timer start/pause/reset without a manual reload. */}
+      {!isComplete && <RealtimeRefresher sessionId={id} />}
       <div className="flex flex-col gap-2">
         <Breadcrumbs
           items={[
@@ -365,6 +357,34 @@ export default async function SessionPage({
         <MyMatchCard
           sessionId={id}
           match={myMatch}
+          timer={
+            latestRound
+              ? {
+                  roundId: latestRound.id,
+                  state: {
+                    durationSeconds: latestRound.timer_duration_seconds,
+                    endsAt: latestRound.timer_ends_at,
+                    remainingSeconds: latestRound.timer_remaining_seconds,
+                  },
+                }
+              : null
+          }
+          timerLabels={{
+            minutesPlaceholder: t("timerMinutesPlaceholder"),
+            start: t("timerStart"),
+            pause: t("timerPause"),
+            resume: t("timerResume"),
+            reset: t("timerReset"),
+            paused: t("timerPaused"),
+            timeUp: t("timerTimeUp"),
+          }}
+          timerNotify={{
+            title: `${t("roundWord")} ${myMatch.roundNumber}`,
+            body: t("timerNotifyBody"),
+            enable: t("timerAlertsEnable"),
+            disable: t("timerAlertsDisable"),
+            blocked: t("timerAlertsBlocked"),
+          }}
           labels={{
             title: t("myMatchTitle"),
             roundWord: t("roundWord"),
@@ -459,6 +479,10 @@ export default async function SessionPage({
                   timerReset: t("timerReset"),
                   timerPaused: t("timerPaused"),
                   timerTimeUp: t("timerTimeUp"),
+                  timerAlertsEnable: t("timerAlertsEnable"),
+                  timerAlertsDisable: t("timerAlertsDisable"),
+                  timerAlertsBlocked: t("timerAlertsBlocked"),
+                  timerNotifyBody: t("timerNotifyBody"),
                 }}
               />
             )}
@@ -537,7 +561,12 @@ export default async function SessionPage({
             {registered.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t("noParticipants")}</p>
             ) : (
-              <ul className="flex flex-col divide-y">{registered.map(renderRow)}</ul>
+              <ParticipantsList
+                {...rosterProps}
+                rows={registered.map(toRow)}
+                filterLabel={t("pendingOnly")}
+                emptyFilteredLabel={t("allCheckedIn")}
+              />
             )}
 
             {waitlisted.length > 0 && (
@@ -545,9 +574,10 @@ export default async function SessionPage({
                 <span className="text-sm font-medium text-muted-foreground">
                   {t("waitlist")} ({waitlisted.length})
                 </span>
-                <ul className="flex flex-col divide-y">
-                  {waitlisted.map(renderRow)}
-                </ul>
+                <ParticipantsList
+                  {...rosterProps}
+                  rows={waitlisted.map(toRow)}
+                />
               </div>
             )}
 

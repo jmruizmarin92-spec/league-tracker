@@ -53,6 +53,10 @@ export function RoundsTabs({
     timerReset: string;
     timerPaused: string;
     timerTimeUp: string;
+    timerAlertsEnable: string;
+    timerAlertsDisable: string;
+    timerAlertsBlocked: string;
+    timerNotifyBody: string;
   };
 }) {
   // Always land on the latest round. Controlled state (not defaultValue) so a
@@ -85,36 +89,40 @@ export function RoundsTabs({
 
       {rounds.map((round) => (
         <TabsContent key={round.id} value={round.id} className="flex flex-col gap-2">
-          {round.isLast &&
-            (admin ||
-              round.timer.endsAt != null ||
-              round.timer.remainingSeconds != null) && (
-              <div className="flex items-center justify-between gap-2">
-                <RoundTimer
-                  roundId={round.id}
-                  admin={admin}
-                  timer={round.timer}
-                  labels={{
-                    minutesPlaceholder: labels.timerMinutesPlaceholder,
-                    start: labels.timerStart,
-                    pause: labels.timerPause,
-                    resume: labels.timerResume,
-                    reset: labels.timerReset,
-                    paused: labels.timerPaused,
-                    timeUp: labels.timerTimeUp,
-                  }}
-                />
-                {admin && (
-                  <form action={deleteRoundAction}>
-                    <input type="hidden" name="session_id" value={sessionId} />
-                    <input type="hidden" name="round_id" value={round.id} />
-                    <Button type="submit" variant="ghost" size="sm">
-                      {labels.deleteRound}
-                    </Button>
-                  </form>
-                )}
-              </div>
-            )}
+          {/* Admin-only: players read the clock off their own match card at the
+              top of the page, so it isn't duplicated here. */}
+          {round.isLast && admin && (
+            <div className="flex items-center justify-between gap-2">
+              <RoundTimer
+                roundId={round.id}
+                admin={admin}
+                timer={round.timer}
+                notify={{
+                  title: `${labels.roundWord} ${round.number}`,
+                  body: labels.timerNotifyBody,
+                  enable: labels.timerAlertsEnable,
+                  disable: labels.timerAlertsDisable,
+                  blocked: labels.timerAlertsBlocked,
+                }}
+                labels={{
+                  minutesPlaceholder: labels.timerMinutesPlaceholder,
+                  start: labels.timerStart,
+                  pause: labels.timerPause,
+                  resume: labels.timerResume,
+                  reset: labels.timerReset,
+                  paused: labels.timerPaused,
+                  timeUp: labels.timerTimeUp,
+                }}
+              />
+              <form action={deleteRoundAction}>
+                <input type="hidden" name="session_id" value={sessionId} />
+                <input type="hidden" name="round_id" value={round.id} />
+                <Button type="submit" variant="ghost" size="sm">
+                  {labels.deleteRound}
+                </Button>
+              </form>
+            </div>
+          )}
           <ul className="flex flex-col gap-2">
             {round.matches.map((m) => {
               const decided =

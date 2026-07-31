@@ -2,6 +2,7 @@
 
 import { Trophy } from "lucide-react";
 import { reportMatchAction } from "@/app/actions/rounds";
+import { RoundTimer, type RoundTimerState } from "@/components/round-timer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,10 +19,19 @@ export type MyMatch = {
 export function MyMatchCard({
   sessionId,
   match,
+  timer,
+  timerLabels,
+  timerNotify,
   labels,
 }: {
   sessionId: string;
   match: MyMatch;
+  // Round clock, shown read-only next to the round/table badges. Null when the
+  // round has no timer at all; RoundTimer itself renders nothing while idle.
+  timer?: { roundId: string; state: RoundTimerState } | null;
+  timerLabels: React.ComponentProps<typeof RoundTimer>["labels"];
+  // Text of the browser notification fired when this round's clock hits zero.
+  timerNotify?: React.ComponentProps<typeof RoundTimer>["notify"];
   labels: {
     title: string;
     roundWord: string;
@@ -75,6 +85,15 @@ export function MyMatchCard({
               <Badge variant="outline">
                 {labels.tableLabel} {match.table}
               </Badge>
+            )}
+            {timer && (
+              <RoundTimer
+                roundId={timer.roundId}
+                admin={false}
+                timer={timer.state}
+                notify={timerNotify}
+                labels={timerLabels}
+              />
             )}
           </span>
         </div>
