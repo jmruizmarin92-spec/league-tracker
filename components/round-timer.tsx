@@ -129,12 +129,20 @@ export function RoundTimer({
   const alertsOn = alerts === "on";
 
   const toggleAlerts = useCallback(async () => {
-    if (!alertsOn && Notification.permission === "default") {
+    if (alertsOn) {
+      window.localStorage.setItem(ALERTS_KEY, "off");
+    } else {
       // First opt-in on this device: the browser prompt only opens off a user
-      // gesture, which is why this lives on a button and not on mount.
-      await Notification.requestPermission();
+      // gesture, which is why this lives on a click handler and not on mount.
+      const permission =
+        Notification.permission === "default"
+          ? await Notification.requestPermission()
+          : Notification.permission;
+      // Prompt dismissed or blocked — don't store an opt-in we can't honour.
+      if (permission === "granted") window.localStorage.setItem(ALERTS_KEY, "on");
     }
-    window.localStorage.setItem(ALERTS_KEY, alertsOn ? "off" : "on");
+    // Fires either way: a dismissal that turned into "denied" still changes
+    // what the toggle should render.
     window.dispatchEvent(new Event(ALERTS_EVENT));
   }, [alertsOn]);
 
