@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ExternalLink } from "lucide-react";
 
 type Labels = {
   registeredIn: string;
@@ -26,6 +27,10 @@ type Labels = {
   unregister: string;
   closed: string;
   privateNote: string;
+  entryLocked: string;
+  deadlineNote: string | null;
+  noList: string;
+  openList: string;
 };
 
 export function EventRegister({
@@ -33,6 +38,7 @@ export function EventRegister({
   eventId,
   isOpen,
   listRequired,
+  locked,
   myReg,
   labels,
 }: {
@@ -40,6 +46,9 @@ export function EventRegister({
   eventId: string;
   isOpen: boolean;
   listRequired: boolean;
+  // Cutoff has passed for this viewer (event admins are passed false — they
+  // keep editing after the deadline).
+  locked: boolean;
   myReg:
     | { status: "registered" | "waitlisted"; content: string | null; url: string | null }
     | null;
@@ -85,7 +94,35 @@ export function EventRegister({
         />
       </div>
       <p className="text-xs text-muted-foreground">{labels.privateNote}</p>
+      {labels.deadlineNote && (
+        <p className="text-xs text-muted-foreground">{labels.deadlineNote}</p>
+      )}
     </>
+  );
+
+  // Past the cutoff a registered player still sees what they sent, read-only.
+  const submittedList = (content: string | null, url: string | null) => (
+    <div className="flex flex-col gap-2">
+      <span className="text-sm font-medium">{labels.listLabel}</span>
+      {content ? (
+        <pre className="overflow-x-auto whitespace-pre-wrap rounded bg-muted p-2 font-mono text-xs">
+          {content}
+        </pre>
+      ) : (
+        !url && <p className="text-sm text-muted-foreground">{labels.noList}</p>
+      )}
+      {url && (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex w-fit items-center gap-1 text-sm text-primary hover:underline"
+        >
+          <ExternalLink className="size-3.5" />
+          {labels.openList}
+        </a>
+      )}
+    </div>
   );
 
   if (myReg) {
@@ -103,22 +140,33 @@ export function EventRegister({
             </Button>
           </form>
         </div>
-        <form action={listAction} className="flex flex-col gap-3">
-          <input type="hidden" name="slug" value={slug} />
-          <input type="hidden" name="event_id" value={eventId} />
-          {listFields(myReg.content ?? "", myReg.url ?? "", false)}
-          <div className="flex items-center gap-3">
-            <Button type="submit" disabled={listPending}>
-              {labels.save}
-            </Button>
-            {listState?.error && (
-              <p className="text-sm text-destructive">{listState.error}</p>
-            )}
-            {listState?.ok && <p className="text-sm text-primary">{labels.saved}</p>}
-          </div>
-        </form>
+        {locked ? (
+          <>
+            <p className="text-sm text-muted-foreground">{labels.entryLocked}</p>
+            {submittedList(myReg.content, myReg.url)}
+          </>
+        ) : (
+          <form action={listAction} className="flex flex-col gap-3">
+            <input type="hidden" name="slug" value={slug} />
+            <input type="hidden" name="event_id" value={eventId} />
+            {listFields(myReg.content ?? "", myReg.url ?? "", false)}
+            <div className="flex items-center gap-3">
+              <Button type="submit" disabled={listPending}>
+                {labels.save}
+              </Button>
+              {listState?.error && (
+                <p className="text-sm text-destructive">{listState.error}</p>
+              )}
+              {listState?.ok && <p className="text-sm text-primary">{labels.saved}</p>}
+            </div>
+          </form>
+        )}
       </div>
     );
+  }
+
+  if (locked) {
+    return <p className="text-sm text-muted-foreground">{labels.entryLocked}</p>;
   }
 
   if (!isOpen) {

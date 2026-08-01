@@ -35,6 +35,7 @@ export function EditEventForm({
     description: string | null;
     prizes: string | null;
     listRequired: boolean;
+    listLockMinutes: number;
   };
   labels: Record<string, string>;
 }) {
@@ -119,6 +120,21 @@ export function EditEventForm({
             placeholder={labels.capacityHint}
             defaultValue={defaults.capacity ?? ""}
           />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="ee_lock" className="text-sm font-medium">
+            {labels.listLock}
+          </label>
+          <Input
+            id="ee_lock"
+            name="list_lock_minutes"
+            type="number"
+            min={0}
+            max={10080}
+            step={1}
+            defaultValue={defaults.listLockMinutes}
+          />
+          <p className="text-xs text-muted-foreground">{labels.listLockHint}</p>
         </div>
         <div className="flex flex-col gap-1.5 sm:col-span-2">
           <label htmlFor="ee_url" className="text-sm font-medium">

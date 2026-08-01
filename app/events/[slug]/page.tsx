@@ -8,7 +8,9 @@ import {
   getMyRegistration,
   getEventLists,
   listEventStaff,
+  type EventParticipant,
 } from "@/lib/events";
+import { eventEntryDeadline, isEventEntryLocked } from "@/lib/event-deadline";
 import { listPlayers } from "@/lib/players";
 import { getUser, getProfile } from "@/lib/auth";
 import { pairingName } from "@/lib/player-name";
@@ -23,13 +25,19 @@ import {
   setMyEventArchetypesAction,
   adminSetEventParticipantArchetypesAction,
   setEventArchetypeVisibilityAction,
+  adminSetEventCheckedInAction,
 } from "@/app/actions/events";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { EventRegister } from "@/components/event-register";
+import { ParticipantListEditor } from "@/components/participant-list-editor";
 import { EditEventForm } from "@/components/edit-event-form";
 import { AddStaffForm } from "@/components/add-staff-form";
 import { ArchetypePicker } from "@/components/archetype-picker";
-import { ParticipantArchetypeEditor } from "@/components/participant-archetype-editor";
+import {
+  ParticipantsList,
+  type ParticipantRowData,
+} from "@/components/participants-list";
+import { CopyPokemonIds } from "@/components/copy-pokemon-ids";
 import { CategoryBadge } from "@/components/category-badge";
 import { GameBadge } from "@/components/game-badge";
 import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
@@ -83,7 +91,7 @@ export default async function EventPage({
   // Once the event is complete, a player can no longer edit an archetype they
   // already recorded — only add one if they never set anything (mirrors
   // set_event_archetypes' own lock, 0036_event_archetypes.sql). Admin edits
-  // stay unrestricted (ParticipantArchetypeEditor below).
+  // stay unrestricted (the roster's own picker below).
   const myArchLocked =
     isComplete && !!myReg && (!!myReg.archetype1 || !!myReg.archetype2);
   const myChips = myReg
@@ -92,6 +100,108 @@ export default async function EventPage({
         .map((k) => chips.get(k))
         .filter((c): c is ArchetypeChip => !!c)
     : [];
+
+  // Registration + list submission close a set number of minutes before the
+  // start (default 60). Admins are never locked out so they can still fix a
+  // list or sign someone up on the day.
+  const entryDeadline = eventEntryDeadline(event);
+  const entryLocked = isEventEntryLocked(event) && !admin;
+  const deadlineWhen = entryDeadline ? formatDateTime(entryDeadline.toISOString()) : null;
+
+  // Pokémon IDs of every registrant (registered + waitlist) for tournament
+  // upload; players without an ID are omitted from the copy list but surfaced
+  // separately so admins can chase them down. Mirrors the session roster.
+  const pokemonIds = regs
+    .map((r) => r.pokemon_id?.trim())
+    .filter((v): v is string => !!v);
+  const missingPokemonIds = regs
+    .filter((r) => !r.pokemon_id?.trim())
+    .map((r) => ({ id: r.player_id, name: pairingName(r) }));
+
+  const rosterProps = {
+    contextId: event.id,
+    contextIdField: "event_id",
+    customs: activeCustoms,
+    action: setMyEventArchetypesAction,
+    adminAction: adminSetEventParticipantArchetypesAction,
+    extraFields: { slug },
+    setCheckedInAction: adminSetEventCheckedInAction.bind(null, slug),
+    labels: {
+      checkedIn: t("checkedIn"),
+      edit: t("archEditCta"),
+      close: t("archEditClose"),
+      none: t("archNone"),
+      title: t("myArchetypes"),
+      hint: t("archHint"),
+      slot1: t("arch1"),
+      slot2: t("arch2"),
+      placeholder: t("archPlaceholder"),
+      search: t("archSearch"),
+      clear: t("archClear"),
+      noResults: t("archNoResults"),
+      publicLabel: t("archPublic"),
+      save: t("archSave"),
+      saved: t("archSaved"),
+      noPokemonId: t("noPokemonId"),
+    },
+  };
+
+  const toRow = (r: EventParticipant): ParticipantRowData => {
+    const list = lists.get(r.player_id);
+    return {
+      playerId: r.player_id,
+      pokemonId: r.pokemon_id,
+      checkedIn: r.checked_in,
+      name: (
+        <span className="flex items-center gap-2">
+          {pairingName(r)}
+          {r.has_list && <Badge variant="outline">{t("listSubmitted")}</Badge>}
+        </span>
+      ),
+      chips: [r.archetype1, r.archetype2]
+        .filter((k): k is string => !!k)
+        .map((k) => chips.get(k))
+        .filter((c): c is ArchetypeChip => !!c),
+      initial: {
+        a1: r.archetype1 ?? "",
+        a2: r.archetype2 ?? "",
+        isPublic: r.archetype_public,
+      },
+      actions: (
+        <form action={adminRemoveRegistrationAction}>
+          <input type="hidden" name="slug" value={slug} />
+          <input type="hidden" name="event_id" value={event.id} />
+          <input type="hidden" name="player_id" value={r.player_id} />
+          <Button type="submit" variant="ghost" size="sm">
+            {t("remove")}
+          </Button>
+        </form>
+      ),
+      extra: (
+        <ParticipantListEditor
+          slug={slug}
+          eventId={event.id}
+          playerId={r.player_id}
+          initial={{ content: list?.content ?? null, url: list?.url ?? null }}
+          labels={{
+            viewList: t("viewList"),
+            openList: t("openList"),
+            noList: t("noListSubmitted"),
+            edit: t("editList"),
+            close: t("archEditClose"),
+            listLabel: isTcg ? t("listLabelTcg") : t("listLabelVgc"),
+            listPlaceholder: isTcg
+              ? t("listPlaceholderTcg")
+              : t("listPlaceholderVgc"),
+            urlLabel: t("urlLabel"),
+            urlPlaceholder: t("urlPlaceholder"),
+            save: t("saveList"),
+            saved: t("saved"),
+          }}
+        />
+      ),
+    };
+  };
 
   const meta = [
     formatDateTime(event.starts_at),
@@ -160,6 +270,7 @@ export default async function EventPage({
               eventId={event.id}
               isOpen={event.status === "open"}
               listRequired={event.list_required}
+              locked={entryLocked}
               myReg={
                 myReg
                   ? { status: myReg.status, content: myReg.content, url: myReg.url }
@@ -181,6 +292,14 @@ export default async function EventPage({
                 unregister: t("unregister"),
                 closed: t("closed"),
                 privateNote: t("privateNote"),
+                entryLocked: deadlineWhen
+                  ? t("entryLockedAt", { when: deadlineWhen })
+                  : t("entryLocked"),
+                deadlineNote: deadlineWhen
+                  ? t("entryDeadlineNote", { when: deadlineWhen })
+                  : null,
+                noList: t("noListSubmitted"),
+                openList: t("openList"),
               }}
             />
           </CardContent>
@@ -247,132 +366,76 @@ export default async function EventPage({
         </Card>
       )}
 
-      {/* Participants */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {t("participants")} ({registered.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          {registered.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("noParticipants")}</p>
-          ) : (
-            <ul className="flex flex-col divide-y">
-              {registered.map((r) => {
-                const list = lists.get(r.player_id);
-                const partChips = [r.archetype1, r.archetype2]
-                  .filter((k): k is string => !!k)
-                  .map((k) => chips.get(k))
-                  .filter((c): c is ArchetypeChip => !!c);
-                return (
-                  <li key={r.player_id} className="flex flex-col gap-1 py-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="flex items-center gap-2">
-                        {pairingName(r)}
-                        {r.has_list && (
-                          <Badge variant="outline">{t("listSubmitted")}</Badge>
-                        )}
-                      </span>
-                      {admin && (
-                        <form action={adminRemoveRegistrationAction}>
-                          <input type="hidden" name="slug" value={slug} />
-                          <input type="hidden" name="event_id" value={event.id} />
-                          <input type="hidden" name="player_id" value={r.player_id} />
-                          <Button type="submit" variant="ghost" size="sm">
-                            {t("remove")}
-                          </Button>
-                        </form>
-                      )}
-                    </div>
-                    {admin && (
-                      <ParticipantArchetypeEditor
-                        contextId={event.id}
-                        contextIdField="event_id"
-                        playerId={r.player_id}
-                        customs={activeCustoms}
-                        initial={{
-                          a1: r.archetype1 ?? "",
-                          a2: r.archetype2 ?? "",
-                          isPublic: r.archetype_public,
-                        }}
-                        chips={partChips}
-                        action={setMyEventArchetypesAction}
-                        adminAction={adminSetEventParticipantArchetypesAction}
-                        extraFields={{ slug }}
-                        labels={{
-                          edit: t("archEditCta"),
-                          close: t("archEditClose"),
-                          none: t("archNone"),
-                          title: t("myArchetypes"),
-                          hint: t("archHint"),
-                          slot1: t("arch1"),
-                          slot2: t("arch2"),
-                          placeholder: t("archPlaceholder"),
-                          search: t("archSearch"),
-                          clear: t("archClear"),
-                          noResults: t("archNoResults"),
-                          publicLabel: t("archPublic"),
-                          save: t("archSave"),
-                          saved: t("archSaved"),
-                        }}
-                      />
-                    )}
-                    {admin && list && (list.content || list.url) && (
-                      <details className="text-sm">
-                        <summary className="cursor-pointer text-muted-foreground">
-                          {t("viewList")}
-                        </summary>
-                        {list.content && (
-                          <pre className="mt-1 overflow-x-auto whitespace-pre-wrap rounded bg-muted p-2 font-mono text-xs">
-                            {list.content}
-                          </pre>
-                        )}
-                        {list.url && (
-                          <a
-                            href={list.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-1 inline-flex w-fit items-center gap-1 text-primary hover:underline"
-                          >
-                            <ExternalLink className="size-3.5" />
-                            {t("openList")}
-                          </a>
-                        )}
-                      </details>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+      {/* Participants — admin-only: the roster carries player IDs and links to
+          every submitted list, so it isn't something the field should browse. */}
+      {admin && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {t("participants")} ({registered.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            {registered.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("noParticipants")}</p>
+            ) : (
+              <>
+                <span className="text-sm text-muted-foreground">
+                  {t("checkedInCount", {
+                    n: registered.filter((r) => r.checked_in).length,
+                    total: registered.length,
+                  })}
+                </span>
+                <ParticipantsList
+                  {...rosterProps}
+                  rows={registered.map(toRow)}
+                  filterLabel={t("pendingOnly")}
+                  emptyFilteredLabel={t("allCheckedIn")}
+                />
+              </>
+            )}
 
-          {waitlisted.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                {t("waitlist")} ({waitlisted.length})
-              </span>
-              <ul className="flex flex-col divide-y">
-                {waitlisted.map((r) => (
-                  <li key={r.player_id} className="flex items-center justify-between gap-3 py-2">
-                    <span>{pairingName(r)}</span>
-                    {admin && (
-                      <form action={adminRemoveRegistrationAction}>
-                        <input type="hidden" name="slug" value={slug} />
-                        <input type="hidden" name="event_id" value={event.id} />
-                        <input type="hidden" name="player_id" value={r.player_id} />
-                        <Button type="submit" variant="ghost" size="sm">
-                          {t("remove")}
-                        </Button>
-                      </form>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            {waitlisted.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <span className="text-sm font-medium text-muted-foreground">
+                  {t("waitlist")} ({waitlisted.length})
+                </span>
+                <ParticipantsList {...rosterProps} rows={waitlisted.map(toRow)} />
+              </div>
+            )}
+
+            {regs.length > 0 && (
+              <div className="flex flex-col gap-2 border-t pt-4">
+                <span className="text-sm font-medium">{t("pokemonIdsTitle")}</span>
+                <CopyPokemonIds
+                  ids={pokemonIds}
+                  labels={{
+                    copy: t("pokemonIdsCopy"),
+                    copied: t("pokemonIdsCopied"),
+                    empty: t("pokemonIdsEmpty"),
+                  }}
+                />
+                {missingPokemonIds.length > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    {t("pokemonIdsMissing", { count: missingPokemonIds.length })}{" "}
+                    {missingPokemonIds.map((p, i) => (
+                      <span key={p.id}>
+                        {i > 0 && ", "}
+                        <Link
+                          href={`/admin/players/${p.id}`}
+                          className="text-primary hover:underline"
+                        >
+                          {p.name}
+                        </Link>
+                      </span>
+                    ))}
+                  </p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Staff (judges, scorekeepers, helpers) */}
       {(staff.length > 0 || admin) && (
@@ -482,6 +545,7 @@ export default async function EventPage({
                 description: event.description,
                 prizes: event.prizes,
                 listRequired: event.list_required,
+                listLockMinutes: event.list_lock_minutes,
               }}
               labels={{
                 name: t("eName"),
@@ -501,6 +565,8 @@ export default async function EventPage({
                 prizes: t("ePrizes"),
                 prizesHint: t("ePrizesHint"),
                 listRequired: t("eListRequired"),
+                listLock: t("eListLock"),
+                listLockHint: t("eListLockHint"),
                 save: t("save"),
                 saved: t("saved"),
               }}

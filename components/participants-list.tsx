@@ -7,15 +7,21 @@ import { Switch } from "@/components/ui/switch";
 import type { ArchetypeChip } from "@/lib/archetypes";
 import type { ActionState } from "@/app/actions/sessions";
 
-// One participant as laid out by the roster: check-in, name, archetypes, actions.
+// One participant as laid out by the roster: check-in, name, ID, archetypes,
+// actions. Shared by league sessions and standalone events.
 export type ParticipantRowData = {
   playerId: string;
   name: ReactNode;
+  // Pokémon ID from the player's profile, shown next to the name so the TO can
+  // match the person in front of them against the tournament software.
+  pokemonId?: string | null;
   checkedIn: boolean;
   chips: ArchetypeChip[];
   initial: { a1: string; a2: string; isPublic: boolean };
   // Server-rendered admin actions (e.g. the remove form) for the last column.
   actions?: ReactNode;
+  // Extra server-rendered block under the row (e.g. the event list editor).
+  extra?: ReactNode;
 };
 
 type Labels = {
@@ -34,13 +40,18 @@ type Labels = {
   publicLabel: string;
   save: string;
   saved: string;
+  noPokemonId?: string;
 };
 
 type SharedProps = {
-  sessionId: string;
+  // The session/event id this roster belongs to, and the hidden-field name the
+  // archetype picker posts it under.
+  contextId: string;
+  contextIdField?: string;
   customs: { id: string; name: string; icon_url: string | null }[];
   action: (prev: ActionState, formData: FormData) => Promise<ActionState>;
   adminAction: (prev: ActionState, formData: FormData) => Promise<ActionState>;
+  extraFields?: Record<string, string>;
   labels: Labels;
 };
 
@@ -54,7 +65,7 @@ export function ParticipantsList({
 }: SharedProps & {
   rows: ParticipantRowData[];
   setCheckedInAction: (
-    sessionId: string,
+    contextId: string,
     playerId: string,
     checkedIn: boolean,
   ) => Promise<void>;
@@ -70,11 +81,11 @@ export function ParticipantsList({
   const isChecked = (id: string) => checked[id] ?? false;
   const toggle = (id: string, value: boolean) => {
     setChecked((prev) => ({ ...prev, [id]: value }));
-    startTransition(() => setCheckedInAction(shared.sessionId, id, value));
+    startTransition(() => setCheckedInAction(shared.contextId, id, value));
   };
 
   const visible = pendingOnly ? rows.filter((r) => !isChecked(r.playerId)) : rows;
-  const filterId = `pending-only-${shared.sessionId}-${rows[0]?.playerId ?? "x"}`;
+  const filterId = `pending-only-${shared.contextId}-${rows[0]?.playerId ?? "x"}`;
 
   return (
     <div className="flex flex-col gap-2">
@@ -116,10 +127,12 @@ function ParticipantRow({
   row,
   checked,
   onCheckedChange,
-  sessionId,
+  contextId,
+  contextIdField = "session_id",
   customs,
   action,
   adminAction,
+  extraFields,
   labels,
 }: SharedProps & {
   row: ParticipantRowData;
@@ -128,6 +141,7 @@ function ParticipantRow({
 }) {
   const [open, setOpen] = useState(false);
   const checkId = `checked-in-${row.playerId}`;
+  const showId = row.pokemonId !== undefined;
 
   return (
     <li className="flex flex-col gap-2 py-2">
@@ -139,7 +153,14 @@ function ParticipantRow({
           aria-label={labels.checkedIn}
           className="shrink-0"
         />
-        <span className="min-w-0 flex-1 basis-32 truncate">{row.name}</span>
+        <span className="flex min-w-0 flex-1 basis-32 flex-col">
+          <span className="truncate">{row.name}</span>
+          {showId && (
+            <span className="truncate font-mono text-xs text-muted-foreground">
+              {row.pokemonId?.trim() || labels.noPokemonId}
+            </span>
+          )}
+        </span>
         <div className="flex min-w-0 flex-1 basis-32 flex-wrap items-center gap-2 text-sm text-muted-foreground">
           {row.chips.length > 0 ? (
             row.chips.map((c) => (
@@ -169,16 +190,18 @@ function ParticipantRow({
       </div>
       {open && (
         <ArchetypePicker
-          contextId={sessionId}
-          contextIdField="session_id"
+          contextId={contextId}
+          contextIdField={contextIdField}
           playerId={row.playerId}
           customs={customs}
           initial={row.initial}
           action={action}
           adminAction={adminAction}
+          extraFields={extraFields}
           labels={labels}
         />
       )}
+      {row.extra}
     </li>
   );
 }

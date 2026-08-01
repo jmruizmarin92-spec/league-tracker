@@ -5,10 +5,35 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { capText, isHttpUrl } from "@/lib/validation";
 import { isCategory } from "@/lib/event-category";
+import { getEventBySlug, isEventAdmin } from "@/lib/events";
+import {
+  isEventEntryLocked,
+  DEFAULT_LIST_LOCK_MINUTES,
+  MAX_LIST_LOCK_MINUTES,
+} from "@/lib/event-deadline";
 
 export type ActionState = { error?: string; ok?: boolean };
 
 const LIST_CONTENT_MAX = 20_000;
+
+// Minutes-before-start cutoff coming from the create/edit forms. Empty means
+// "leave the default" on create, so it resolves to null for the RPC to fill in.
+function parseLockMinutes(raw: string): number | null | "invalid" {
+  if (raw.trim() === "") return null;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 0 || n > MAX_LIST_LOCK_MINUTES) return "invalid";
+  return n;
+}
+
+// Shared gate for the player-facing register/list actions: returns an error
+// message once the cutoff has passed, unless the caller runs the event. The
+// RPCs enforce this too (0039) — this is here to give a readable message.
+async function entryDeadlineError(slug: string): Promise<string | null> {
+  const event = await getEventBySlug(slug);
+  if (!event || !isEventEntryLocked(event)) return null;
+  if (await isEventAdmin(event.id)) return null;
+  return "El plazo para inscribirse y enviar listas ya está cerrado.";
+}
 
 export async function createEventAction(
   _prev: ActionState,
@@ -26,9 +51,13 @@ export async function createEventAction(
   const externalUrl = capText(String(formData.get("external_url") ?? ""), 500);
   const prizes = capText(String(formData.get("prizes") ?? ""), 1000);
   const listRequired = String(formData.get("list_required") ?? "") === "true";
+  const lockMinutes = parseLockMinutes(String(formData.get("list_lock_minutes") ?? ""));
 
   if (!name) return { error: "Introduce un nombre." };
   if (game !== "tcg" && game !== "vgc") return { error: "Elige un juego." };
+  if (lockMinutes === "invalid") {
+    return { error: "El cierre de listas debe ser un número de minutos válido." };
+  }
   if (category && !isCategory(category)) return { error: "Categoría no válida." };
   if (externalUrl && !isHttpUrl(externalUrl)) {
     return { error: "El enlace externo no es una URL válida." };
@@ -54,6 +83,7 @@ export async function createEventAction(
     p_capacity: capacity,
     p_category: category || null,
     p_subtitle: subtitle || null,
+    p_list_lock_minutes: lockMinutes,
   });
   if (error) return { error: error.message };
 
@@ -78,9 +108,13 @@ export async function updateEventAction(
   const externalUrl = capText(String(formData.get("external_url") ?? ""), 500);
   const prizes = capText(String(formData.get("prizes") ?? ""), 1000);
   const listRequired = String(formData.get("list_required") ?? "") === "true";
+  const lockMinutes = parseLockMinutes(String(formData.get("list_lock_minutes") ?? ""));
 
   if (!name) return { error: "Introduce un nombre." };
   if (category && !isCategory(category)) return { error: "Categoría no válida." };
+  if (lockMinutes === "invalid") {
+    return { error: "El cierre de listas debe ser un número de minutos válido." };
+  }
   if (externalUrl && !isHttpUrl(externalUrl)) {
     return { error: "El enlace externo no es una URL válida." };
   }
@@ -105,6 +139,7 @@ export async function updateEventAction(
       external_url: externalUrl || null,
       prizes: prizes || null,
       list_required: listRequired,
+      list_lock_minutes: lockMinutes ?? DEFAULT_LIST_LOCK_MINUTES,
       capacity,
     })
     .eq("id", eventId);
@@ -124,6 +159,8 @@ export async function registerEventAction(
   const content = capText(String(formData.get("content") ?? ""), LIST_CONTENT_MAX);
   const url = capText(String(formData.get("url") ?? ""), 500);
   if (url && !isHttpUrl(url)) return { error: "El enlace no es una URL válida." };
+  const locked = await entryDeadlineError(slug);
+  if (locked) return { error: locked };
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("register_event", {
@@ -145,10 +182,36 @@ export async function submitListAction(
   const content = capText(String(formData.get("content") ?? ""), LIST_CONTENT_MAX);
   const url = capText(String(formData.get("url") ?? ""), 500);
   if (url && !isHttpUrl(url)) return { error: "El enlace no es una URL válida." };
+  const locked = await entryDeadlineError(slug);
+  if (locked) return { error: locked };
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("submit_event_list", {
     p_event: eventId,
+    p_content: content,
+    p_url: url,
+  });
+  if (error) return { error: error.message };
+  revalidatePath(`/events/${slug}`);
+  return { ok: true };
+}
+
+// Admin: write a registrant's list on their behalf, cutoff or not.
+export async function adminSubmitListAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const slug = String(formData.get("slug") ?? "");
+  const eventId = String(formData.get("event_id") ?? "");
+  const playerId = String(formData.get("player_id") ?? "");
+  const content = capText(String(formData.get("content") ?? ""), LIST_CONTENT_MAX);
+  const url = capText(String(formData.get("url") ?? ""), 500);
+  if (url && !isHttpUrl(url)) return { error: "El enlace no es una URL válida." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("admin_submit_event_list", {
+    p_event: eventId,
+    p_player: playerId,
     p_content: content,
     p_url: url,
   });
@@ -214,6 +277,23 @@ export async function setEventArchetypeVisibilityAction(
   await supabase.rpc("set_event_archetype_visibility", {
     p_event: eventId,
     p_public: isPublic,
+  });
+  revalidatePath(`/events/${slug}`);
+}
+
+// On-site check-in toggle (0040). Bound with the slug on the page so the
+// roster can call it as (eventId, playerId, checkedIn) like its session twin.
+export async function adminSetEventCheckedInAction(
+  slug: string,
+  eventId: string,
+  playerId: string,
+  checkedIn: boolean,
+) {
+  const supabase = await createClient();
+  await supabase.rpc("admin_set_event_checked_in", {
+    p_event: eventId,
+    p_player: playerId,
+    p_checked_in: checkedIn,
   });
   revalidatePath(`/events/${slug}`);
 }

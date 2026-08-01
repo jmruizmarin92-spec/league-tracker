@@ -34,6 +34,8 @@ export default async function AdminEventsPage() {
               prizes: t("fPrizes"),
               prizesHint: t("prizesHint"),
               listRequired: t("fListRequired"),
+              listLock: t("fListLock"),
+              listLockHint: t("listLockHint"),
               cta: t("createCta"),
             }}
           />

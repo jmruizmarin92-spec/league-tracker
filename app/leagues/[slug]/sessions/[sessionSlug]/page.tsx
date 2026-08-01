@@ -39,6 +39,7 @@ import {
 } from "@/components/participants-list";
 import { StandingsTable } from "@/components/standings-table";
 import { RoundsTabs, type RoundView } from "@/components/rounds-tabs";
+import { SessionTabs, type SessionTab } from "@/components/session-tabs";
 import { MyMatchCard, type MyMatch } from "@/components/my-match-card";
 import { CopyPokemonIds } from "@/components/copy-pokemon-ids";
 import { RealtimeRefresher } from "@/components/realtime-refresher";
@@ -86,7 +87,7 @@ export default async function SessionPage({
   // Once the session is complete, a player can no longer edit an archetype
   // they already recorded — only add one if they never set anything (mirrors
   // the set_participant_archetypes RPC's own lock, 0034_lock_archetypes.sql).
-  // Admin edits stay unrestricted (ParticipantArchetypeEditor below).
+  // Admin edits stay unrestricted (the roster's own picker below).
   const myArchLocked =
     isComplete && !!myPart && (!!myPart.archetype1 || !!myPart.archetype2);
   const myChips = myPart
@@ -249,7 +250,7 @@ export default async function SessionPage({
   });
 
   const rosterProps = {
-    sessionId: id,
+    contextId: id,
     customs: activeCustoms,
     action: setMyArchetypesAction,
     adminAction: adminSetParticipantArchetypesAction,
@@ -272,6 +273,305 @@ export default async function SessionPage({
       saved: t("archSaved"),
     },
   };
+
+  // Everything below the header lives in tabs so the admin view stops being one
+  // long scroll. All panels are rendered server-side in this pass — the tabs
+  // only pick what's visible. Panels drop their own card title: the tab label is
+  // the heading, so repeating it inside would be doubled chrome.
+  const tabs: SessionTab[] = [];
+
+  if (rounds.length > 0 || (admin && !isComplete)) {
+    tabs.push({
+      value: "rounds",
+      label: t("rounds"),
+      content: (
+        <Card>
+          <CardContent className="flex flex-col gap-5">
+            {admin && !isComplete && (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <form action={generateRoundAction}>
+                  <input type="hidden" name="session_id" value={id} />
+                  <Button type="submit" size="sm" disabled={hasPending}>
+                    {t("generateRound", { n: nextRoundNumber })}
+                  </Button>
+                </form>
+                {recommendedRounds > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {t("recommendedRounds", { n: recommendedRounds })}
+                  </span>
+                )}
+              </div>
+            )}
+            {hasPending && admin && (
+              <p className="text-xs text-muted-foreground">
+                {t("pendingBlocksNext")}
+              </p>
+            )}
+            {rounds.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("noRounds")}</p>
+            ) : (
+              <RoundsTabs
+                sessionId={id}
+                admin={admin}
+                rounds={roundViews}
+                labels={{
+                  roundWord: t("roundWord"),
+                  deleteRound: t("deleteRound"),
+                  bye: t("bye"),
+                  loss: t("loss"),
+                  draw: t("draw"),
+                  pending: t("pending"),
+                  winPrefix: t("winPrefix"),
+                  mine: t("mine"),
+                  vs: t("vs"),
+                  tableLabel: t("tableLabel"),
+                  timerMinutesPlaceholder: t("timerMinutesPlaceholder"),
+                  timerStart: t("timerStart"),
+                  timerPause: t("timerPause"),
+                  timerResume: t("timerResume"),
+                  timerReset: t("timerReset"),
+                  timerPaused: t("timerPaused"),
+                  timerTimeUp: t("timerTimeUp"),
+                  timerAlertsEnable: t("timerAlertsEnable"),
+                  timerAlertsDisable: t("timerAlertsDisable"),
+                  timerAlertsBlocked: t("timerAlertsBlocked"),
+                  timerNotifyBody: t("timerNotifyBody"),
+                }}
+              />
+            )}
+          </CardContent>
+        </Card>
+      ),
+    });
+  }
+
+  if (standings.length > 0) {
+    tabs.push({
+      value: "standings",
+      label: t("standings"),
+      content: (
+        <Card>
+          <CardContent>
+            <StandingsTable
+              rows={standings}
+              names={standingsNames}
+              archetypes={publicArch}
+              labels={{
+                rank: t("rank"),
+                player: t("player"),
+                points: t("points"),
+                record: t("record"),
+                oppWinRate: t("oppWinRate"),
+              }}
+            />
+          </CardContent>
+        </Card>
+      ),
+    });
+  }
+
+  // Participants are admin-only; standings and rounds already show the roster
+  // to everyone else.
+  if (admin) {
+    tabs.push({
+      value: "participants",
+      label: `${t("participants")} (${registered.length})`,
+      content: (
+        <Card>
+          <CardContent className="flex flex-col gap-4">
+            {registered.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("noParticipants")}</p>
+            ) : (
+              <>
+                <span className="text-sm text-muted-foreground">
+                  {t("checkedInCount", {
+                    n: registered.filter((p) => p.checked_in).length,
+                    total: registered.length,
+                  })}
+                </span>
+                <ParticipantsList
+                  {...rosterProps}
+                  rows={registered.map(toRow)}
+                  filterLabel={t("pendingOnly")}
+                  emptyFilteredLabel={t("allCheckedIn")}
+                />
+              </>
+            )}
+
+            {waitlisted.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <span className="text-sm font-medium text-muted-foreground">
+                  {t("waitlist")} ({waitlisted.length})
+                </span>
+                <ParticipantsList
+                  {...rosterProps}
+                  rows={waitlisted.map(toRow)}
+                />
+              </div>
+            )}
+
+            {participants.length > 0 && (
+              <div className="flex flex-col gap-2 border-t pt-4">
+                <span className="text-sm font-medium">{t("pokemonIdsTitle")}</span>
+                <CopyPokemonIds
+                  ids={pokemonIds}
+                  labels={{
+                    copy: t("pokemonIdsCopy"),
+                    copied: t("pokemonIdsCopied"),
+                    empty: t("pokemonIdsEmpty"),
+                  }}
+                />
+                {missingPokemonIds.length > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    {t("pokemonIdsMissing", {
+                      count: missingPokemonIds.length,
+                    })}{" "}
+                    {missingPokemonIds.map((p, i) => (
+                      <span key={p.id}>
+                        {i > 0 && ", "}
+                        <Link
+                          href={`/admin/players/${p.id}`}
+                          className="text-primary hover:underline"
+                        >
+                          {p.name}
+                        </Link>
+                      </span>
+                    ))}
+                  </p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ),
+    });
+
+    tabs.push({
+      value: "manage",
+      label: t("tabManage"),
+      content: (
+        <Card>
+          <CardContent className="flex flex-col gap-5">
+            {isComplete ? (
+              <p className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
+                {t("completeNoAdd")}
+              </p>
+            ) : (
+              <>
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm font-medium">
+                    {t("addParticipant")}
+                  </span>
+                  <AddParticipantForm
+                    sessionId={id}
+                    players={addable}
+                    roundsStarted={lastRoundNumber > 0}
+                    labels={{
+                      placeholder: t("choosePlayer"),
+                      cta: t("add"),
+                      lateTitle: t("lateTitle"),
+                      lateHint: t("lateHint"),
+                      missedNone: t("lateMissedNone"),
+                      missedLoss: t("lateMissedLoss"),
+                      entryNext: t("lateEntryNext"),
+                      entryCurrent: t("lateEntryCurrent"),
+                      entryBye: t("lateEntryBye"),
+                    }}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2 border-t pt-4">
+                  <span className="text-sm font-medium">{t("createPlayer")}</span>
+                  <p className="text-sm text-muted-foreground">
+                    {t("createPlayerHint")}
+                  </p>
+                  <form
+                    action={createSessionPlayerAction}
+                    className="flex flex-col gap-2 sm:flex-row"
+                  >
+                    <input type="hidden" name="session_id" value={id} />
+                    <Input
+                      name="name"
+                      maxLength={60}
+                      placeholder={t("newPlayerPlaceholder")}
+                      className="sm:flex-1"
+                    />
+                    <Button type="submit" variant="secondary">
+                      {t("createPlayerCta")}
+                    </Button>
+                  </form>
+                </div>
+              </>
+            )}
+
+            <div className="flex flex-col gap-2 border-t pt-4">
+              <span className="text-sm font-medium">{t("editDetailsTitle")}</span>
+              <EditSessionForm
+                sessionId={id}
+                locations={session.league?.locations ?? []}
+                defaults={{
+                  startsAt: session.starts_at,
+                  location: session.location,
+                  cost: session.cost,
+                  capacity: session.capacity,
+                }}
+                labels={{
+                  startsAt: t("sStartsAt"),
+                  location: t("sLocation"),
+                  locationPlaceholder: t("sLocationPlaceholder"),
+                  cost: t("sCost"),
+                  capacity: t("sCapacity"),
+                  capacityHint: t("sCapacityHint"),
+                  save: t("save"),
+                  saved: t("saved"),
+                }}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2 border-t pt-4">
+              <span className="text-sm font-medium">{t("statusLabel")}</span>
+              <div className="flex flex-wrap gap-2">
+                {(["setup", "active", "complete"] as const).map((s) => (
+                  <form key={s} action={setSessionStatusAction}>
+                    <input type="hidden" name="session_id" value={id} />
+                    <input type="hidden" name="status" value={s} />
+                    <Button
+                      type="submit"
+                      size="sm"
+                      variant={session.status === s ? "default" : "outline"}
+                    >
+                      {t(`status_${s}`)}
+                    </Button>
+                  </form>
+                ))}
+              </div>
+            </div>
+
+            {session.league && (
+              <div className="flex flex-col gap-2 border-t pt-4">
+                <span className="text-sm font-medium">{t("dangerZone")}</span>
+                <form action={deleteSessionAction} className="w-fit">
+                  <input type="hidden" name="session_id" value={id} />
+                  <input
+                    type="hidden"
+                    name="league_slug"
+                    value={session.league.slug}
+                  />
+                  <ConfirmDeleteButton confirmMessage={t("confirmDeleteSession")}>
+                    {t("deleteSession")}
+                  </ConfirmDeleteButton>
+                </form>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ),
+    });
+  }
+
+  // During setup an admin's job is check-in, not pairings — land them there.
+  const initialTab =
+    admin && session.status === "setup" ? "participants" : "rounds";
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
@@ -402,95 +702,8 @@ export default async function SessionPage({
         />
       )}
 
-      {/* Standings */}
-      {standings.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("standings")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <StandingsTable
-              rows={standings}
-              names={standingsNames}
-              archetypes={publicArch}
-              labels={{
-                rank: t("rank"),
-                player: t("player"),
-                points: t("points"),
-                record: t("record"),
-                oppWinRate: t("oppWinRate"),
-              }}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Rounds */}
-      {(rounds.length > 0 || (admin && !isComplete)) && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between gap-2">
-              <CardTitle>{t("rounds")}</CardTitle>
-              {admin && !isComplete && (
-                <div className="flex flex-col items-end gap-1">
-                  <form action={generateRoundAction}>
-                    <input type="hidden" name="session_id" value={id} />
-                    <Button type="submit" size="sm" disabled={hasPending}>
-                      {t("generateRound", { n: nextRoundNumber })}
-                    </Button>
-                  </form>
-                  {recommendedRounds > 0 && (
-                    <span className="text-xs text-muted-foreground">
-                      {t("recommendedRounds", { n: recommendedRounds })}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-5">
-            {hasPending && admin && (
-              <p className="text-xs text-muted-foreground">
-                {t("pendingBlocksNext")}
-              </p>
-            )}
-            {rounds.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t("noRounds")}</p>
-            ) : (
-              <RoundsTabs
-                sessionId={id}
-                admin={admin}
-                rounds={roundViews}
-                labels={{
-                  roundWord: t("roundWord"),
-                  deleteRound: t("deleteRound"),
-                  bye: t("bye"),
-                  loss: t("loss"),
-                  draw: t("draw"),
-                  pending: t("pending"),
-                  winPrefix: t("winPrefix"),
-                  mine: t("mine"),
-                  vs: t("vs"),
-                  tableLabel: t("tableLabel"),
-                  timerMinutesPlaceholder: t("timerMinutesPlaceholder"),
-                  timerStart: t("timerStart"),
-                  timerPause: t("timerPause"),
-                  timerResume: t("timerResume"),
-                  timerReset: t("timerReset"),
-                  timerPaused: t("timerPaused"),
-                  timerTimeUp: t("timerTimeUp"),
-                  timerAlertsEnable: t("timerAlertsEnable"),
-                  timerAlertsDisable: t("timerAlertsDisable"),
-                  timerAlertsBlocked: t("timerAlertsBlocked"),
-                  timerNotifyBody: t("timerNotifyBody"),
-                }}
-              />
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* My archetypes */}
+      {/* My archetypes — stays pinned: it's a one-time action per player and
+          burying it behind a tab makes it easy to forget before pairings. */}
       {myPart && (
         <Card>
           <CardHeader>
@@ -545,199 +758,7 @@ export default async function SessionPage({
         </Card>
       )}
 
-      {/* Participants (admin-only; standings/rounds already show the roster) */}
-      {admin && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {t("participants")} ({registered.length}) ·{" "}
-              {t("checkedInCount", {
-                n: registered.filter((p) => p.checked_in).length,
-                total: registered.length,
-              })}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            {registered.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t("noParticipants")}</p>
-            ) : (
-              <ParticipantsList
-                {...rosterProps}
-                rows={registered.map(toRow)}
-                filterLabel={t("pendingOnly")}
-                emptyFilteredLabel={t("allCheckedIn")}
-              />
-            )}
-
-            {waitlisted.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <span className="text-sm font-medium text-muted-foreground">
-                  {t("waitlist")} ({waitlisted.length})
-                </span>
-                <ParticipantsList
-                  {...rosterProps}
-                  rows={waitlisted.map(toRow)}
-                />
-              </div>
-            )}
-
-            {participants.length > 0 && (
-              <div className="flex flex-col gap-2 border-t pt-4">
-                <span className="text-sm font-medium">{t("pokemonIdsTitle")}</span>
-                <CopyPokemonIds
-                  ids={pokemonIds}
-                  labels={{
-                    copy: t("pokemonIdsCopy"),
-                    copied: t("pokemonIdsCopied"),
-                    empty: t("pokemonIdsEmpty"),
-                  }}
-                />
-                {missingPokemonIds.length > 0 && (
-                  <p className="text-sm text-muted-foreground">
-                    {t("pokemonIdsMissing", {
-                      count: missingPokemonIds.length,
-                    })}{" "}
-                    {missingPokemonIds.map((p, i) => (
-                      <span key={p.id}>
-                        {i > 0 && ", "}
-                        <Link
-                          href={`/admin/players/${p.id}`}
-                          className="text-primary hover:underline"
-                        >
-                          {p.name}
-                        </Link>
-                      </span>
-                    ))}
-                  </p>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Admin controls */}
-      {admin && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("adminTitle")}</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-5">
-            {isComplete ? (
-              <p className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
-                {t("completeNoAdd")}
-              </p>
-            ) : (
-              <>
-                <div className="flex flex-col gap-2">
-                  <span className="text-sm font-medium">
-                    {t("addParticipant")}
-                  </span>
-                  <AddParticipantForm
-                    sessionId={id}
-                    players={addable}
-                    roundsStarted={lastRoundNumber > 0}
-                    labels={{
-                      placeholder: t("choosePlayer"),
-                      cta: t("add"),
-                      lateTitle: t("lateTitle"),
-                      lateHint: t("lateHint"),
-                      missedNone: t("lateMissedNone"),
-                      missedLoss: t("lateMissedLoss"),
-                      entryNext: t("lateEntryNext"),
-                      entryCurrent: t("lateEntryCurrent"),
-                      entryBye: t("lateEntryBye"),
-                    }}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <span className="text-sm font-medium">{t("createPlayer")}</span>
-                  <p className="text-sm text-muted-foreground">
-                    {t("createPlayerHint")}
-                  </p>
-                  <form
-                    action={createSessionPlayerAction}
-                    className="flex flex-col gap-2 sm:flex-row"
-                  >
-                    <input type="hidden" name="session_id" value={id} />
-                    <Input
-                      name="name"
-                      maxLength={60}
-                      placeholder={t("newPlayerPlaceholder")}
-                      className="sm:flex-1"
-                    />
-                    <Button type="submit" variant="secondary">
-                      {t("createPlayerCta")}
-                    </Button>
-                  </form>
-                </div>
-              </>
-            )}
-
-
-            <div className="flex flex-col gap-2 border-t pt-4">
-              <span className="text-sm font-medium">{t("editDetailsTitle")}</span>
-              <EditSessionForm
-                sessionId={id}
-                locations={session.league?.locations ?? []}
-                defaults={{
-                  startsAt: session.starts_at,
-                  location: session.location,
-                  cost: session.cost,
-                  capacity: session.capacity,
-                }}
-                labels={{
-                  startsAt: t("sStartsAt"),
-                  location: t("sLocation"),
-                  locationPlaceholder: t("sLocationPlaceholder"),
-                  cost: t("sCost"),
-                  capacity: t("sCapacity"),
-                  capacityHint: t("sCapacityHint"),
-                  save: t("save"),
-                  saved: t("saved"),
-                }}
-              />
-            </div>
-
-            <div className="flex flex-col gap-2 border-t pt-4">
-              <span className="text-sm font-medium">{t("statusLabel")}</span>
-              <div className="flex flex-wrap gap-2">
-                {(["setup", "active", "complete"] as const).map((s) => (
-                  <form key={s} action={setSessionStatusAction}>
-                    <input type="hidden" name="session_id" value={id} />
-                    <input type="hidden" name="status" value={s} />
-                    <Button
-                      type="submit"
-                      size="sm"
-                      variant={session.status === s ? "default" : "outline"}
-                    >
-                      {t(`status_${s}`)}
-                    </Button>
-                  </form>
-                ))}
-              </div>
-            </div>
-
-            {session.league && (
-              <div className="flex flex-col gap-2 border-t pt-4">
-                <span className="text-sm font-medium">{t("dangerZone")}</span>
-                <form action={deleteSessionAction} className="w-fit">
-                  <input type="hidden" name="session_id" value={id} />
-                  <input
-                    type="hidden"
-                    name="league_slug"
-                    value={session.league.slug}
-                  />
-                  <ConfirmDeleteButton confirmMessage={t("confirmDeleteSession")}>
-                    {t("deleteSession")}
-                  </ConfirmDeleteButton>
-                </form>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+      {tabs.length > 0 && <SessionTabs tabs={tabs} initial={initialTab} />}
     </main>
   );
 }

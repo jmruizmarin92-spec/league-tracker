@@ -19,6 +19,7 @@ export type EventRow = {
   external_url: string | null;
   prizes: string | null;
   list_required: boolean;
+  list_lock_minutes: number;
   capacity: number | null;
   status: EventStatus;
   created_at: string;
@@ -66,9 +67,11 @@ export type EventParticipant = {
   display_name: string;
   first_name: string | null;
   last_name: string | null;
+  pokemon_id: string | null;
   archetype1: string | null;
   archetype2: string | null;
   archetype_public: boolean;
+  checked_in: boolean;
 };
 
 type RegRow = {
@@ -79,10 +82,12 @@ type RegRow = {
   archetype1: string | null;
   archetype2: string | null;
   archetype_public: boolean;
+  checked_in: boolean;
   players: {
     display_name: string;
     first_name: string | null;
     last_name: string | null;
+    pokemon_id: string | null;
   } | null;
 };
 
@@ -93,7 +98,7 @@ export async function listRegistrations(
   const { data } = await supabase
     .from("event_registrations")
     .select(
-      "player_id, status, has_list, registered_at, archetype1, archetype2, archetype_public, players(display_name, first_name, last_name)",
+      "player_id, status, has_list, registered_at, archetype1, archetype2, archetype_public, checked_in, players(display_name, first_name, last_name, pokemon_id)",
     )
     .eq("event_id", eventId)
     .order("registered_at");
@@ -104,9 +109,11 @@ export async function listRegistrations(
     display_name: r.players?.display_name ?? "—",
     first_name: r.players?.first_name ?? null,
     last_name: r.players?.last_name ?? null,
+    pokemon_id: r.players?.pokemon_id ?? null,
     archetype1: r.archetype1,
     archetype2: r.archetype2,
     archetype_public: r.archetype_public,
+    checked_in: r.checked_in,
   }));
 }
 

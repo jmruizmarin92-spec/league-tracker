@@ -79,6 +79,19 @@ export function CreateEventForm({
           <label htmlFor="e_cap" className="text-sm font-medium">{labels.capacity}</label>
           <Input id="e_cap" name="capacity" type="number" min={1} step={1} placeholder={labels.capacityHint} />
         </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="e_lock" className="text-sm font-medium">{labels.listLock}</label>
+          <Input
+            id="e_lock"
+            name="list_lock_minutes"
+            type="number"
+            min={0}
+            max={10080}
+            step={1}
+            defaultValue={60}
+          />
+          <p className="text-xs text-muted-foreground">{labels.listLockHint}</p>
+        </div>
         <div className="flex flex-col gap-1.5 sm:col-span-2">
           <label htmlFor="e_url" className="text-sm font-medium">{labels.externalUrl}</label>
           <Input id="e_url" name="external_url" type="url" maxLength={500} placeholder={labels.externalUrlHint} />
