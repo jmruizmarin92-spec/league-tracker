@@ -175,10 +175,20 @@ export default async function EventDisplayPage({
                 </h2>
                 <ul className="flex flex-col gap-2">
                   {d.matches.map((m) => {
+                    // A table that reported but hasn't been keyed into TOM yet
+                    // still reads as played from across the hall — tagged "sin
+                    // confirmar" instead of "pendiente", so the room can see
+                    // which tables the judge still has to enter.
+                    const shown =
+                      m.official_result === "pending"
+                        ? m.reported_result
+                        : m.official_result;
+                    const provisional =
+                      m.official_result === "pending" && !!m.reported_result;
                     const decided =
-                      m.official_result === "p1_win" ||
-                      m.official_result === "p2_win" ||
-                      m.official_result === "double_loss";
+                      shown === "p1_win" ||
+                      shown === "p2_win" ||
+                      shown === "double_loss";
                     const nameClass = (won: boolean) =>
                       won
                         ? "font-bold text-primary"
@@ -196,11 +206,11 @@ export default async function EventDisplayPage({
                               {m.table_number}
                             </span>
                           )}
-                          {m.official_result === "p1_win" && (
+                          {shown === "p1_win" && (
                             <Trophy className="h-5 w-5 text-primary" />
                           )}
                           <span
-                            className={`min-w-0 flex-1 truncate ${nameClass(m.official_result === "p1_win")}`}
+                            className={`min-w-0 flex-1 truncate ${nameClass(shown === "p1_win")}`}
                             title={name(m.player1_id)}
                           >
                             {name(m.player1_id)}
@@ -210,11 +220,11 @@ export default async function EventDisplayPage({
                               <span className="text-muted-foreground">
                                 {tt("vs")}
                               </span>
-                              {m.official_result === "p2_win" && (
+                              {shown === "p2_win" && (
                                 <Trophy className="h-5 w-5 text-primary" />
                               )}
                               <span
-                                className={`min-w-0 flex-1 truncate ${nameClass(m.official_result === "p2_win")}`}
+                                className={`min-w-0 flex-1 truncate ${nameClass(shown === "p2_win")}`}
                                 title={name(m.player2_id)}
                               >
                                 {name(m.player2_id)}
@@ -225,12 +235,12 @@ export default async function EventDisplayPage({
                               {tt("bye")}
                             </Badge>
                           )}
-                          {m.official_result === "draw" && (
+                          {shown === "draw" && (
                             <Badge variant="outline" className="text-base">
                               {tt("draw")}
                             </Badge>
                           )}
-                          {m.official_result === "double_loss" && (
+                          {shown === "double_loss" && (
                             <Badge variant="outline" className="text-base">
                               {tt("doubleLoss")}
                             </Badge>
@@ -238,7 +248,7 @@ export default async function EventDisplayPage({
                         </span>
                         {m.official_result === "pending" && (
                           <Badge variant="secondary" className="text-base">
-                            {t("pending")}
+                            {provisional ? tt("unconfirmed") : t("pending")}
                           </Badge>
                         )}
                       </li>

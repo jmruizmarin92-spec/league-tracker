@@ -42,13 +42,15 @@ export type EventPairingLabels = {
   tableLabel: string;
   mine: string;
   win: string;
-  reportedPrefix: string;
+  unconfirmed: string;
   noPairings: string;
 };
 
-// Read-only mirror of what TOM has, plus the one thing players can do from
-// their seat: say who won. That lands next to the official result, never on
-// top of it — the next .tdf drop is what settles the round.
+// Mirror of what TOM has, plus the one thing players can do from their seat:
+// say who won. A report is drawn exactly like a session result — trophy on the
+// winner, loser muted — because that is what the TO reads off the screen to key
+// into TOM. It never overwrites the official result: the next .tdf drop settles
+// the round, and until then the row carries the "sin confirmar" badge.
 export function EventPairings({
   slug,
   divisions,
@@ -154,10 +156,14 @@ function MatchRow({
 }) {
   const { official, reported } = match;
   const decided = official !== "pending" && official !== "bye";
+  // While TOM hasn't ruled, the table's own word stands in for the result. Same
+  // shape as a session match from here on — only the badge says it's a report.
+  const shown = decided ? official : reported;
+  const provisional = !decided && !!reported;
   const nameClass = (won: boolean) =>
     won
       ? "font-semibold text-primary"
-      : decided
+      : shown
         ? "text-muted-foreground"
         : undefined;
 
@@ -180,7 +186,7 @@ function MatchRow({
       <input type="hidden" name="result" value={value} />
       <Button
         type="submit"
-        variant={reported === value ? "default" : "outline"}
+        variant={shown === value ? "default" : "outline"}
         size="sm"
         className="w-full"
       >
@@ -199,11 +205,11 @@ function MatchRow({
       <div className="grid grid-cols-3 items-stretch gap-2 text-center">
         <div className="flex flex-col items-center gap-2">
           <span className="flex w-full min-w-0 items-center justify-center gap-1 text-sm">
-            {official === "p1_win" && (
+            {shown === "p1_win" && (
               <Trophy className="h-3.5 w-3.5 shrink-0 text-primary" />
             )}
             <span
-              className={`min-w-0 truncate ${nameClass(official === "p1_win") ?? ""}`}
+              className={`min-w-0 truncate ${nameClass(shown === "p1_win") ?? ""}`}
               title={match.p1Name}
             >
               {match.p1Name}
@@ -213,7 +219,7 @@ function MatchRow({
         </div>
 
         <div className="flex flex-col items-center gap-2">
-          {official === "draw" ? (
+          {shown === "draw" && !match.canReport ? (
             <Badge variant="outline">{labels.draw}</Badge>
           ) : official === "double_loss" ? (
             <Badge variant="outline">{labels.doubleLoss}</Badge>
@@ -225,11 +231,11 @@ function MatchRow({
 
         <div className="flex flex-col items-center gap-2">
           <span className="flex w-full min-w-0 items-center justify-center gap-1 text-sm">
-            {official === "p2_win" && (
+            {shown === "p2_win" && (
               <Trophy className="h-3.5 w-3.5 shrink-0 text-primary" />
             )}
             <span
-              className={`min-w-0 truncate ${nameClass(official === "p2_win") ?? ""}`}
+              className={`min-w-0 truncate ${nameClass(shown === "p2_win") ?? ""}`}
               title={match.p2Name}
             >
               {match.p2Name}
@@ -238,21 +244,12 @@ function MatchRow({
           {match.canReport && reportButton("p2_win", labels.win)}
         </div>
 
-        {(match.isMine || (!decided && reported)) && (
+        {(match.isMine || provisional) && (
           <div className="col-span-3 flex flex-wrap justify-center gap-1.5">
             {match.isMine && <Badge variant="outline">{labels.mine}</Badge>}
-            {/* Only worth showing while TOM hasn't spoken: once the official
-                result lands, the self-report is noise. */}
-            {!decided && reported && (
-              <Badge variant="secondary">
-                {labels.reportedPrefix}{" "}
-                {reported === "draw"
-                  ? labels.draw
-                  : reported === "p1_win"
-                    ? match.p1Name
-                    : match.p2Name}
-              </Badge>
-            )}
+            {/* Drops off the moment the next import lands the official result —
+                by then the report has been keyed in and is just noise. */}
+            {provisional && <Badge variant="secondary">{labels.unconfirmed}</Badge>}
           </div>
         )}
       </div>

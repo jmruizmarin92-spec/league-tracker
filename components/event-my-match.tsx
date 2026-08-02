@@ -53,9 +53,12 @@ export function EventMyMatch({
   const theirs = (r: EventReportedResult | EventOfficialResult) =>
     (iAmP1 && r === "p2_win") || (!iAmP1 && r === "p1_win");
 
-  const iWon = mine(official);
-  const iLost = theirs(official);
   const decided = official !== "pending" && official !== "bye";
+  // Until TOM rules, what was reported at the table is what the card shows —
+  // same trophy-and-muted-name treatment as a session match.
+  const shown = decided ? official : reported;
+  const iWon = !!shown && mine(shown);
+  const iLost = !!shown && theirs(shown);
 
   // Player-centric buttons, mapped to the p1/p2 shape the RPC stores.
   const winValue = iAmP1 ? "p1_win" : "p2_win";

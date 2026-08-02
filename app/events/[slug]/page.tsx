@@ -203,9 +203,11 @@ export default async function EventPage({
     official: m.official_result,
     reported: m.reported_result,
     isMine: isMine(m),
-    // Only your own undecided pairing: once TOM has ruled there is nothing to
-    // signal, and other people's matches are none of your business.
-    canReport: isMine(m) && !!m.player2_id && m.official_result === "pending",
+    // Your own undecided pairing, or any of them if you're running the event —
+    // the judge takes a call at the table as often as the players tap it in.
+    // Once TOM has ruled there is nothing left to signal.
+    canReport:
+      (isMine(m) || admin) && !!m.player2_id && m.official_result === "pending",
   });
 
   // Age divisions run as parallel tournaments in the same file.
@@ -507,11 +509,13 @@ export default async function EventPage({
                 tableLabel: tt("tableLabel"),
                 mine: tt("mine"),
                 win: tt("win"),
-                reportedPrefix: tt("reportedPrefix"),
+                unconfirmed: tt("unconfirmed"),
                 noPairings: tt("noPairings"),
               }}
             />
-            <p className="text-sm text-muted-foreground">{tt("officialNote")}</p>
+            <p className="text-sm text-muted-foreground">
+              {admin ? tt("officialNoteAdmin") : tt("officialNote")}
+            </p>
           </CardContent>
         </Card>
       ),
