@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# TOM exports used as local test fixtures. Real .tdf files carry entrants'
+# full names, birthdates and Pokémon IDs — including minors, since Junior and
+# Senior are age divisions — so they must never reach the repo. The tests that
+# read them (lib/tdf-sequence.test.ts) skip themselves when they're absent.
+/TOMFiles
+/tombye

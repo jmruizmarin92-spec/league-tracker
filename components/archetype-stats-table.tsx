@@ -21,6 +21,9 @@ type Props =
         archetype: string;
         players: string;
         percentage: string;
+        games: string;
+        record: string;
+        winRate: string;
       };
     };
 
@@ -30,6 +33,12 @@ export function ArchetypeStatsTable(props: Props) {
   if (rows.length === 0) {
     return <p className="text-sm text-muted-foreground">{labels.empty}</p>;
   }
+
+  // Events only have a win/loss record when their results were imported from
+  // TOM. Without one the record columns would be a wall of zeroes, so they
+  // only appear once there is something in them.
+  const eventRecord =
+    props.showRecord === false && props.rows.some((r) => r.games > 0);
 
   return (
     <div className="overflow-x-auto">
@@ -53,9 +62,24 @@ export function ArchetypeStatsTable(props: Props) {
                 </th>
               </>
             ) : (
-              <th className="py-2 text-right font-medium">
-                {props.labels.percentage}
-              </th>
+              <>
+                <th className="py-2 pr-2 text-right font-medium">
+                  {props.labels.percentage}
+                </th>
+                {eventRecord && (
+                  <>
+                    <th className="py-2 pr-2 text-right font-medium">
+                      {props.labels.games}
+                    </th>
+                    <th className="py-2 pr-2 text-right font-medium">
+                      {props.labels.record}
+                    </th>
+                    <th className="py-2 text-right font-medium">
+                      {props.labels.winRate}
+                    </th>
+                  </>
+                )}
+              </>
             )}
           </tr>
         </thead>
@@ -100,9 +124,22 @@ export function ArchetypeStatsTable(props: Props) {
                   <td className="py-2 pr-2 text-right tabular-nums text-muted-foreground">
                     {r.players}
                   </td>
-                  <td className="py-2 text-right font-medium tabular-nums">
+                  <td className="py-2 pr-2 text-right font-medium tabular-nums">
                     {(r.percentage * 100).toFixed(1)}%
                   </td>
+                  {eventRecord && (
+                    <>
+                      <td className="py-2 pr-2 text-right tabular-nums text-muted-foreground">
+                        {r.games}
+                      </td>
+                      <td className="py-2 pr-2 text-right tabular-nums text-muted-foreground">
+                        {r.wins}-{r.losses}-{r.draws}
+                      </td>
+                      <td className="py-2 text-right font-medium tabular-nums">
+                        {r.games > 0 ? `${(r.winRate * 100).toFixed(1)}%` : "—"}
+                      </td>
+                    </>
+                  )}
                 </tr>
               ))}
         </tbody>

@@ -13,14 +13,20 @@ export type ArchetypeStatRow = {
   players: number; // distinct players who've publicly used this archetype
 };
 
-// Usage-only stats for events — events have no matches/results, so there's
-// no win/loss record, just how many (and what share of) registered players
-// declared this archetype.
+// Stats for events. Usage (how many, and what share of, registered players
+// declared this archetype) is always available; the win/loss record only
+// exists for events whose results were imported from TOM, so `games` is 0 on
+// an event that was never imported and the record columns stay hidden.
 export type EventArchetypeStatRow = {
   key: string;
   chip: ArchetypeChip | null;
   players: number;
   percentage: number; // players / field size, 0..1
+  games: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  winRate: number; // wins / games, 0..1
 };
 
 type MatchRow = {
@@ -192,22 +198,43 @@ type EventRegRow = {
   archetype2: string | null;
 };
 
-// Usage stats for a fixed set of events. Events don't run matches on-site,
-// so there's no win/loss record — just how many distinct players publicly
-// declared each archetype, out of the registered field.
+type EventMatchStatRow = {
+  event_id: string;
+  player1_id: string;
+  player2_id: string | null;
+  official_result:
+    | "pending"
+    | "p1_win"
+    | "p2_win"
+    | "draw"
+    | "double_loss"
+    | "bye";
+};
+
+// Usage stats for a fixed set of events, plus a win/loss record wherever the
+// event's results were imported from TOM. Only public picks count, and a match
+// credits every archetype slot the player declared for that event — the same
+// rules the league version uses, so the two tables mean the same thing.
 async function computeArchetypeStatsForEvents(
   eventIds: string[],
 ): Promise<EventArchetypeStatRow[]> {
   if (eventIds.length === 0) return [];
   const supabase = await createClient();
 
-  const { data: regData } = await supabase
-    .from("event_registrations")
-    .select("player_id, archetype1, archetype2")
-    .in("event_id", eventIds)
-    .eq("status", "registered")
-    .eq("archetype_public", true)
-    .or("archetype1.not.is.null,archetype2.not.is.null");
+  const [{ data: regData }, { data: matchData }] = await Promise.all([
+    supabase
+      .from("event_registrations")
+      .select("player_id, archetype1, archetype2")
+      .in("event_id", eventIds)
+      .eq("status", "registered")
+      .eq("archetype_public", true)
+      .or("archetype1.not.is.null,archetype2.not.is.null"),
+    supabase
+      .from("event_matches")
+      .select("event_id, player1_id, player2_id, official_result")
+      .in("event_id", eventIds)
+      .neq("official_result", "pending"),
+  ]);
 
   const regs = (regData as EventRegRow[] | null) ?? [];
   const fieldSize = new Set(regs.map((r) => r.player_id)).size;
@@ -226,20 +253,74 @@ async function computeArchetypeStatsForEvents(
     }
   }
 
+  // Which archetypes a player declared, keyed by player. A registration row is
+  // unique per (event, player) and we only ever aggregate across the given set
+  // of events, so a player's picks are looked up by id alone.
+  const archByPlayer = new Map<string, string[]>();
+  for (const r of regs) {
+    const keys = [r.archetype1, r.archetype2].filter((k): k is string => !!k);
+    if (keys.length > 0) archByPlayer.set(r.player_id, keys);
+  }
+
+  type Tally = { games: number; wins: number; draws: number; losses: number };
+  const records = new Map<string, Tally>();
+  const credit = (playerId: string, outcome: "win" | "draw" | "loss") => {
+    const keys = archByPlayer.get(playerId);
+    if (!keys) return;
+    for (const key of keys) {
+      let rec = records.get(key);
+      if (!rec) {
+        rec = { games: 0, wins: 0, draws: 0, losses: 0 };
+        records.set(key, rec);
+      }
+      rec.games += 1;
+      if (outcome === "win") rec.wins += 1;
+      else if (outcome === "draw") rec.draws += 1;
+      else rec.losses += 1;
+    }
+  };
+
+  for (const m of (matchData as EventMatchStatRow[] | null) ?? []) {
+    if (m.official_result === "bye" || m.player2_id === null) {
+      credit(m.player1_id, "win");
+    } else if (m.official_result === "double_loss") {
+      credit(m.player1_id, "loss");
+      credit(m.player2_id, "loss");
+    } else if (m.official_result === "p1_win") {
+      credit(m.player1_id, "win");
+      credit(m.player2_id, "loss");
+    } else if (m.official_result === "p2_win") {
+      credit(m.player2_id, "win");
+      credit(m.player1_id, "loss");
+    } else if (m.official_result === "draw") {
+      credit(m.player1_id, "draw");
+      credit(m.player2_id, "draw");
+    }
+  }
+
   const chips = await resolveArchetypes([...playersByKey.keys()]);
 
   const rows: EventArchetypeStatRow[] = [...playersByKey.entries()].map(
-    ([key, players]) => ({
-      key,
-      chip: chips.get(key) ?? null,
-      players: players.size,
-      percentage: fieldSize > 0 ? players.size / fieldSize : 0,
-    }),
+    ([key, players]) => {
+      const rec = records.get(key) ?? { games: 0, wins: 0, draws: 0, losses: 0 };
+      return {
+        key,
+        chip: chips.get(key) ?? null,
+        players: players.size,
+        percentage: fieldSize > 0 ? players.size / fieldSize : 0,
+        games: rec.games,
+        wins: rec.wins,
+        draws: rec.draws,
+        losses: rec.losses,
+        winRate: rec.games > 0 ? rec.wins / rec.games : 0,
+      };
+    },
   );
 
   rows.sort(
     (a, b) =>
       b.players - a.players ||
+      b.winRate - a.winRate ||
       (a.chip?.name ?? a.key).localeCompare(b.chip?.name ?? b.key),
   );
   return rows;

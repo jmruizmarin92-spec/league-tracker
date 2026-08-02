@@ -87,6 +87,9 @@ export default async function OverallArchetypeStatsPage({
               archetype: tEvent("archetype"),
               players: tEvent("players"),
               percentage: tEvent("percentage"),
+              games: tEvent("games"),
+              record: tEvent("record"),
+              winRate: tEvent("winRate"),
             }}
           />
         </CardContent>

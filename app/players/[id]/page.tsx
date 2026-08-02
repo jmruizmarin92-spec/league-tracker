@@ -14,6 +14,7 @@ import {
 import {
   getPlayer,
   getPlayerMatchRecords,
+  getPlayerEventHistory,
   getLeagueConfigs,
   getArchetypeHistory,
 } from "@/lib/player-profile-data";
@@ -36,9 +37,10 @@ export default async function PlayerProfilePage({
   const sp = await searchParams;
   const gameFilter = sp.game === "tcg" || sp.game === "vgc" ? sp.game : null;
 
-  const [viewerProfile, allRecords] = await Promise.all([
+  const [viewerProfile, allRecords, allEventHistory] = await Promise.all([
     getProfile(),
     getPlayerMatchRecords(id),
+    getPlayerEventHistory(id),
   ]);
   const isOwner = viewerProfile != null && player.user_id === viewerProfile.id;
   const canSeePrivate = isOwner || !!viewerProfile?.is_admin;
@@ -53,6 +55,13 @@ export default async function PlayerProfilePage({
   const career = computeCareerTotals(records);
   const leagueHistory = computeLeagueHistory(records, leagueConfigs);
   const h2h = computeHeadToHead(records);
+
+  // Events sit in their own section rather than in the career totals above:
+  // those numbers have always meant league play, and folding event results in
+  // would silently change what they say.
+  const eventHistory = gameFilter
+    ? allEventHistory.filter((e) => e.game === gameFilter)
+    : allEventHistory;
 
   const allArchetypeHistory = await getArchetypeHistory(id, canSeePrivate);
   const archetypeHistory = gameFilter
@@ -165,6 +174,47 @@ export default async function PlayerProfilePage({
           )}
         </CardContent>
       </Card>
+
+      {/* Standalone events (results imported from TOM) */}
+      {eventHistory.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("eventsTitle")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="flex flex-col divide-y">
+              {eventHistory.map((e) => (
+                <li
+                  key={e.eventId}
+                  className="flex flex-wrap items-center justify-between gap-2 py-2"
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <Link
+                      href={`/events/${e.slug}`}
+                      className="truncate font-medium hover:text-primary"
+                    >
+                      {e.name}
+                    </Link>
+                    {e.place != null && (
+                      <Badge variant={e.place === 1 ? "default" : "outline"}>
+                        {t("eventPlace", { place: e.place })}
+                      </Badge>
+                    )}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {[
+                      formatDateTime(e.startsAt),
+                      t("eventRecord", { w: e.wins, l: e.losses, d: e.draws }),
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Archetype history */}
       <Card>

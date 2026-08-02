@@ -30,7 +30,9 @@ export default async function EventArchetypeStatsPage({
           ]}
         />
         <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("hint")}</p>
+        <p className="text-sm text-muted-foreground">
+          {rows.some((r) => r.games > 0) ? t("hintWithResults") : t("hint")}
+        </p>
       </div>
 
       <Card>
@@ -43,6 +45,9 @@ export default async function EventArchetypeStatsPage({
               archetype: t("archetype"),
               players: t("players"),
               percentage: t("percentage"),
+              games: t("games"),
+              record: t("record"),
+              winRate: t("winRate"),
             }}
           />
         </CardContent>

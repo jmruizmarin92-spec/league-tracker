@@ -61,6 +61,111 @@ export async function getPlayerMatchRecords(
   return records;
 }
 
+export type PlayerEventHistoryRow = {
+  eventId: string;
+  slug: string;
+  name: string;
+  game: Game | null;
+  category: string | null;
+  startsAt: string | null;
+  wins: number;
+  losses: number;
+  draws: number;
+  place: number | null; // official final placing, once TOM closed the event
+};
+
+type EventMatchHistoryRow = {
+  event_id: string;
+  player1_id: string;
+  player2_id: string | null;
+  official_result:
+    | "pending"
+    | "p1_win"
+    | "p2_win"
+    | "draw"
+    | "double_loss"
+    | "bye";
+  events: {
+    slug: string;
+    name: string;
+    game: Game;
+    category: string | null;
+    starts_at: string | null;
+  } | null;
+};
+
+// This player's record at standalone events, built from the pairings imported
+// from TOM plus the official final placing when the event was closed. Kept out
+// of the league career totals on purpose: those numbers mean "league play",
+// and quietly folding event results into them would change what the profile
+// has always claimed.
+export async function getPlayerEventHistory(
+  playerId: string,
+): Promise<PlayerEventHistoryRow[]> {
+  const supabase = await createClient();
+  const [{ data: matchData }, { data: placeData }] = await Promise.all([
+    supabase
+      .from("event_matches")
+      .select(
+        "event_id, player1_id, player2_id, official_result, events(slug, name, game, category, starts_at)",
+      )
+      .or(`player1_id.eq.${playerId},player2_id.eq.${playerId}`)
+      .neq("official_result", "pending"),
+    supabase
+      .from("event_standings")
+      .select("event_id, place")
+      .eq("player_id", playerId),
+  ]);
+
+  const places = new Map(
+    ((placeData as { event_id: string; place: number }[] | null) ?? []).map(
+      (p) => [p.event_id, p.place],
+    ),
+  );
+
+  const rows = new Map<string, PlayerEventHistoryRow>();
+  for (const m of (matchData as EventMatchHistoryRow[] | null) ?? []) {
+    const e = m.events;
+    if (!e) continue;
+    let row = rows.get(m.event_id);
+    if (!row) {
+      row = {
+        eventId: m.event_id,
+        slug: e.slug,
+        name: e.name,
+        game: e.game,
+        category: e.category,
+        startsAt: e.starts_at,
+        wins: 0,
+        losses: 0,
+        draws: 0,
+        place: places.get(m.event_id) ?? null,
+      };
+      rows.set(m.event_id, row);
+    }
+
+    // A bye counts as a win, matching how sessions score it.
+    if (m.official_result === "bye" || m.player2_id === null) {
+      row.wins += 1;
+    } else if (m.official_result === "double_loss") {
+      row.losses += 1;
+    } else if (m.official_result === "draw") {
+      row.draws += 1;
+    } else {
+      const isP1 = m.player1_id === playerId;
+      if ((m.official_result === "p1_win") === isP1) row.wins += 1;
+      else row.losses += 1;
+    }
+  }
+
+  // An event can have a placing with no imported pairings only if the rounds
+  // were cleared afterwards; nothing to show there, so placings alone don't
+  // create a row.
+  return [...rows.values()].sort((a, b) =>
+    (b.startsAt ?? "").localeCompare(a.startsAt ?? ""),
+  );
+}
+
 export async function getLeagueConfigs(
   leagueIds: string[],
 ): Promise<Map<string, LeaguePointConfig & { name: string; slug: string; game: Game }>> {
