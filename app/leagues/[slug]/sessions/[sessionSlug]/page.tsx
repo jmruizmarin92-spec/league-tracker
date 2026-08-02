@@ -39,7 +39,7 @@ import {
 } from "@/components/participants-list";
 import { StandingsTable } from "@/components/standings-table";
 import { RoundsTabs, type RoundView } from "@/components/rounds-tabs";
-import { SessionTabs, type SessionTab } from "@/components/session-tabs";
+import { PageTabs, type PageTab } from "@/components/page-tabs";
 import { MyMatchCard, type MyMatch } from "@/components/my-match-card";
 import { CopyPokemonIds } from "@/components/copy-pokemon-ids";
 import { RealtimeRefresher } from "@/components/realtime-refresher";
@@ -278,7 +278,7 @@ export default async function SessionPage({
   // long scroll. All panels are rendered server-side in this pass — the tabs
   // only pick what's visible. Panels drop their own card title: the tab label is
   // the heading, so repeating it inside would be doubled chrome.
-  const tabs: SessionTab[] = [];
+  const tabs: PageTab[] = [];
 
   if (rounds.length > 0 || (admin && !isComplete)) {
     tabs.push({
@@ -758,7 +758,7 @@ export default async function SessionPage({
         </Card>
       )}
 
-      {tabs.length > 0 && <SessionTabs tabs={tabs} initial={initialTab} />}
+      {tabs.length > 0 && <PageTabs tabs={tabs} initial={initialTab} />}
     </main>
   );
 }

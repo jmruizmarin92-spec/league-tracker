@@ -3,23 +3,23 @@
 import { useState, type ReactNode } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export type SessionTab = {
+export type PageTab = {
   value: string;
   label: string;
   content: ReactNode;
 };
 
 /**
- * Top-level tab strip for the session page. Every panel is rendered on the
- * server up front — the tabs only decide what is visible, they don't defer any
- * fetching. `line` variant so the round pills nested inside the rounds panel
- * still read as a separate, lower level of navigation.
+ * Top-level tab strip for the session and event pages. Every panel is rendered
+ * on the server up front — the tabs only decide what is visible, they don't
+ * defer any fetching. `line` variant so the round pills nested inside the
+ * rounds/pairings panel still read as a separate, lower level of navigation.
  */
-export function SessionTabs({
+export function PageTabs({
   tabs,
   initial,
 }: {
-  tabs: SessionTab[];
+  tabs: PageTab[];
   initial: string;
 }) {
   const [active, setActive] = useState(initial);
