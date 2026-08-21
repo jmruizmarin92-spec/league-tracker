@@ -1,10 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import type { MatchResult } from "@/lib/scoring";
 
+// pairing: pairings published, round not started (no results; admin may
+// re-pair). playing: in progress. complete: allowed by the schema, unused.
+export type RoundStatus = "pairing" | "playing" | "complete";
+
 export type DbRound = {
   id: string;
   number: number;
-  status: string;
+  status: RoundStatus;
   timer_duration_seconds: number | null;
   timer_ends_at: string | null;
   timer_remaining_seconds: number | null;

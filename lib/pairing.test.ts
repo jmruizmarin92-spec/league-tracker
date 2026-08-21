@@ -1,9 +1,11 @@
 import { describe, it, expect } from "vitest";
 import {
   generateSwissPairings,
+  repairSwissPairings,
   pairKey,
   recommendedRoundCount,
   type Pairing,
+  type SeatedPairing,
 } from "./pairing";
 
 function playedKeys(p: Pairing[]): string[] {
@@ -133,6 +135,168 @@ describe("generateSwissPairings", () => {
       expectEveryoneOnce(p!, ids);
       for (const k of playedKeys(p!)) played.add(k);
     }
+  });
+});
+
+describe("repairSwissPairings", () => {
+  // Eight players ranked a..h, paired top-down: a–b (1), c–d (2), e–f (3), g–h (4).
+  const eight = ["a", "b", "c", "d", "e", "f", "g", "h"];
+  const seat = (p: Pairing[]): SeatedPairing[] => {
+    let t = 0;
+    return p.map((x) => ({ ...x, table: x.player2 === null ? null : ++t }));
+  };
+  const posted8 = seat(generateSwissPairings(eight)!);
+
+  it("returns the posted pairing unchanged when nothing changed", () => {
+    expect(repairSwissPairings(eight, posted8)).toEqual(posted8);
+  });
+
+  it("gives the orphan a bye when their opponent drops from an even field", () => {
+    // d drops: c is left alone, no bye to fill.
+    const r = repairSwissPairings(
+      eight.filter((x) => x !== "d"),
+      posted8,
+    )!;
+    expect(r).toEqual([
+      { player1: "a", player2: "b", table: 1 },
+      { player1: "e", player2: "f", table: 3 },
+      { player1: "g", player2: "h", table: 4 },
+      { player1: "c", player2: null, table: null },
+    ]);
+  });
+
+  it("pairs the orphan with the bye holder, keeping every other table", () => {
+    // Nine players: i has the bye. d drops -> c plays i at the freed table 2.
+    const nine = [...eight, "i"];
+    const posted = seat(generateSwissPairings(nine)!);
+    expect(posted.at(-1)).toEqual({ player1: "i", player2: null, table: null });
+    const r = repairSwissPairings(
+      nine.filter((x) => x !== "d"),
+      posted,
+    )!;
+    expect(r).toEqual([
+      { player1: "a", player2: "b", table: 1 },
+      { player1: "c", player2: "i", table: 2 },
+      { player1: "e", player2: "f", table: 3 },
+      { player1: "g", player2: "h", table: 4 },
+    ]);
+  });
+
+  it("seats a late joiner against the bye holder", () => {
+    const nine = [...eight, "i"];
+    const posted = seat(generateSwissPairings(nine)!);
+    const r = repairSwissPairings([...nine, "j"], posted)!;
+    expect(r.slice(0, 4)).toEqual(posted.slice(0, 4));
+    expect(r[4]).toEqual({ player1: "i", player2: "j", table: 5 });
+  });
+
+  it("gives a late joiner the bye on an even field", () => {
+    const r = repairSwissPairings([...eight, "i"], posted8)!;
+    expect(r.slice(0, 4)).toEqual(posted8);
+    expect(r[4]).toEqual({ player1: "i", player2: null, table: null });
+  });
+
+  it("dissolves the lowest table when the orphan and the bye holder already met", () => {
+    const nine = [...eight, "i"];
+    const posted = seat(generateSwissPairings(nine)!);
+    const played = new Set([pairKey("c", "i")]);
+    const r = repairSwissPairings(
+      nine.filter((x) => x !== "d"),
+      posted,
+      played,
+    )!;
+    // Tables 1 and 3 untouched; c, i, g, h re-paired fresh on tables 2 and 4.
+    expect(r).toContainEqual({ player1: "a", player2: "b", table: 1 });
+    expect(r).toContainEqual({ player1: "e", player2: "f", table: 3 });
+    expectNoRematch(r, played);
+    expectEveryoneOnce(r, nine.filter((x) => x !== "d"));
+    expect(r.map((x) => x.table)).toEqual([1, 2, 3, 4]);
+    const bottom = r.filter((x) => x.table === 2 || x.table === 4);
+    expect(bottom.flatMap((x) => [x.player1, x.player2]).sort()).toEqual(
+      ["c", "g", "h", "i"],
+    );
+  });
+
+  it("falls back to a full re-pair when no partial fix exists", () => {
+    // Five players posted a–b (1), c–d (2), e bye. d drops and c has already
+    // met e: the pool {c, e} is a rematch, so table 1 is dissolved too and
+    // a, b, c, e are re-paired from scratch.
+    const five = ["a", "b", "c", "d", "e"];
+    const posted = seat(generateSwissPairings(five)!);
+    const played = new Set([pairKey("c", "e")]);
+    const r = repairSwissPairings(
+      ["a", "b", "c", "e"],
+      posted,
+      played,
+    )!;
+    expectNoRematch(r, played);
+    expectEveryoneOnce(r, ["a", "b", "c", "e"]);
+    expect(r.map((x) => x.table)).toEqual([1, 2]);
+  });
+
+  it("does not second-guess an intact table, even if it is a rematch", () => {
+    // Posted a–b (1), c–d (2). d drops. a–b is intact and stays as posted (the
+    // repair only re-pairs what the roster change broke); c takes the bye.
+    const four = ["a", "b", "c", "d"];
+    const posted = seat(generateSwissPairings(four)!);
+    const played = new Set([
+      pairKey("a", "b"),
+      pairKey("a", "c"),
+      pairKey("b", "c"),
+    ]);
+    expect(repairSwissPairings(["a", "b", "c"], posted, played)).toEqual([
+      { player1: "a", player2: "b", table: 1 },
+      { player1: "c", player2: null, table: null },
+    ]);
+  });
+
+  it("returns null when no rematch-free pairing exists at all", () => {
+    // Posted a–b (1), c–d (2). d drops, e joins, and every pair among
+    // a, b, c, e has already been played: neither the pool {c, e} nor the
+    // full field can be paired fresh.
+    const four = ["a", "b", "c", "d"];
+    const posted = seat(generateSwissPairings(four)!);
+    const played = new Set([
+      pairKey("c", "e"),
+      pairKey("a", "c"),
+      pairKey("a", "e"),
+      pairKey("b", "c"),
+      pairKey("b", "e"),
+      pairKey("a", "b"),
+    ]);
+    expect(repairSwissPairings(["a", "b", "c", "e"], posted, played)).toBeNull();
+  });
+
+  it("keeps every intact table even if the orphan already had a bye", () => {
+    // Six players posted a–b, c–d, e–f. f drops; e already had a bye, but a
+    // second one is preferable to dissolving a table that is still valid.
+    const six = ["a", "b", "c", "d", "e", "f"];
+    const posted = seat(generateSwissPairings(six)!);
+    const r = repairSwissPairings(
+      ["a", "b", "c", "d", "e"],
+      posted,
+      new Set(),
+      new Set(["e"]),
+    )!;
+    expect(r).toEqual([
+      { player1: "a", player2: "b", table: 1 },
+      { player1: "c", player2: "d", table: 2 },
+      { player1: "e", player2: null, table: null },
+    ]);
+  });
+
+  it("numbers a kept table that had no number (bye filled by a late joiner)", () => {
+    const posted: SeatedPairing[] = [
+      { player1: "a", player2: "b", table: 1 },
+      { player1: "c", player2: "d", table: 2 },
+      { player1: "e", player2: "f", table: null },
+    ];
+    const r = repairSwissPairings(["a", "b", "c", "d", "e", "f"], posted)!;
+    expect(r).toEqual([
+      { player1: "a", player2: "b", table: 1 },
+      { player1: "c", player2: "d", table: 2 },
+      { player1: "e", player2: "f", table: 3 },
+    ]);
   });
 });
 

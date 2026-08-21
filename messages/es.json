@@ -397,7 +397,16 @@
     "openDisplay": "Abrir pantalla completa ↗",
     "leagueStandingsLink": "Ver clasificación de la liga",
     "leagueArchetypesLink": "Ver estadísticas de arquetipos",
-    "tabManage": "Gestión"
+    "tabManage": "Gestión",
+    "roundStatusPairing": "Emparejamientos publicados",
+    "roundStatusPlaying": "En juego",
+    "roundNotStarted": "La ronda aún no ha empezado.",
+    "startRound": "Empezar ronda",
+    "repairRound": "Reemparejar",
+    "repairHint": "La inscripción ha cambiado desde que se publicaron los emparejamientos.",
+    "drop": "Retirar",
+    "undrop": "Readmitir",
+    "dropped": "Retirado"
   },
   "display": {
     "session": "Sesión",
@@ -411,6 +420,8 @@
     "pending": "Pendiente",
     "standings": "Clasificación",
     "noStandings": "Aún no hay clasificación.",
+    "roundStatusPairing": "Emparejamientos",
+    "roundStatusPlaying": "En juego",
     "rank": "#",
     "player": "Jugador",
     "points": "Pts",

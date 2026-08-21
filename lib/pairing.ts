@@ -81,6 +81,90 @@ export function generateSwissPairings(
   return null;
 }
 
+export type SeatedPairing = Pairing & { table: number | null }; // null = bye
+
+/**
+ * Re-pair a round whose pairings are published but not yet played, after the
+ * roster changed (drops, late joiners), keeping as much of the posted pairing
+ * as possible.
+ * @param ordered   Active player ids, best-standing first — standings as they
+ *                  were BEFORE this round (this round's matches excluded).
+ * @param existing  The round's current pairings with their table numbers.
+ * @param played    pairKey()s played in PREVIOUS rounds of the session.
+ * @param hadBye    Players who had a bye in a PREVIOUS round.
+ * @returns         The full new pairing for the round, seated, byes last — or
+ *                  `null` when even a full re-pair admits no rematch-free
+ *                  pairing (the caller leaves the round untouched).
+ *
+ * A table is "intact" when both its players are still active; intact tables
+ * are kept, with their table numbers, as long as the rest can be paired. The
+ * pool to re-pair is everyone active who is not at an intact table: orphans
+ * whose opponent dropped, the bye holder (a bye is never intact — it is the
+ * first thing to give up so an orphan gets a game), and players added since
+ * the pairings went up. The pool is paired with the same rules as a fresh
+ * round (`generateSwissPairings`: Swiss order, no rematch, bye to the lowest
+ * player without one). When the pool alone cannot be paired fresh, the intact
+ * table with the highest number (the lowest in the standings) is dissolved
+ * into the pool and we try again, down to a full re-pair of the round.
+ *
+ * Seating: kept tables keep their numbers; new pairings take the freed numbers
+ * in ascending order, then continue after the highest one; byes get none.
+ */
+export function repairSwissPairings(
+  ordered: string[],
+  existing: SeatedPairing[],
+  played: Set<string> = new Set(),
+  hadBye: Set<string> = new Set(),
+): SeatedPairing[] | null {
+  const active = new Set(ordered);
+  const intact = existing
+    .filter(
+      (p) =>
+        p.player2 !== null && active.has(p.player1) && active.has(p.player2),
+    )
+    .sort(byTable);
+
+  // keep = how many intact tables survive, counted from table 1 downwards.
+  for (let keep = intact.length; keep >= 0; keep--) {
+    const kept = intact.slice(0, keep);
+    const seated = new Set(kept.flatMap((p) => [p.player1, p.player2 as string]));
+    const pool = ordered.filter((id) => !seated.has(id));
+    const fresh = generateSwissPairings(pool, played, hadBye);
+    if (!fresh) continue;
+
+    const taken = new Set(
+      kept.map((p) => p.table).filter((t): t is number => t !== null),
+    );
+    let next = 1;
+    const nextFreeTable = () => {
+      while (taken.has(next)) next++;
+      taken.add(next);
+      return next;
+    };
+    const out: SeatedPairing[] = [
+      ...kept,
+      ...fresh.map((p) => ({
+        ...p,
+        table: p.player2 === null ? null : nextFreeTable(),
+      })),
+    ];
+    // A kept two-player table without a number (a bye filled by a late joiner
+    // keeps the bye's null table) gets one now, after the new tables.
+    for (const p of out) {
+      if (p.player2 !== null && p.table === null) p.table = nextFreeTable();
+    }
+    return out.sort(byTable);
+  }
+  return null;
+}
+
+// Table order, byes (null) last.
+function byTable(a: SeatedPairing, b: SeatedPairing): number {
+  if (a.table === null) return b.table === null ? 0 : 1;
+  if (b.table === null) return -1;
+  return a.table - b.table;
+}
+
 /**
  * Perfect matching of an even pool with no repeated pairKey, preferring (in
  * top-down order) the nearest unplayed opponent for each player. Greedy with

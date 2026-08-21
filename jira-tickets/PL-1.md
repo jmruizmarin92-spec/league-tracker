@@ -24,7 +24,7 @@ A rematch inside a single session is wrong by Play! Pokémon Swiss rules and pla
 * ✅ `matchFresh`: greedy with lookahead — a pick is only committed if the leftover players still admit a perfect rematch-free matching.
 * ✅ `hasPerfectMatching`: Edmonds' blossom algorithm (general graph — the "fresh opponents" graph isn't bipartite). O(V³), fine at league size.
 * ✅ `app/actions/rounds.ts`: `generateRoundAction` becomes a `useActionState`-shaped action `(prev, formData) => Promise<GenerateRoundState>`; returns `{ error }` when pairings are `null` or the RPC fails, `{}` otherwise.
-* ✅ `components/generate-round-button.tsx` (new, client): `useActionState` wrapper around the generate-round form, shows `state.error` next to the button, disables while pending.
+* ✅ `components/generate-round-button.tsx` (new, client): `useActionState` wrapper around the generate-round form, shows `state.error` next to the button, disables while pending. _(Generalised into `components/action-state-button.tsx` by PL-2 before this was committed, so the re-pair button could share it — the old file no longer exists.)_
 * ✅ `app/leagues/[slug]/sessions/[sessionSlug]/page.tsx`: swap the inline form for `GenerateRoundButton`.
 * ✅ `lib/pairing.test.ts`: cover backtracking, full round-robin with no repeats, bye climbing, bye-to-someone-who-had-one before rematch, `null` on exhausted even/odd fields, 40-player × 8-round run.
 * ✅ Update `docs/features/sessions-rounds.md` (`generateRoundAction`, `lib/pairing.ts` and new `generate-round-button.tsx` entries describe the lookahead + refusal behaviour).
@@ -59,13 +59,15 @@ The unchecked browser items need an admin Google login on prod — login is Goog
 - `app/actions/rounds.ts` (modified) — `GenerateRoundState` type, action returns `{ error? }`, RPC error propagated.
 
 **components**
-- `components/generate-round-button.tsx` (new) — client `useActionState` form showing the action error.
+- `components/generate-round-button.tsx` (new) — client `useActionState` form showing the action error. Superseded by `components/action-state-button.tsx` (PL-2) in the same uncommitted batch.
 - `app/leagues/[slug]/sessions/[sessionSlug]/page.tsx` (modified) — uses `GenerateRoundButton`.
 
 **docs**
 - `docs/features/sessions-rounds.md` (modified) — `generateRoundAction` error state, `lib/pairing.ts` lookahead/blossom/null description, `generate-round-button.tsx` component entry.
 
 ## Activity
+
+- 2026-08-21 — PL-2 replaced `generate-round-button.tsx` with the generic `action-state-button.tsx` (same behaviour, also used by re-pair) and renamed `GenerateRoundState` to `RoundActionState`; docs entry moved accordingly.
 
 - 2026-08-21 — Ticket created retroactively for the uncommitted work in the working tree (pairing rewrite + error surfacing). Status set to In Progress.
 - 2026-08-21 — Full test suite, lint and `next build` green. Committed `071bc92` and pushed to `origin/main`.

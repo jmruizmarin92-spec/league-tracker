@@ -102,9 +102,21 @@ export default async function SessionDisplayPage({
         {/* Current round pairings */}
         <section className="flex flex-col gap-4 lg:col-span-3">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <h2 className="text-2xl font-semibold">
-              {currentRound ? t("round", { n: currentRound.number }) : t("rounds")}
-            </h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl font-semibold">
+                {currentRound ? t("round", { n: currentRound.number }) : t("rounds")}
+              </h2>
+              {currentRound && (
+                <Badge
+                  variant={currentRound.status === "playing" ? "default" : "secondary"}
+                  className="text-base"
+                >
+                  {currentRound.status === "pairing"
+                    ? t("roundStatusPairing")
+                    : t("roundStatusPlaying")}
+                </Badge>
+              )}
+            </div>
             {currentRound && (
               <RoundTimer
                 roundId={currentRound.id}

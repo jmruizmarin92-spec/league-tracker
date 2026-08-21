@@ -195,6 +195,22 @@ export async function adminRemoveParticipantAction(formData: FormData) {
   revalidateSession();
 }
 
+// Admin: drop (or readmit) a participant once rounds exist. Unlike remove, the
+// player keeps their matches and standings; they just leave the active roster
+// for the next pairing / re-pair.
+export async function adminSetDroppedAction(formData: FormData) {
+  const id = String(formData.get("session_id") ?? "");
+  const player = String(formData.get("player_id") ?? "");
+  const dropped = String(formData.get("dropped") ?? "true") === "true";
+  if (!id || !player) return;
+  await rpc("admin_set_dropped", {
+    p_session: id,
+    p_player: player,
+    p_dropped: dropped,
+  });
+  revalidateSession();
+}
+
 export async function adminSetCheckedInAction(
   sessionId: string,
   playerId: string,

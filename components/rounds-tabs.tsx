@@ -1,9 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Trophy } from "lucide-react";
-import { reportMatchAction, deleteRoundAction } from "@/app/actions/rounds";
+import {
+  reportMatchAction,
+  deleteRoundAction,
+  repairRoundAction,
+} from "@/app/actions/rounds";
+import type { RoundStatus } from "@/lib/rounds";
 import { RoundTimer, type RoundTimerState } from "@/components/round-timer";
+import { StartRoundForm } from "@/components/start-round-form";
+import { ActionStateButton } from "@/components/action-state-button";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,6 +28,7 @@ export type MatchView = {
 export type RoundView = {
   id: string;
   number: number;
+  status: RoundStatus;
   isLast: boolean;
   matches: MatchView[];
   timer: RoundTimerState;
@@ -30,14 +38,27 @@ export function RoundsTabs({
   sessionId,
   admin,
   rounds,
+  defaultTimerMinutes,
+  needsRepair,
   labels,
 }: {
   sessionId: string;
   admin: boolean;
   rounds: RoundView[];
+  // Pre-fill for the "start round" clock (session round length, else 40).
+  defaultTimerMinutes: number;
+  // The roster changed since the latest round's pairings were posted (someone
+  // seated is no longer active, or an active player has no match).
+  needsRepair: boolean;
   labels: {
     roundWord: string;
     deleteRound: string;
+    statusPairing: string;
+    statusPlaying: string;
+    startRound: string;
+    repairRound: string;
+    repairHint: string;
+    notStarted: string;
     bye: string;
     loss: string;
     draw: string;
@@ -62,11 +83,15 @@ export function RoundsTabs({
   // Always land on the latest round. Controlled state (not defaultValue) so a
   // soft re-render — realtime update or a newly generated round — snaps back to
   // the latest tab; manual selection within the same set of rounds is kept.
+  // The snap happens during render (React's "adjust state on prop change"
+  // pattern) rather than in an effect, which would set state in an effect body.
   const latestRound = rounds[rounds.length - 1]?.id;
   const [active, setActive] = useState(latestRound);
-  useEffect(() => {
+  const [seenLatest, setSeenLatest] = useState(latestRound);
+  if (latestRound !== seenLatest) {
+    setSeenLatest(latestRound);
     setActive(latestRound);
-  }, [latestRound]);
+  }
 
   const nameClass = (won: boolean, decided: boolean) =>
     won
@@ -89,38 +114,84 @@ export function RoundsTabs({
 
       {rounds.map((round) => (
         <TabsContent key={round.id} value={round.id} className="flex flex-col gap-2">
-          {/* Admin-only: players read the clock off their own match card at the
-              top of the page, so it isn't duplicated here. */}
-          {round.isLast && admin && (
-            <div className="flex items-center justify-between gap-2">
-              <RoundTimer
-                roundId={round.id}
-                admin={admin}
-                timer={round.timer}
-                notify={{
-                  title: `${labels.roundWord} ${round.number}`,
-                  body: labels.timerNotifyBody,
-                  enable: labels.timerAlertsEnable,
-                  disable: labels.timerAlertsDisable,
-                  blocked: labels.timerAlertsBlocked,
-                }}
-                labels={{
-                  minutesPlaceholder: labels.timerMinutesPlaceholder,
-                  start: labels.timerStart,
-                  pause: labels.timerPause,
-                  resume: labels.timerResume,
-                  reset: labels.timerReset,
-                  paused: labels.timerPaused,
-                  timeUp: labels.timerTimeUp,
-                }}
+          {/* Latest round only: its lifecycle (pairings posted / playing) and
+              the admin controls for it. Players read the clock off their own
+              match card at the top of the page, so it isn't duplicated here. */}
+          {round.isLast && (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge
+                  variant={round.status === "playing" ? "default" : "secondary"}
+                >
+                  {round.status === "pairing"
+                    ? labels.statusPairing
+                    : labels.statusPlaying}
+                </Badge>
+                {round.status === "pairing" && !admin && (
+                  <span className="text-xs text-muted-foreground">
+                    {labels.notStarted}
+                  </span>
+                )}
+                {admin && round.status === "pairing" && (
+                  <StartRoundForm
+                    roundId={round.id}
+                    defaultMinutes={defaultTimerMinutes}
+                    labels={{
+                      minutes: labels.timerMinutesPlaceholder,
+                      start: labels.startRound,
+                    }}
+                  />
+                )}
+                {admin && round.status !== "pairing" && (
+                  <RoundTimer
+                    roundId={round.id}
+                    admin={admin}
+                    timer={round.timer}
+                    notify={{
+                      title: `${labels.roundWord} ${round.number}`,
+                      body: labels.timerNotifyBody,
+                      enable: labels.timerAlertsEnable,
+                      disable: labels.timerAlertsDisable,
+                      blocked: labels.timerAlertsBlocked,
+                    }}
+                    labels={{
+                      minutesPlaceholder: labels.timerMinutesPlaceholder,
+                      start: labels.timerStart,
+                      pause: labels.timerPause,
+                      resume: labels.timerResume,
+                      reset: labels.timerReset,
+                      paused: labels.timerPaused,
+                      timeUp: labels.timerTimeUp,
+                    }}
+                  />
+                )}
+              </div>
+              {admin && (
+                <form action={deleteRoundAction}>
+                  <input type="hidden" name="session_id" value={sessionId} />
+                  <input type="hidden" name="round_id" value={round.id} />
+                  <Button type="submit" variant="ghost" size="sm">
+                    {labels.deleteRound}
+                  </Button>
+                </form>
+              )}
+            </div>
+          )}
+          {/* Re-pair is only offered while pairings are posted and nothing has
+              been played: it replaces the round's matches. */}
+          {round.isLast && admin && round.status === "pairing" && (
+            <div className="flex flex-wrap items-center gap-3">
+              <ActionStateButton
+                action={repairRoundAction}
+                fields={{ session_id: sessionId, round_id: round.id }}
+                label={labels.repairRound}
+                variant={needsRepair ? "default" : "outline"}
               />
-              <form action={deleteRoundAction}>
-                <input type="hidden" name="session_id" value={sessionId} />
-                <input type="hidden" name="round_id" value={round.id} />
-                <Button type="submit" variant="ghost" size="sm">
-                  {labels.deleteRound}
-                </Button>
-              </form>
+              {needsRepair && (
+                <span className="text-xs text-muted-foreground">
+                  {labels.repairHint}
+                </span>
+              )}
             </div>
           )}
           <ul className="flex flex-col gap-2">
@@ -130,9 +201,12 @@ export function RoundsTabs({
                 m.result === "p2_win" ||
                 m.result === "loss";
               // Two-player matches: players report only their own pending game;
-              // admins can set or correct the result on any round.
+              // admins can set or correct the result on any round. Nothing is
+              // reportable before the round starts (the RPC refuses too).
               const canInput =
-                !!m.p2Name && (m.result === "pending" ? m.canReport : admin);
+                round.status !== "pairing" &&
+                !!m.p2Name &&
+                (m.result === "pending" ? m.canReport : admin);
               return (
                 <li
                   key={m.id}

@@ -27,8 +27,10 @@ import {
   adminSetParticipantArchetypesAction,
   setArchetypeVisibilityAction,
   adminSetCheckedInAction,
+  adminSetDroppedAction,
 } from "@/app/actions/sessions";
-import { GenerateRoundButton } from "@/components/generate-round-button";
+import { generateRoundAction } from "@/app/actions/rounds";
+import { ActionStateButton } from "@/components/action-state-button";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { AddParticipantForm } from "@/components/add-participant-form";
 import { EditSessionForm } from "@/components/edit-session-form";
@@ -149,11 +151,15 @@ export default async function SessionPage({
   const hasPending = matches.some((m) => m.result === "pending");
   const lastRoundNumber = rounds.at(-1)?.number ?? 0;
   const nextRoundNumber = lastRoundNumber + 1;
-  const recommendedRounds = recommendedRoundCount(registered.length);
+  // Active roster = registered and not dropped; dropped players keep their
+  // standings row but are no longer paired.
+  const activePlayers = registered.filter((p) => p.dropped_round === null);
+  const recommendedRounds = recommendedRoundCount(activePlayers.length);
 
   const roundViews: RoundView[] = rounds.map((r) => ({
     id: r.id,
     number: r.number,
+    status: r.status,
     isLast: r.number === lastRoundNumber,
     matches: matches
       .filter((m) => m.round_id === r.id)
@@ -194,6 +200,7 @@ export default async function SessionPage({
       ? {
           id: myMatchRow.id,
           roundNumber: latestRound.number,
+          roundStarted: latestRound.status !== "pairing",
           table: myMatchRow.table_number,
           iAmP1: myMatchRow.player1_id === myPlayerId,
           opponentName: (() => {
@@ -206,6 +213,26 @@ export default async function SessionPage({
           result: myMatchRow.result,
         }
       : null;
+
+  // Has the roster changed since the latest round's pairings went up? Only
+  // meaningful while that round is still in its pairing stage: someone seated
+  // who is no longer active, or an active player without a match.
+  const needsRepair = (() => {
+    if (!latestRound || latestRound.status !== "pairing") return false;
+    const activeIds = new Set(activePlayers.map((p) => p.player_id));
+    const roundMatches = matches.filter(
+      (m) => m.round_id === latestRound.id && m.result !== "loss",
+    );
+    const seated = new Set(
+      roundMatches.flatMap(
+        (m) => [m.player1_id, m.player2_id].filter(Boolean) as string[],
+      ),
+    );
+    return (
+      [...seated].some((pid) => !activeIds.has(pid)) ||
+      [...activeIds].some((pid) => !seated.has(pid))
+    );
+  })();
 
   const participantIds = new Set(participants.map((p) => p.player_id));
   const addable = admin
@@ -227,6 +254,11 @@ export default async function SessionPage({
     name: (
       <span className={p.is_me ? "font-medium" : undefined}>
         {pairingName(p)}
+        {p.dropped_round !== null && (
+          <Badge variant="outline" className="ml-2 align-middle">
+            {t("dropped")}
+          </Badge>
+        )}
       </span>
     ),
     chips: [p.archetype1, p.archetype2]
@@ -239,13 +271,31 @@ export default async function SessionPage({
       isPublic: p.archetype_public,
     },
     actions: (
-      <form action={adminRemoveParticipantAction}>
-        <input type="hidden" name="session_id" value={id} />
-        <input type="hidden" name="player_id" value={p.player_id} />
-        <Button type="submit" variant="ghost" size="sm">
-          {t("remove")}
-        </Button>
-      </form>
+      <>
+        {/* Drop keeps history; only meaningful once rounds exist (before that,
+            remove is the right tool) and for the registered roster. */}
+        {lastRoundNumber > 0 && p.status === "registered" && !isComplete && (
+          <form action={adminSetDroppedAction}>
+            <input type="hidden" name="session_id" value={id} />
+            <input type="hidden" name="player_id" value={p.player_id} />
+            <input
+              type="hidden"
+              name="dropped"
+              value={p.dropped_round === null ? "true" : "false"}
+            />
+            <Button type="submit" variant="ghost" size="sm">
+              {p.dropped_round === null ? t("drop") : t("undrop")}
+            </Button>
+          </form>
+        )}
+        <form action={adminRemoveParticipantAction}>
+          <input type="hidden" name="session_id" value={id} />
+          <input type="hidden" name="player_id" value={p.player_id} />
+          <Button type="submit" variant="ghost" size="sm">
+            {t("remove")}
+          </Button>
+        </form>
+      </>
     ),
   });
 
@@ -289,8 +339,9 @@ export default async function SessionPage({
           <CardContent className="flex flex-col gap-5">
             {admin && !isComplete && (
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <GenerateRoundButton
-                  sessionId={id}
+                <ActionStateButton
+                  action={generateRoundAction}
+                  fields={{ session_id: id }}
                   disabled={hasPending}
                   label={t("generateRound", { n: nextRoundNumber })}
                 />
@@ -313,9 +364,17 @@ export default async function SessionPage({
                 sessionId={id}
                 admin={admin}
                 rounds={roundViews}
+                defaultTimerMinutes={session.round_timer_minutes ?? 40}
+                needsRepair={needsRepair}
                 labels={{
                   roundWord: t("roundWord"),
                   deleteRound: t("deleteRound"),
+                  statusPairing: t("roundStatusPairing"),
+                  statusPlaying: t("roundStatusPlaying"),
+                  startRound: t("startRound"),
+                  repairRound: t("repairRound"),
+                  repairHint: t("repairHint"),
+                  notStarted: t("roundNotStarted"),
                   bye: t("bye"),
                   loss: t("loss"),
                   draw: t("draw"),
@@ -697,6 +756,7 @@ export default async function SessionPage({
             youWon: t("myMatchYouWon"),
             youLost: t("myMatchYouLost"),
             youDrew: t("myMatchYouDrew"),
+            notStarted: t("roundNotStarted"),
           }}
         />
       )}

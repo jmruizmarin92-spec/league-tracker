@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export type MyMatch = {
   id: string;
   roundNumber: number;
+  // Pairings posted but round not started: no reporting yet.
+  roundStarted: boolean;
   table: number | null;
   opponentName: string | null; // null = bye / loss
   iAmP1: boolean;
@@ -45,6 +47,7 @@ export function MyMatchCard({
     youWon: string;
     youLost: string;
     youDrew: string;
+    notStarted: string;
   };
 }) {
   const { iAmP1, result, opponentName } = match;
@@ -119,7 +122,9 @@ export function MyMatchCard({
               </span>
             </p>
 
-            {result === "pending" ? (
+            {result === "pending" && !match.roundStarted ? (
+              <p className="text-sm text-muted-foreground">{labels.notStarted}</p>
+            ) : result === "pending" ? (
               <div className="flex gap-2">
                 {reportButton(winResult, labels.win, false)}
                 {reportButton("draw", labels.draw, false)}
