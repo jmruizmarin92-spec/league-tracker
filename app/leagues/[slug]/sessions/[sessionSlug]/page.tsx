@@ -28,7 +28,7 @@ import {
   setArchetypeVisibilityAction,
   adminSetCheckedInAction,
 } from "@/app/actions/sessions";
-import { generateRoundAction } from "@/app/actions/rounds";
+import { GenerateRoundButton } from "@/components/generate-round-button";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { AddParticipantForm } from "@/components/add-participant-form";
 import { EditSessionForm } from "@/components/edit-session-form";
@@ -289,12 +289,11 @@ export default async function SessionPage({
           <CardContent className="flex flex-col gap-5">
             {admin && !isComplete && (
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <form action={generateRoundAction}>
-                  <input type="hidden" name="session_id" value={id} />
-                  <Button type="submit" size="sm" disabled={hasPending}>
-                    {t("generateRound", { n: nextRoundNumber })}
-                  </Button>
-                </form>
+                <GenerateRoundButton
+                  sessionId={id}
+                  disabled={hasPending}
+                  label={t("generateRound", { n: nextRoundNumber })}
+                />
                 {recommendedRounds > 0 && (
                   <span className="text-xs text-muted-foreground">
                     {t("recommendedRounds", { n: recommendedRounds })}

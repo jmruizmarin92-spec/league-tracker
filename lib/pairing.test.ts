@@ -1,5 +1,25 @@
 import { describe, it, expect } from "vitest";
-import { generateSwissPairings, pairKey, recommendedRoundCount } from "./pairing";
+import {
+  generateSwissPairings,
+  pairKey,
+  recommendedRoundCount,
+  type Pairing,
+} from "./pairing";
+
+function playedKeys(p: Pairing[]): string[] {
+  return p
+    .filter((x) => x.player2)
+    .map((x) => pairKey(x.player1, x.player2 as string));
+}
+
+function expectNoRematch(p: Pairing[], played: Set<string>) {
+  for (const k of playedKeys(p)) expect(played.has(k)).toBe(false);
+}
+
+function expectEveryoneOnce(p: Pairing[], ids: string[]) {
+  const seen = p.flatMap((x) => [x.player1, x.player2].filter(Boolean));
+  expect(seen.sort()).toEqual([...ids].sort());
+}
 
 describe("generateSwissPairings", () => {
   it("pairs an even field top-down", () => {
@@ -11,7 +31,7 @@ describe("generateSwissPairings", () => {
   });
 
   it("gives a bye to the lowest-ranked player on an odd field", () => {
-    const p = generateSwissPairings(["a", "b", "c"]);
+    const p = generateSwissPairings(["a", "b", "c"])!;
     expect(p).toContainEqual({ player1: "c", player2: null });
     // the bye is the only null-opponent pairing
     expect(p.filter((x) => x.player2 === null)).toHaveLength(1);
@@ -20,40 +40,99 @@ describe("generateSwissPairings", () => {
   });
 
   it("returns the bye as the last pairing", () => {
-    const p = generateSwissPairings(["a", "b", "c"]);
+    const p = generateSwissPairings(["a", "b", "c"])!;
     expect(p.at(-1)).toEqual({ player1: "c", player2: null });
   });
 
   it("avoids rematches when possible", () => {
     const played = new Set([pairKey("a", "b"), pairKey("c", "d")]);
-    const p = generateSwissPairings(["a", "b", "c", "d"], played);
-    for (const pair of p) {
-      if (pair.player2) {
-        expect(played.has(pairKey(pair.player1, pair.player2))).toBe(false);
-      }
+    const p = generateSwissPairings(["a", "b", "c", "d"], played)!;
+    expectNoRematch(p, played);
+  });
+
+  it("backtracks instead of leaving the bottom pair with a rematch", () => {
+    // Greedy would pair a–b and then be stuck with c–d again.
+    const played = new Set([pairKey("c", "d")]);
+    const p = generateSwissPairings(["a", "b", "c", "d"], played)!;
+    expect(p).toEqual([
+      { player1: "a", player2: "c" },
+      { player1: "b", player2: "d" },
+    ]);
+  });
+
+  it("never repeats a matchup across a full round-robin", () => {
+    const ids = ["a", "b", "c", "d", "e", "f"];
+    const played = new Set<string>();
+    for (let round = 1; round <= ids.length - 1; round++) {
+      const p = generateSwissPairings(ids, played);
+      expect(p, `round ${round}`).not.toBeNull();
+      expectNoRematch(p!, played);
+      expectEveryoneOnce(p!, ids);
+      for (const k of playedKeys(p!)) played.add(k);
     }
   });
 
   it("skips a player who already had a bye when assigning the next", () => {
-    const p = generateSwissPairings(["a", "b", "c"], new Set(), new Set(["c"]));
+    const p = generateSwissPairings(["a", "b", "c"], new Set(), new Set(["c"]))!;
     const bye = p.find((x) => x.player2 === null)!;
     expect(bye.player1).not.toBe("c");
     expect(bye.player1).toBe("b"); // next lowest without a bye
   });
 
-  it("falls back to a rematch if every remaining option was already played", () => {
-    // Only two players who have already met — must pair again.
+  it("moves the bye up the standings when that is the only fresh pairing", () => {
+    // e would get the bye by default, but then a has to pair inside a,b,c,d and
+    // has already met all three. Moving the bye one step up (to d) frees a–e.
+    const played = new Set([pairKey("a", "b"), pairKey("a", "c"), pairKey("a", "d")]);
+    const p = generateSwissPairings(["a", "b", "c", "d", "e"], played)!;
+    expectNoRematch(p, played);
+    expectEveryoneOnce(p, ["a", "b", "c", "d", "e"]);
+    const bye = p.find((x) => x.player2 === null)!;
+    expect(bye.player1).toBe("d"); // lowest bye-eligible player that unlocks a fresh pairing
+  });
+
+  it("gives the bye to someone who already had one before allowing a rematch", () => {
+    // Everyone has met everyone except c–d; the only fresh pairing needs a bye
+    // on a or b, both of whom already had one.
+    const played = new Set([
+      pairKey("a", "b"),
+      pairKey("a", "c"),
+      pairKey("a", "d"),
+      pairKey("b", "c"),
+      pairKey("b", "d"),
+    ]);
+    const p = generateSwissPairings(["a", "b", "c", "d", "e"], played, new Set(["a", "b"]))!;
+    expect(p).not.toBeNull();
+    expectNoRematch(p, played);
+  });
+
+  it("returns null when the only option is a rematch", () => {
+    // Only two players who have already met — refuse, don't repeat.
     const played = new Set([pairKey("a", "b")]);
-    const p = generateSwissPairings(["a", "b"], played);
-    expect(p).toEqual([{ player1: "a", player2: "b" }]);
+    expect(generateSwissPairings(["a", "b"], played)).toBeNull();
+  });
+
+  it("returns null when the field is exhausted on an odd count too", () => {
+    const played = new Set([pairKey("a", "b"), pairKey("a", "c"), pairKey("b", "c")]);
+    expect(generateSwissPairings(["a", "b", "c"], played)).toBeNull();
   });
 
   it("pairs everyone (no player left unpaired) on a larger even field", () => {
     const ids = ["a", "b", "c", "d", "e", "f"];
-    const p = generateSwissPairings(ids);
-    const seen = p.flatMap((x) => [x.player1, x.player2].filter(Boolean));
-    expect(new Set(seen).size).toBe(6);
+    const p = generateSwissPairings(ids)!;
+    expectEveryoneOnce(p, ids);
     expect(p).toHaveLength(3);
+  });
+
+  it("handles a league-sized field with several rounds played quickly", () => {
+    const ids = Array.from({ length: 40 }, (_, i) => `p${String(i).padStart(2, "0")}`);
+    const played = new Set<string>();
+    for (let round = 1; round <= 8; round++) {
+      const p = generateSwissPairings(ids, played);
+      expect(p, `round ${round}`).not.toBeNull();
+      expectNoRematch(p!, played);
+      expectEveryoneOnce(p!, ids);
+      for (const k of playedKeys(p!)) played.add(k);
+    }
   });
 });
 

@@ -9,9 +9,14 @@ import {
 import { computeStandings, type MatchInput } from "@/lib/scoring";
 import { generateSwissPairings, pairKey } from "@/lib/pairing";
 
-export async function generateRoundAction(formData: FormData) {
+export type GenerateRoundState = { error?: string };
+
+export async function generateRoundAction(
+  _prev: GenerateRoundState,
+  formData: FormData,
+): Promise<GenerateRoundState> {
   const sessionId = String(formData.get("session_id") ?? "");
-  if (!sessionId) return;
+  if (!sessionId) return {};
 
   const [matches, activeIds] = await Promise.all([
     getSessionMatches(sessionId),
@@ -49,14 +54,24 @@ export async function generateRoundAction(formData: FormData) {
     matches.filter((m) => m.result === "bye").map((m) => m.player1_id),
   );
 
+  // A matchup never repeats within a session. If every remaining option is a
+  // rematch the field is exhausted and the round is refused rather than paired.
   const pairings = generateSwissPairings(ordered, played, hadBye);
+  if (!pairings) {
+    return {
+      error:
+        "No se puede generar la ronda: todos los emparejamientos posibles ya se han jugado en esta sesión.",
+    };
+  }
 
   const supabase = await createClient();
-  await supabase.rpc("create_round", {
+  const { error } = await supabase.rpc("create_round", {
     p_session: sessionId,
     p_pairings: pairings,
   });
+  if (error) return { error: error.message };
   revalidatePath("/leagues/[slug]/sessions/[sessionSlug]", "page");
+  return {};
 }
 
 export async function reportMatchAction(formData: FormData) {
