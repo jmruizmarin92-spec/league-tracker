@@ -1,6 +1,6 @@
 # PL-1 — Never repeat a matchup within a session (Swiss pairing with lookahead)
 
-Status: In Review | Type: Task | Assignee: José María | Created: 2026-08-21 | Done: —
+Status: Done | Type: Task | Assignee: José María | Created: 2026-08-21 | Done: 2026-08-21
 
 ## Description
 
@@ -67,10 +67,10 @@ The unchecked browser items need an admin Google login on prod — login is Goog
 
 ## Activity
 
-- 2026-08-21 — PL-2 replaced `generate-round-button.tsx` with the generic `action-state-button.tsx` (same behaviour, also used by re-pair) and renamed `GenerateRoundState` to `RoundActionState`; docs entry moved accordingly.
-
 - 2026-08-21 — Ticket created retroactively for the uncommitted work in the working tree (pairing rewrite + error surfacing). Status set to In Progress.
 - 2026-08-21 — Full test suite, lint and `next build` green. Committed `071bc92` and pushed to `origin/main`.
 - 2026-08-21 — Vercel deployment of `071bc92` completed (12:57Z); public session/display/standings pages smoke-tested on prod. Status → In Review pending the manual admin browser checks in QA — Dev.
+- 2026-08-21 — PL-2 (`2624a77`) replaced `generate-round-button.tsx` with the generic `action-state-button.tsx` (same behaviour, also used by re-pair) and renamed `GenerateRoundState` to `RoundActionState`; docs entry moved accordingly. Deployed to prod 14:11Z (Vercel status `success`).
+- 2026-08-21 — Closed as Done on José María's call: the change is live on prod (`071bc92`, superseded in place by `2624a77`, both deployed green). The admin browser checks under QA — Dev were not run by Claude (no Google login / browser driver available) and stay unchecked here on purpose.
 
 Last updated: 2026-08-21
