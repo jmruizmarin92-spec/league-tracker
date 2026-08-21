@@ -43,3 +43,14 @@ Participant-level archetype edits live in `app/actions/sessions.ts` (`set_partic
 - `0036_event_archetypes.sql` — mirrors the whole pattern for events: adds `archetype1/2`, `archetype_public` to `event_registrations`, and `set_event_archetypes` (self, locked once `events.status = 'complete'` with the same null-slot exception), `admin_set_event_archetypes` (event admin, unrestricted), `set_event_archetype_visibility` (instant toggle).
 
 Locking mechanism: archetype picks lock automatically once the parent session/event transitions to `status = 'complete'`, enforced in the security-definer RPC itself (not just the UI) — the only escape hatch for a self-editing player is if they never recorded anything (both slots null); admins always bypass the lock via the separate `admin_set_*` RPCs.
+
+## Saved decks (PL-3)
+
+A player's usual combos ("Dragapult + Dudunsparce", "Raging Bolt + Ogerpon") are remembered per account and per game so they don't re-pick them every session.
+
+- `0043_player_decks.sql` — `player_decks` (`user_id` FK `auth.users`, `game`, `archetype1` not null, `archetype2` nullable, `last_used_at`; `pair_key` generated column = the unordered pair, unique per user+game so A+B and B+A are one deck). RLS: owner select; writes only through RPCs. `save_player_deck(p_game, p_a1, p_a2)` normalises (trim, lone slot 2 → slot 1, A+A → A, both empty → no-op) and upserts, bumping `last_used_at`; `delete_player_deck(p_id)`. The self RPCs `set_participant_archetypes` and `set_event_archetypes` are redefined to call `save_player_deck` with the league's / event's game after the update, so every submitted combo is auto-saved; the `admin_set_*` RPCs don't touch decks. Keyed by user rather than player so merges/claims never have to move rows.
+- `lib/decks.ts` — `Deck` type; `listMyDecks(game?)` (most recent first, chips resolved via `resolveArchetypes`, unresolvable keys dropped and empty decks hidden); `latestDeck(decks, game)`.
+- `app/actions/decks.ts` — `saveDeckAction` / `deleteDeckAction` for the explicit add/delete on `/me`.
+- `archetype-picker.tsx` — exports `ArchetypeCombobox`, `DeckChips`, `PickerDeck`; new optional `decks` (chip row above the slots, self mode only — tapping fills both slots, Save still required) and `prefilled` (shows `labels.prefilled`) props.
+- `saved-decks-manager.tsx` — `/me` card body: a TCG and a VGC block, each with the deck list (delete per row) and an add form (two comboboxes).
+- Session and event pages load `listMyDecks(game)` alongside the customs; when the player's row has no picks yet the picker's `initial` comes from `latestDeck` and `prefilled` is set — the DB row stays null until they press Save, so the roster still shows "Sin arquetipos" until then.

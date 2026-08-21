@@ -5,7 +5,7 @@ Player profiles, Pokémon Player ID / game ID, unclaimed ("managed") player reco
 ## Routes
 
 - `app/players/[id]/page.tsx` — public player profile: header (alias, Pokémon/game ID, managed badge), game filter (TCG/VGC), career totals, per-league history, archetype history (respects private/public + owner/admin visibility), head-to-head table.
-- `app/me/page.tsx` — the logged-in user's own profile page: edit own fields via `PlayerFieldsForm`, or (if no linked player yet) browse/request-claim unclaimed managed players.
+- `app/me/page.tsx` — the logged-in user's own profile page: edit own fields via `PlayerFieldsForm`, manage saved decks (`SavedDecksManager`, see `archetypes.md` → Saved decks), or (if no linked player yet) browse/request-claim unclaimed managed players.
 - `app/admin/players/page.tsx` — admin console, tabbed: pending claims (approve/reject), create managed player, full player list with inline quick-edit of Pokémon/game ID (`PlayerQuickEditRow`) and delete, merge-duplicates form (only from unlinked → into linked players).
 - `app/admin/players/[id]/page.tsx` — admin edit page for one player's full field set (alias, first/last name, Pokémon ID, game ID) via `PlayerFieldsForm`.
 

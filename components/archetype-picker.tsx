@@ -14,7 +14,61 @@ import {
 
 type Option = { key: string; name: string; icon: string | null };
 
-function ArchetypeCombobox({
+// A saved combo offered as a one-tap chip (PL-3): the two keys it fills the
+// slots with, plus the resolved chips to render.
+export type PickerDeck = {
+  id: string;
+  a1: string;
+  a2: string;
+  chips: Option[];
+};
+
+export function DeckChips({
+  decks,
+  onPick,
+  selectedA1,
+  selectedA2,
+}: {
+  decks: PickerDeck[];
+  onPick: (deck: PickerDeck) => void;
+  selectedA1?: string;
+  selectedA2?: string;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {decks.map((d) => {
+        const active =
+          selectedA1 !== undefined &&
+          ((d.a1 === selectedA1 && d.a2 === selectedA2) ||
+            (d.a1 === selectedA2 && d.a2 === selectedA1));
+        return (
+          <button
+            key={d.id}
+            type="button"
+            onClick={() => onPick(d)}
+            aria-pressed={active}
+            className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-sm hover:bg-accent ${
+              active ? "border-primary bg-accent" : ""
+            }`}
+          >
+            {d.chips.map((c, i) => (
+              <span key={c.key} className="flex items-center gap-1">
+                {i > 0 && <span className="text-muted-foreground">+</span>}
+                {c.icon && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={c.icon} alt="" className="h-5 w-5" />
+                )}
+                <span className="truncate">{c.name}</span>
+              </span>
+            ))}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function ArchetypeCombobox({
   options,
   value,
   onChange,
@@ -125,6 +179,8 @@ export function ArchetypePicker({
   adminAction,
   onVisibilityChange,
   extraFields,
+  decks,
+  prefilled,
   labels,
 }: {
   // The session/event id this picker edits, and the hidden-field name the
@@ -144,9 +200,17 @@ export function ArchetypePicker({
   // Extra hidden fields the action needs beyond contextId/playerId/a1/a2/is_public
   // (e.g. a slug for revalidatePath).
   extraFields?: Record<string, string>;
+  // Saved combos to offer as one-tap chips (self mode; PL-3). Tapping one
+  // fills both slots — Save is still required.
+  decks?: PickerDeck[];
+  // True when `initial` came from the player's last-used deck rather than the
+  // row itself: shows a note that it still needs saving.
+  prefilled?: boolean;
   labels: {
     title: string;
     hint: string;
+    decks?: string;
+    prefilled?: string;
     slot1: string;
     slot2: string;
     placeholder: string;
@@ -194,6 +258,27 @@ export function ArchetypePicker({
         ))}
 
       <p className="text-sm text-muted-foreground">{labels.hint}</p>
+
+      {!playerId && decks && decks.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          {labels.decks && (
+            <span className="text-sm font-medium">{labels.decks}</span>
+          )}
+          <DeckChips
+            decks={decks}
+            selectedA1={a1}
+            selectedA2={a2}
+            onPick={(d) => {
+              setA1(d.a1);
+              setA2(d.a2);
+            }}
+          />
+        </div>
+      )}
+
+      {prefilled && labels.prefilled && (
+        <p className="text-sm text-muted-foreground">{labels.prefilled}</p>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">

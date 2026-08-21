@@ -13,6 +13,7 @@ import { listPlayers, getPlayersByIds } from "@/lib/players";
 import { pairingName } from "@/lib/player-name";
 import { formatDateTime, formatCost } from "@/lib/format";
 import { resolveArchetypes, listCustoms, type ArchetypeChip } from "@/lib/archetypes";
+import { listMyDecks, latestDeck } from "@/lib/decks";
 import { getRounds, getSessionMatches } from "@/lib/rounds";
 import { computeStandings, type MatchInput } from "@/lib/scoring";
 import { recommendedRoundCount } from "@/lib/pairing";
@@ -67,13 +68,15 @@ export default async function SessionPage({
   const sessionLabel =
     session.name ?? formatDateTime(session.starts_at) ?? t("session");
 
-  const [admin, participants, myPart, user, customsAll] = await Promise.all([
-    session.league ? isLeagueAdmin(session.league.id) : Promise.resolve(false),
-    listParticipants(id),
-    getMyParticipation(id),
-    getUser(),
-    game ? listCustoms(game) : Promise.resolve([]),
-  ]);
+  const [admin, participants, myPart, user, customsAll, myDecks] =
+    await Promise.all([
+      session.league ? isLeagueAdmin(session.league.id) : Promise.resolve(false),
+      listParticipants(id),
+      getMyParticipation(id),
+      getUser(),
+      game ? listCustoms(game) : Promise.resolve([]),
+      game ? listMyDecks(game) : Promise.resolve([]),
+    ]);
 
   const chips = await resolveArchetypes(
     participants.flatMap((p) => [p.archetype1, p.archetype2]),
@@ -98,6 +101,11 @@ export default async function SessionPage({
         .map((k) => chips.get(k))
         .filter((c): c is ArchetypeChip => !!c)
     : [];
+  // Saved decks (PL-3): chips for the self picker, plus a prefill from the
+  // most recently used deck when this row has no picks yet (Save still
+  // required — the row stays null until then).
+  const myHasPicks = !!myPart && (!!myPart.archetype1 || !!myPart.archetype2);
+  const prefillDeck = !myHasPicks && game ? latestDeck(myDecks, game) : null;
 
   // Pokémon IDs of every participant (registered + waitlist) for tournament
   // upload; players without an ID on their profile are omitted from the copy
@@ -792,15 +800,19 @@ export default async function SessionPage({
                 contextIdField="session_id"
                 customs={activeCustoms}
                 initial={{
-                  a1: myPart.archetype1 ?? "",
-                  a2: myPart.archetype2 ?? "",
+                  a1: myPart.archetype1 ?? prefillDeck?.a1 ?? "",
+                  a2: myPart.archetype2 ?? prefillDeck?.a2 ?? "",
                   isPublic: myPart.archetype_public,
                 }}
+                decks={myDecks}
+                prefilled={!!prefillDeck}
                 action={setMyArchetypesAction}
                 onVisibilityChange={setArchetypeVisibilityAction.bind(null, id)}
                 labels={{
                   title: t("myArchetypes"),
                   hint: t("archHint"),
+                  decks: t("archDecks"),
+                  prefilled: t("archPrefilled"),
                   slot1: t("arch1"),
                   slot2: t("arch2"),
                   placeholder: t("archPlaceholder"),

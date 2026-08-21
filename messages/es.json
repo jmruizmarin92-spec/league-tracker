@@ -179,6 +179,8 @@
     "archEditClose": "Cerrar",
     "archNone": "Sin arquetipos",
     "archLocked": "Este evento está finalizado; tu arquetipo ya no se puede editar. Si necesitas corregirlo, contacta con la organización.",
+    "archDecks": "Mis mazos",
+    "archPrefilled": "Hemos precargado tu último mazo. Pulsa Guardar para confirmarlo.",
     "archetypesLink": "Ver estadísticas de arquetipos"
   },
   "eventTom": {
@@ -353,6 +355,8 @@
     "archEditClose": "Cerrar",
     "archNone": "Sin arquetipos",
     "archLocked": "Esta sesión está finalizada; tu arquetipo ya no se puede editar. Si necesitas corregirlo, contacta con un administrador.",
+    "archDecks": "Mis mazos",
+    "archPrefilled": "Hemos precargado tu último mazo. Pulsa Guardar para confirmarlo.",
     "standings": "Clasificación",
     "rank": "#",
     "player": "Jugador",
@@ -581,7 +585,21 @@
     "claimCta": "Solicitar",
     "noUnclaimed": "No hay jugadores disponibles para vincular.",
     "pendingTitle": "Solicitudes pendientes",
-    "statusPending": "Pendiente"
+    "statusPending": "Pendiente",
+    "decksTitle": "Mazos guardados",
+    "decksDesc": "Las combinaciones de arquetipos que sueles jugar. Cada vez que guardas tus arquetipos en una sesión o evento se añaden aquí, y en el selector aparecen como atajos.",
+    "decksTcg": "TCG",
+    "decksVgc": "VGC",
+    "decksNone": "Aún no tienes mazos guardados.",
+    "deckSlot1": "Arquetipo 1",
+    "deckSlot2": "Arquetipo 2",
+    "deckPlaceholder": "Sin elegir",
+    "deckSearch": "Buscar…",
+    "deckClear": "Ninguno",
+    "deckNoResults": "Sin resultados.",
+    "deckAdd": "Añadir mazo",
+    "deckAdded": "Añadido.",
+    "deckDelete": "Eliminar"
   },
   "adminPlayers": {
     "title": "Jugadores",

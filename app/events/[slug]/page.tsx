@@ -26,6 +26,7 @@ import { getUser, getProfile } from "@/lib/auth";
 import { pairingName } from "@/lib/player-name";
 import { formatDateTime, formatCost } from "@/lib/format";
 import { resolveArchetypes, listCustoms, type ArchetypeChip } from "@/lib/archetypes";
+import { listMyDecks, latestDeck } from "@/lib/decks";
 import {
   adminRemoveRegistrationAction,
   setEventStatusAction,
@@ -92,6 +93,7 @@ export default async function EventPage({
     tomMatches,
     tomPlaces,
     myPlayer,
+    myDecks,
   ] = await Promise.all([
     isEventAdmin(event.id),
     listRegistrations(event.id),
@@ -104,6 +106,7 @@ export default async function EventPage({
     getEventMatches(event.id),
     getEventStandings(event.id),
     getMyPlayer(),
+    listMyDecks(event.game),
   ]);
   const isSiteAdmin = !!viewerProfile?.is_admin;
   const lists = admin ? await getEventLists(event.id) : new Map();
@@ -138,6 +141,11 @@ export default async function EventPage({
         .map((k) => chips.get(k))
         .filter((c): c is ArchetypeChip => !!c)
     : [];
+  // Saved decks (PL-3): chips for the self picker, plus a prefill from the
+  // most recently used deck when this registration has no picks yet (Save
+  // still required — the row stays null until then).
+  const myHasPicks = !!myReg && (!!myReg.archetype1 || !!myReg.archetype2);
+  const prefillDeck = !myHasPicks ? latestDeck(myDecks, event.game) : null;
 
   // Registration + list submission close a set number of minutes before the
   // start (default 60). Admins are never locked out so they can still fix a
@@ -1012,10 +1020,12 @@ export default async function EventPage({
                 contextIdField="event_id"
                 customs={activeCustoms}
                 initial={{
-                  a1: myReg.archetype1 ?? "",
-                  a2: myReg.archetype2 ?? "",
+                  a1: myReg.archetype1 ?? prefillDeck?.a1 ?? "",
+                  a2: myReg.archetype2 ?? prefillDeck?.a2 ?? "",
                   isPublic: myReg.archetype_public,
                 }}
+                decks={myDecks}
+                prefilled={!!prefillDeck}
                 action={setMyEventArchetypesAction}
                 extraFields={{ slug }}
                 onVisibilityChange={setEventArchetypeVisibilityAction.bind(
@@ -1026,6 +1036,8 @@ export default async function EventPage({
                 labels={{
                   title: t("myArchetypes"),
                   hint: t("archHint"),
+                  decks: t("archDecks"),
+                  prefilled: t("archPrefilled"),
                   slot1: t("arch1"),
                   slot2: t("arch2"),
                   placeholder: t("archPlaceholder"),
