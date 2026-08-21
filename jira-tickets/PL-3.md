@@ -1,6 +1,6 @@
 # PL-3 — Saved decks: remember a player's archetype combos and prefill the picker
 
-Status: In Review | Type: Story | Assignee: José María | Created: 2026-08-21 | Done: —
+Status: Done | Type: Story | Assignee: José María | Created: 2026-08-21 | Done: 2026-08-21
 
 ## Description
 
@@ -32,14 +32,17 @@ Clarified in chat (2026-08-21):
 * ✅ `messages/es.json`: `session`/`event` keys `archDecks`, `archPrefilled`; `me` keys for the decks card.
 * ✅ `docs/features/archetypes.md` and `docs/features/players.md`.
 * ✅ Migration applied in Supabase (José María, 2026-08-21, right after the file was written).
-* Commit — pending: the working tree also holds PL-2's uncommitted changes in `messages/es.json`, the session page and `jira-tickets/INDEX.md`, so a PL-3-only commit can't be staged cleanly until PL-2 is committed first.
+* ✅ Commit `0a5d199` on `main`, pushed 2026-08-21 (PL-2 had been committed separately beforehand, so the commit is PL-3-only).
+* ✅ Vercel deployment for `0a5d199` finished `success` (GitHub deployments API, 2026-08-21 14:24 UTC).
 
 ## QA — Dev
 
 - [x] ✅ `npx tsc --noEmit` clean (2026-08-21).
 - [x] ✅ `eslint` clean on every file touched by this ticket (2026-08-21).
 - [x] ✅ Migration applied on Supabase (2026-08-21).
-- [ ] SQL verified: `save_player_deck` dedupes the reversed pair (`select save_player_deck('tcg','pkm:887','pkm:982')` twice with the keys swapped → one row, `last_used_at` bumped); `set_participant_archetypes` inserts into `player_decks`; `admin_set_participant_archetypes` does not.
+- [x] ✅ Live DB probe via REST with the anon key (2026-08-21): `player_decks` exists (anon select → `permission denied`, as intended — only `authenticated` can read its own rows); `save_player_deck`, `delete_player_deck` and the redefined `set_participant_archetypes` all answer with their own `Not authenticated` guard, so the functions are in place.
+- [x] ✅ Prod smoke (2026-08-21): `/` and `/arquetipos` 200, `/me` redirects to `/login`, on `pkmgranada.vercel.app` (the old `league-tracker-granada.vercel.app` hostname now 307s there).
+- [ ] SQL verified with a logged-in user: `save_player_deck` dedupes the reversed pair (`save_player_deck('tcg','pkm:887','pkm:982')` twice with the keys swapped → one row, `last_used_at` bumped); `set_participant_archetypes` inserts into `player_decks`; `admin_set_participant_archetypes` does not.
 - [ ] Browser: save archetypes in a session → deck appears on `/me` and as a chip in another session of the same game; not in a session of the other game.
 - [ ] Browser: new session, no picks → slots prefilled with the last-used deck + note; roster still shows "Sin arquetipos" until Save.
 - [ ] Browser: tap a deck chip → both slots change; Save persists them.
@@ -73,5 +76,6 @@ Clarified in chat (2026-08-21):
 - 2026-08-21 — Ticket created after clarifying questions (picker + /me, auto-named, prefill last-used, auto-save every distinct combo). Status set to In Progress.
 - 2026-08-21 — Migration 0043 applied in Supabase by José María.
 - 2026-08-21 — Implementation done locally; tsc + eslint clean. Status set to In Review. Pending: SQL/browser QA, commit (after PL-2 is committed — shared files).
+- 2026-08-21 — Committed `0a5d199`, pushed to `main`; Vercel deploy success; live RPC/table probe and prod smoke OK. Status set to Done. Browser QA of the chips/prefill//me flows still unchecked (see QA — Dev).
 
 Last updated: 2026-08-21
