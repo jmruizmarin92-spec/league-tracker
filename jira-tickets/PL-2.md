@@ -40,7 +40,7 @@ Clarified in chat (2026-08-21):
 * ✅ `messages/es.json`: new `session` keys (`roundStatusPairing/Playing`, `roundNotStarted`, `startRound`, `repairRound`, `repairHint`, `drop`, `undrop`, `dropped`) and `display` keys (`roundStatusPairing/Playing`).
 * ✅ `docs/features/sessions-rounds.md`: round lifecycle, drop, re-pair, components, RPCs, migration list.
 * ✅ Apply the migration in Supabase before deploying (see DEPLOYMENT.md) — applied by José María, verified via REST.
-* Commit.
+* ✅ Commit — `2624a77` on `main`, pushed 2026-08-21; Vercel deployment of that sha reported `success` (GitHub deployments API) and the live display page on `league-tracker-granada.vercel.app` serves the new status badge.
 
 ## QA — Dev
 
@@ -49,6 +49,7 @@ Clarified in chat (2026-08-21):
 - [x] ✅ `eslint` clean on every file touched by this ticket; the remaining project lint problems (`round-timer.tsx`, `theme-toggle.tsx`, `app/admin/events/page.tsx`) are pre-existing and untouched (2026-08-21).
 - [x] ✅ Migration applied on Supabase and verified via REST with the publishable key (2026-08-21): `start_round`/`repair_round`/`start_round_timer` answer `Round not found` for a fake id, `admin_set_dropped` answers `Not allowed`, `drop_participant` is `permission denied` (42501), `session_participants.dropped_round` selectable, all 23 existing rounds read `playing`.
 - [x] ✅ `npm run build` clean (2026-08-21).
+- [x] ✅ Deployed: Vercel build of `2624a77` succeeded; `GET /leagues/tcg-war-lotus-verano/sessions/2026-08-14/display` on prod returns 200 with the "En juego" badge (2026-08-21).
 - [ ] Browser: generate a round → status "Emparejamientos publicados", no win/draw buttons for players or admin; my-match card shows the not-started note; display shows "Emparejamientos".
 - [ ] Browser: "Empezar ronda" with 30 min → status "En juego", timer running, report buttons appear; display shows "En juego".
 - [ ] Browser: "Empezar ronda" with 0 min → playing, no clock, timer "Iniciar" still available in the admin timer block.
@@ -93,5 +94,7 @@ Clarified in chat (2026-08-21):
 - 2026-08-21 — Implementation done locally: migration, pure repair + tests, actions, components, pages, i18n, docs. vitest 92/92, tsc clean. Pending: apply migration, browser QA, commit.
 
 - 2026-08-21 — Migration 0042 applied to the live project and verified; build clean; committed and pushed to main (Vercel auto-deploy). Status → In Review pending browser QA.
+
+- 2026-08-21 — Live in production (Vercel `2624a77`, verified on the display page). Still In Review: the browser QA scenarios (generate → start → report, drop → re-pair, leave-as-drop) have not been clicked through by anyone, so Done is not set yet.
 
 Last updated: 2026-08-21
