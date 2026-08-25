@@ -26,6 +26,7 @@ import {
 } from "@/app/actions/leagues";
 import { Input } from "@/components/ui/input";
 import { LeagueDetailsForm } from "@/components/league-details-form";
+import { listStores } from "@/lib/stores";
 import { LeaguePointsForm } from "@/components/league-points-form";
 import { LeagueDurationForm } from "@/components/league-duration-form";
 import { LeagueScheduleForm } from "@/components/league-schedule-form";
@@ -49,6 +50,7 @@ export default async function LeagueAdminPage({
 
   const t = await getTranslations("leagueAdmin");
   const tp = await getTranslations("leaguePrizes");
+  const stores = await listStores();
   const [admins, addable, viewerProfile, matchSessions, awards] = await Promise.all([
     listLeagueAdmins(league.id),
     listAddableUsers(league.id),
@@ -126,7 +128,9 @@ export default async function LeagueAdminPage({
               game: league.game,
               format: league.format,
               prizes: league.prizes,
+              storeId: league.store_id,
             }}
+            stores={stores.map((s) => ({ id: s.id, name: s.name }))}
             labels={{
               name: t("fieldName"),
               subtitle: t("fieldSubtitle"),
@@ -136,6 +140,9 @@ export default async function LeagueAdminPage({
               formatPlaceholder: t("formatPlaceholder"),
               prizes: t("fieldPrizes"),
               prizesHint: t("prizesHint"),
+              store: t("fieldStore"),
+              storeNone: t("storeNone"),
+              storeHint: t("storeHint"),
               save: t("save"),
               saved: t("saved"),
             }}

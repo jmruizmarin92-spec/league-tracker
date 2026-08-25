@@ -52,6 +52,10 @@ export async function createEventAction(
   const prizes = capText(String(formData.get("prizes") ?? ""), 1000);
   const listRequired = String(formData.get("list_required") ?? "") === "true";
   const lockMinutes = parseLockMinutes(String(formData.get("list_lock_minutes") ?? ""));
+  const storeId = String(formData.get("store_id") ?? "").trim();
+  const leagueId = String(formData.get("league_id") ?? "").trim();
+  const tournamentId = parseTournamentId(String(formData.get("tournament_id") ?? ""));
+  const status = String(formData.get("status") ?? "open");
 
   if (!name) return { error: "Introduce un nombre." };
   if (game !== "tcg" && game !== "vgc") return { error: "Elige un juego." };
@@ -61,6 +65,10 @@ export async function createEventAction(
   if (category && !isCategory(category)) return { error: "Categoría no válida." };
   if (externalUrl && !isHttpUrl(externalUrl)) {
     return { error: "El enlace externo no es una URL válida." };
+  }
+  if (tournamentId === "invalid") return { error: "El Tournament ID no es válido." };
+  if (status !== "open" && status !== "closed" && status !== "complete") {
+    return { error: "Estado no válido." };
   }
   const cost = costRaw === "" ? 0 : Number(costRaw);
   if (Number.isNaN(cost) || cost < 0) return { error: "Coste no válido." };
@@ -84,11 +92,37 @@ export async function createEventAction(
     p_category: category || null,
     p_subtitle: subtitle || null,
     p_list_lock_minutes: lockMinutes,
+    p_league_id: leagueId || null,
+    p_tournament_id: tournamentId,
+    p_status: status,
+    p_store_id: storeId || null,
   });
-  if (error) return { error: error.message };
+  if (error) return { error: friendlyEventError(error.message, tournamentId) };
 
   revalidatePath("/");
+  if (leagueId) revalidatePath("/leagues", "layout");
   redirect(`/events/${slug}`);
+}
+
+// TOM tournament ids look like 26-08-001970; we only insist on something
+// short and printable so a hand-typed one from another region still fits.
+function parseTournamentId(raw: string): string | null | "invalid" {
+  const v = raw.trim();
+  if (v === "") return null;
+  if (v.length > 40 || !/^[\w.-]+$/.test(v)) return "invalid";
+  return v;
+}
+
+// The RPC raises on a duplicate tournament id and the unique index does too
+// on a direct update; both come back as raw SQL text, so translate them.
+function friendlyEventError(message: string, tournamentId: string | null): string {
+  if (
+    tournamentId &&
+    (/already exists/i.test(message) || /events_tournament_id_key/.test(message))
+  ) {
+    return `Ya existe un evento con el Tournament ID ${tournamentId}.`;
+  }
+  return message;
 }
 
 export async function updateEventAction(
@@ -109,6 +143,9 @@ export async function updateEventAction(
   const prizes = capText(String(formData.get("prizes") ?? ""), 1000);
   const listRequired = String(formData.get("list_required") ?? "") === "true";
   const lockMinutes = parseLockMinutes(String(formData.get("list_lock_minutes") ?? ""));
+  const storeId = String(formData.get("store_id") ?? "").trim();
+  const leagueId = String(formData.get("league_id") ?? "").trim();
+  const tournamentId = parseTournamentId(String(formData.get("tournament_id") ?? ""));
 
   if (!name) return { error: "Introduce un nombre." };
   if (category && !isCategory(category)) return { error: "Categoría no válida." };
@@ -118,6 +155,7 @@ export async function updateEventAction(
   if (externalUrl && !isHttpUrl(externalUrl)) {
     return { error: "El enlace externo no es una URL válida." };
   }
+  if (tournamentId === "invalid") return { error: "El Tournament ID no es válido." };
   const cost = costRaw === "" ? 0 : Number(costRaw);
   if (Number.isNaN(cost) || cost < 0) return { error: "Coste no válido." };
   const capacity = capacityRaw === "" ? null : Number(capacityRaw);
@@ -141,12 +179,16 @@ export async function updateEventAction(
       list_required: listRequired,
       list_lock_minutes: lockMinutes ?? DEFAULT_LIST_LOCK_MINUTES,
       capacity,
+      store_id: storeId || null,
+      league_id: leagueId || null,
+      tournament_id: tournamentId,
     })
     .eq("id", eventId);
-  if (error) return { error: error.message };
+  if (error) return { error: friendlyEventError(error.message, tournamentId) };
 
   revalidatePath(`/events/${slug}`);
   revalidatePath("/");
+  revalidatePath("/leagues", "layout");
   return { ok: true };
 }
 

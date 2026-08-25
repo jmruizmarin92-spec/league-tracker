@@ -27,8 +27,21 @@ export type League = {
   archived_at: string | null;
   starts_month: string | null;
   ends_month: string | null;
+  // The store/organiser this season belongs to (0045); the store carries the
+  // permanent Play! Pokémon League ID a pasted tournament page resolves.
+  store_id: string | null;
   created_at: string;
 };
+
+export const getLeagueById = cache(async (id: string): Promise<League | null> => {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("leagues")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  return data as League | null;
+});
 
 export async function listLeagues(): Promise<League[]> {
   const supabase = await createClient();

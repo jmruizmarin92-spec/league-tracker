@@ -4,12 +4,17 @@ import { listLeagues, formatLabel } from "@/lib/leagues";
 import { getProfile } from "@/lib/auth";
 import { formatMonthRange } from "@/lib/format";
 import { CreateLeagueForm } from "@/components/create-league-form";
+import { listStores } from "@/lib/stores";
 import { GameBadge } from "@/components/game-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function LeaguesPage() {
   const t = await getTranslations("leagues");
-  const [leagues, profile] = await Promise.all([listLeagues(), getProfile()]);
+  const [leagues, profile, stores] = await Promise.all([
+    listLeagues(),
+    getProfile(),
+    listStores(),
+  ]);
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
@@ -58,6 +63,7 @@ export default async function LeaguesPage() {
           </CardHeader>
           <CardContent>
             <CreateLeagueForm
+              stores={stores.map((s) => ({ id: s.id, name: s.name }))}
               labels={{
                 name: t("fieldName"),
                 game: t("fieldGame"),
@@ -67,6 +73,8 @@ export default async function LeaguesPage() {
                 description: t("fieldDescription"),
                 startMonth: t("fieldStartMonth"),
                 endMonth: t("fieldEndMonth"),
+                store: t("fieldStore"),
+                storeNone: t("storeNone"),
                 cta: t("createCta"),
               }}
             />

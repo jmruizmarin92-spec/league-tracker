@@ -56,6 +56,7 @@ export async function SiteHeader() {
                 adminArea: t("adminArea"),
                 archetypes: t("archetypes"),
                 adminEvents: t("adminEvents"),
+                adminStores: t("adminStores"),
               }}
             />
           ) : (

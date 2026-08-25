@@ -5,7 +5,7 @@ A League is the top-level recurring competitive container: a schedule, a points 
 ## Routes
 
 - `app/leagues/page.tsx` — lists all leagues as cards (name, game badge, format, subtitle, month range); shows `CreateLeagueForm` to site admins.
-- `app/leagues/[slug]/page.tsx` — league home: header (name/game/format/subtitle/archived badge), description, duration + weekday/time summary, links to standings/archetypes/admin, session list, and (for league admins) a create-session form.
+- `app/leagues/[slug]/page.tsx` — league home: header (name/game/format/subtitle/store/archived badges), description, duration + weekday/time summary, links to standings/archetypes/admin, session list, an "Eventos de la liga" card listing standalone events with `events.league_id` = this league (only rendered when there are any; `listLeagueEvents` from `lib/events.ts`), and (for league admins) a create-session form.
 - `app/leagues/[slug]/admin/page.tsx` — league admin console: details form, points config, duration form, weekly schedule + bulk session generation, locations picklist (add/remove/default), admins management (add/remove co-admins), archive/reactivate toggle, and (site-admin only) hard delete.
 - `app/leagues/[slug]/clasificacion/page.tsx` — standings page; filters by trimestre or "general" (overall), computes `computeLeagueStandings` from all session matches, renders ranked table with points/wins/attended and prizes text.
 - `app/leagues/[slug]/arquetipos/page.tsx` — league-wide archetype usage stats via `computeLeagueArchetypeStats`, rendered in `ArchetypeStatsTable`.
@@ -13,8 +13,8 @@ A League is the top-level recurring competitive container: a schedule, a points 
 
 ## Server actions (`app/actions/leagues.ts`)
 
-- `createLeagueAction` — validates name/game/format/month range, calls RPC `create_league`, redirects to the new league.
-- `updateLeagueDetailsAction` — updates name, subtitle, game, format, prizes.
+- `createLeagueAction` — validates name/game/format/month range, calls RPC `create_league` (7 args since 0045, the last being `p_store_id`), redirects to the new league.
+- `updateLeagueDetailsAction` — updates name, subtitle, game, format, prizes and `store_id`.
 - `updateLeagueDurationAction` — updates `starts_month`/`ends_month` (validates end ≥ start).
 - `updateLeagueScheduleAction` — updates `session_weekday`, `session_time`, `default_cost`.
 - `generateLeagueSessionsAction` — calls RPC `generate_league_sessions`, returns count created.
@@ -26,15 +26,15 @@ A League is the top-level recurring competitive container: a schedule, a points 
 
 ## Lib logic
 
-- `lib/leagues.ts` — `League` type; `listLeagues`, `listActiveLeagues`, cached `getLeagueBySlug`, `listLeagueAdmins`, `isLeagueAdmin` (site-admin or league_member check), `getLeagueMatchesBySession` (matches grouped by session, feeds standings), `listAddableUsers`. Re-exports `Game`, `FORMATS_BY_GAME`, `formatLabel` from `league-format.ts`.
+- `lib/leagues.ts` — `League` type (with `store_id` since 0045); `listLeagues`, `listActiveLeagues`, cached `getLeagueBySlug`, cached `getLeagueById` (the event header's league link), `listLeagueAdmins`, `isLeagueAdmin` (site-admin or league_member check), `getLeagueMatchesBySession` (matches grouped by session, feeds standings), `listAddableUsers`. Re-exports `Game`, `FORMATS_BY_GAME`, `formatLabel` from `league-format.ts`.
 - `lib/league-standings.ts` — pure `computeLeagueStandings(sessions: MatchInput[][], cfg)`: aggregates wins/draws/losses/attendance across sessions; league points = wins×win + draws×draw + attended×attendance; attendance credited once per session regardless of game count; sorted by points then wins then id; ranked. Covered by `lib/league-standings.test.ts` (cross-session aggregation, bye counts as a win, attendance counted once per session even with multiple games, pending-only sessions yield no rows, configurable draw value).
 - `lib/league-format.ts` — `Game` type, `GAME_ROW_TINT` (UI color), `FORMATS_BY_GAME` (tcg: standard/glc; vgc: champions), `formatLabel`.
 - `lib/trimestre.ts` — defines 4 fixed quarters starting in July (1=Jul-Sep … 4=Apr-Jun); `trimestreOf(iso)`, `currentTrimestre()`, `ALL_TRIMESTRES`. Drives the standings-page quarter filter.
 
 ## Components
 
-- `create-league-form.tsx` — new-league form (name, game→format cascading select, month range with auto +2mo end suggestion, description).
-- `league-details-form.tsx` — edits name/subtitle/game/format/prizes.
+- `create-league-form.tsx` — new-league form (name, game→format cascading select, month range with auto +2mo end suggestion, store select, description).
+- `league-details-form.tsx` — edits name/subtitle/game/format/prizes and the store (`store_id`). A league is a season of a store; the store carries the permanent Play! Pokémon League ID that lets an event pasted from the organiser site resolve to it, and game + format + month range are what pick this season among the store's leagues (see `docs/features/events.md`, "Play! Pokémon paste").
 - `league-duration-form.tsx` — edits start/end month inputs.
 - `league-points-form.tsx` — edits win/attendance/draw point values.
 - `league-schedule-form.tsx` — edits weekday/time/default cost for recurring sessions.
@@ -43,7 +43,7 @@ A League is the top-level recurring competitive container: a schedule, a points 
 
 ## Database
 
-`leagues` (base table, columns added across several migrations): `id, name, slug (unique), description, game (tcg|vgc), win_value (default 3), attendance_value (default 1), draw_value (default 1), created_by, created_at, archived_at, starts_month, ends_month, format (check-constrained per game), subtitle, session_weekday, session_time, default_cost, prizes`. `locations`/`default_location` columns exist in code (not confirmed in the migration set reviewed).
+`leagues` (base table, columns added across several migrations): `id, name, slug (unique), description, game (tcg|vgc), win_value (default 3), attendance_value (default 1), draw_value (default 1), created_by, created_at, archived_at, starts_month, ends_month, format (check-constrained per game), subtitle, session_weekday, session_time, default_cost, prizes, store_id (0045: nullable FK → stores, on delete set null)`. 0044 briefly added `play_league_id` here; 0045 moved it to `stores` (one Play! id per store, shared by all its seasons) and dropped the column. `events.league_id` (0044) points back here with `on delete set null`, so deleting a league leaves its events standalone. `locations`/`default_location` columns exist in code (not confirmed in the migration set reviewed).
 
 `league_members`: `league_id, user_id, role (owner|admin)`, PK(league_id, user_id) — RLS-gated via `is_league_admin`/`is_league_owner`.
 

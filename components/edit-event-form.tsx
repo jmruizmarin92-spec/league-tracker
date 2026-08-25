@@ -7,6 +7,18 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  NONE,
+  type LeagueOption,
+  type StoreOption,
+} from "@/components/create-event-form";
 
 function toDatetimeLocalValue(iso: string | null): string {
   if (!iso) return "";
@@ -18,12 +30,19 @@ function toDatetimeLocalValue(iso: string | null): string {
 export function EditEventForm({
   eventId,
   slug,
+  stores,
+  leagues,
   defaults,
   labels,
 }: {
   eventId: string;
   slug: string;
+  stores: StoreOption[];
+  leagues: LeagueOption[];
   defaults: {
+    storeId: string | null;
+    leagueId: string | null;
+    tournamentId: string | null;
     name: string;
     subtitle: string | null;
     category: string | null;
@@ -46,7 +65,22 @@ export function EditEventForm({
   const [local, setLocal] = useState(toDatetimeLocalValue(defaults.startsAt));
   const [listRequired, setListRequired] = useState(defaults.listRequired);
   const [category, setCategory] = useState(defaults.category ?? "");
+  const [storeId, setStoreId] = useState(defaults.storeId ?? "");
+  const [leagueId, setLeagueId] = useState(defaults.leagueId ?? "");
   const iso = local ? new Date(local).toISOString() : "";
+  // The league picker follows the store (all leagues when none is chosen);
+  // archived ones are hidden unless this event already points at one.
+  const leagueOptions = leagues.filter(
+    (l) =>
+      (l.id === leagueId || !l.archived) && (storeId === "" || l.storeId === storeId),
+  );
+
+  function onStoreChange(v: string) {
+    const next = v === NONE ? "" : v;
+    setStoreId(next);
+    const current = leagues.find((l) => l.id === leagueId);
+    if (next && current && current.storeId !== next) setLeagueId("");
+  }
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -55,6 +89,8 @@ export function EditEventForm({
       <input type="hidden" name="starts_at_iso" value={iso} />
       <input type="hidden" name="list_required" value={String(listRequired)} />
       <input type="hidden" name="category" value={category} />
+      <input type="hidden" name="store_id" value={storeId} />
+      <input type="hidden" name="league_id" value={leagueId} />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
@@ -70,6 +106,52 @@ export function EditEventForm({
             onChange={setCategory}
             placeholder={labels.categoryPlaceholder}
             noneLabel={labels.categoryNone}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium">{labels.store}</label>
+          <Select value={storeId === "" ? NONE : storeId} onValueChange={onStoreChange}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NONE}>{labels.storeNone}</SelectItem>
+              {stores.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium">{labels.league}</label>
+          <Select
+            value={leagueId === "" ? NONE : leagueId}
+            onValueChange={(v) => setLeagueId(v === NONE ? "" : v)}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NONE}>{labels.leagueNone}</SelectItem>
+              {leagueOptions.map((l) => (
+                <SelectItem key={l.id} value={l.id}>
+                  {l.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="ee_tid" className="text-sm font-medium">
+            {labels.tournamentId}
+          </label>
+          <Input
+            id="ee_tid"
+            name="tournament_id"
+            maxLength={40}
+            defaultValue={defaults.tournamentId ?? ""}
           />
         </div>
         <div className="flex flex-col gap-1.5">

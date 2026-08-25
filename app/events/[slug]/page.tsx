@@ -25,6 +25,8 @@ import { divisionLabel } from "@/lib/tdf";
 import { getUser, getProfile } from "@/lib/auth";
 import { pairingName } from "@/lib/player-name";
 import { formatDateTime, formatCost } from "@/lib/format";
+import { getLeagueById, listLeagues } from "@/lib/leagues";
+import { getStoreById, listStores } from "@/lib/stores";
 import { resolveArchetypes, listCustoms, type ArchetypeChip } from "@/lib/archetypes";
 import { listMyDecks, latestDeck } from "@/lib/decks";
 import {
@@ -110,6 +112,30 @@ export default async function EventPage({
   ]);
   const isSiteAdmin = !!viewerProfile?.is_admin;
   const lists = admin ? await getEventLists(event.id) : new Map();
+  const [league, store] = await Promise.all([
+    event.league_id ? getLeagueById(event.league_id) : null,
+    event.store_id ? getStoreById(event.store_id) : null,
+  ]);
+  // The edit form's store/league pickers; only admins see the form.
+  const [leagueOptions, storeOptions] = admin
+    ? await Promise.all([
+        listLeagues().then((rows) =>
+          rows.map((l) => ({
+            id: l.id,
+            name: l.name,
+            storeId: l.store_id,
+            game: l.game,
+            format: l.format,
+            startsMonth: l.starts_month,
+            endsMonth: l.ends_month,
+            archived: l.archived_at !== null,
+          })),
+        ),
+        listStores().then((rows) =>
+          rows.map((s) => ({ id: s.id, name: s.name, playLeagueId: s.play_league_id })),
+        ),
+      ])
+    : [[], []];
 
   const staffIds = new Set(staff.map((s) => s.player_id));
   const addableStaff = admin
@@ -756,7 +782,12 @@ export default async function EventPage({
               <EditEventForm
                 eventId={event.id}
                 slug={slug}
+                stores={storeOptions}
+                leagues={leagueOptions}
                 defaults={{
+                  storeId: event.store_id,
+                  leagueId: event.league_id,
+                  tournamentId: event.tournament_id,
                   name: event.name,
                   subtitle: event.subtitle,
                   category: event.category,
@@ -790,6 +821,11 @@ export default async function EventPage({
                   listRequired: t("eListRequired"),
                   listLock: t("eListLock"),
                   listLockHint: t("eListLockHint"),
+                  store: t("eStore"),
+                  storeNone: t("eStoreNone"),
+                  league: t("eLeague"),
+                  leagueNone: t("eLeagueNone"),
+                  tournamentId: t("eTournamentId"),
                   save: t("save"),
                   saved: t("saved"),
                 }}
@@ -881,6 +917,24 @@ export default async function EventPage({
           </Button>
         )}
         <div className="flex flex-wrap items-center gap-3">
+          {store && (
+            <span className="text-sm text-muted-foreground">
+              {t("storeLabel")}: {store.name}
+            </span>
+          )}
+          {league && (
+            <Link
+              href={`/leagues/${league.slug}`}
+              className="text-sm text-primary hover:underline"
+            >
+              {t("leagueLabel")}: {league.name}
+            </Link>
+          )}
+          {event.tournament_id && (
+            <span className="text-sm text-muted-foreground">
+              {t("tournamentIdLabel")}: {event.tournament_id}
+            </span>
+          )}
           <Link
             href={`/events/${slug}/arquetipos`}
             className="text-sm text-primary hover:underline"

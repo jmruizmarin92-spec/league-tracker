@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { User, Settings, LogOut, Shield, Sparkles, CalendarPlus } from "lucide-react";
+import { User, Settings, LogOut, Shield, Sparkles, CalendarPlus, Store } from "lucide-react";
 import { signOut } from "@/app/actions/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ export function UserMenu({
     adminArea: string;
     archetypes: string;
     adminEvents: string;
+    adminStores: string;
   };
 }) {
   const initials =
@@ -91,6 +92,12 @@ export function UserMenu({
               <Link href="/admin/events">
                 <CalendarPlus className="mr-2 h-4 w-4" />
                 {labels.adminEvents}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/admin/stores">
+                <Store className="mr-2 h-4 w-4" />
+                {labels.adminStores}
               </Link>
             </DropdownMenuItem>
           </>

@@ -22,8 +22,26 @@ export type EventRow = {
   list_lock_minutes: number;
   capacity: number | null;
   status: EventStatus;
+  // Optional store (0045), season league (0044) and TOM's tournament id, all
+  // set by the Play! Pokémon paste on /admin/events; editable afterwards.
+  store_id: string | null;
+  league_id: string | null;
+  tournament_id: string | null;
   created_at: string;
 };
+
+// Standalone events linked to a league, oldest first — the league page lists
+// them under its sessions.
+export async function listLeagueEvents(leagueId: string): Promise<EventRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("events")
+    .select("*")
+    .eq("league_id", leagueId)
+    .order("starts_at", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: true });
+  return (data as EventRow[] | null) ?? [];
+}
 
 export async function listEvents(): Promise<EventRow[]> {
   const supabase = await createClient();

@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { updateLeagueDetailsAction, type ActionState } from "@/app/actions/leagues";
 import { FORMATS_BY_GAME, type Game } from "@/lib/league-format";
+import { NONE } from "@/components/create-event-form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ export function LeagueDetailsForm({
   leagueId,
   slug,
   defaults,
+  stores,
   labels,
 }: {
   leagueId: string;
@@ -28,7 +30,9 @@ export function LeagueDetailsForm({
     game: Game;
     format: string | null;
     prizes: string | null;
+    storeId: string | null;
   };
+  stores: { id: string; name: string }[];
   labels: {
     name: string;
     subtitle: string;
@@ -38,6 +42,9 @@ export function LeagueDetailsForm({
     formatPlaceholder: string;
     prizes: string;
     prizesHint: string;
+    store: string;
+    storeNone: string;
+    storeHint: string;
     save: string;
     saved: string;
   };
@@ -46,6 +53,7 @@ export function LeagueDetailsForm({
     updateLeagueDetailsAction,
     {},
   );
+  const [storeId, setStoreId] = useState(defaults.storeId ?? "");
   const [game, setGame] = useState<Game>(defaults.game);
   // VGC has exactly one format; seed it so an existing VGC league that
   // predates the format field (format === null) can still be saved — the
@@ -113,6 +121,27 @@ export function LeagueDetailsForm({
               ))}
             </SelectContent>
           </Select>
+        </div>
+        <div className="flex flex-col gap-1.5 sm:col-span-2">
+          <label className="text-sm font-medium">{labels.store}</label>
+          <input type="hidden" name="store_id" value={storeId} />
+          <Select
+            value={storeId === "" ? NONE : storeId}
+            onValueChange={(v) => setStoreId(v === NONE ? "" : v)}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NONE}>{labels.storeNone}</SelectItem>
+              {stores.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">{labels.storeHint}</p>
         </div>
         <div className="flex flex-col gap-1.5 sm:col-span-2">
           <label htmlFor="ld_prizes" className="text-sm font-medium">

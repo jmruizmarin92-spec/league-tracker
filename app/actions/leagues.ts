@@ -18,6 +18,7 @@ export async function createLeagueAction(
   const description = capText(String(formData.get("description") ?? ""), 200);
   const startsMonth = toMonthDate(String(formData.get("starts_month") ?? ""));
   const endsMonth = toMonthDate(String(formData.get("ends_month") ?? ""));
+  const storeId = String(formData.get("store_id") ?? "").trim();
   if (!name) return { error: "Introduce un nombre." };
   if (game !== "tcg" && game !== "vgc") return { error: "Elige un juego." };
   const allowed = FORMATS_BY_GAME[game as Game].map((f) => f.value);
@@ -34,6 +35,7 @@ export async function createLeagueAction(
     p_starts_month: startsMonth,
     p_ends_month: endsMonth,
     p_format: format,
+    p_store_id: storeId || null,
   });
   if (error) return { error: error.message };
 
@@ -52,6 +54,7 @@ export async function updateLeagueDetailsAction(
   const game = String(formData.get("game") ?? "");
   const format = String(formData.get("format") ?? "");
   const prizes = capText(String(formData.get("prizes") ?? ""), 1000);
+  const storeId = String(formData.get("store_id") ?? "").trim();
 
   if (!name) return { error: "Introduce un nombre." };
   if (game !== "tcg" && game !== "vgc") return { error: "Elige un juego." };
@@ -67,6 +70,7 @@ export async function updateLeagueDetailsAction(
       game,
       format,
       prizes: prizes || null,
+      store_id: storeId || null,
     })
     .eq("id", id);
   if (error) return { error: error.message };

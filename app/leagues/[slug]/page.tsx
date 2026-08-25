@@ -9,6 +9,9 @@ import {
   formatLabel,
 } from "@/lib/leagues";
 import { listSessions } from "@/lib/sessions";
+import { listLeagueEvents } from "@/lib/events";
+import { getStoreById } from "@/lib/stores";
+import { CategoryBadge } from "@/components/category-badge";
 import { computeLeagueStandings } from "@/lib/league-standings";
 import { computePrizePool, QUARTER_POOL_SIZE, YEAR_POOL_SIZE } from "@/lib/prize-pool";
 import { currentTrimestre, trimestreOf } from "@/lib/trimestre";
@@ -39,10 +42,13 @@ export default async function LeaguePage({
 
   const t = await getTranslations("league");
   const tp = await getTranslations("leaguePrizes");
-  const [admin, sessions, matchSessions] = await Promise.all([
+  const te = await getTranslations("events");
+  const [admin, sessions, matchSessions, events, store] = await Promise.all([
     isLeagueAdmin(league.id),
     listSessions(league.id),
     getLeagueMatchesBySession(league.id),
+    listLeagueEvents(league.id),
+    league.store_id ? getStoreById(league.store_id) : null,
   ]);
 
   const pointCfg = {
@@ -85,6 +91,7 @@ export default async function LeaguePage({
             {league.subtitle && (
               <Badge variant="outline">{league.subtitle}</Badge>
             )}
+            {store && <Badge variant="outline">{store.name}</Badge>}
             {league.archived_at && (
               <Badge variant="outline">{t("archivedBadge")}</Badge>
             )}
@@ -206,6 +213,50 @@ export default async function LeaguePage({
           )}
         </CardContent>
       </Card>
+
+      {events.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("eventsTitle")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="flex flex-col divide-y">
+              {events.map((e) => (
+                <li key={e.id}>
+                  <Link
+                    href={`/events/${e.slug}`}
+                    className="flex items-center justify-between gap-3 py-3 transition-colors hover:text-primary"
+                  >
+                    <span className="flex min-w-0 flex-col gap-0.5">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium">{e.name}</span>
+                        <CategoryBadge category={e.category} />
+                      </span>
+                      <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-muted-foreground">
+                        {formatDateTime(e.starts_at) && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3.5 w-3.5" />
+                            {formatDateTime(e.starts_at)}
+                          </span>
+                        )}
+                        {e.location && (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-3.5 w-3.5" />
+                            {e.location}
+                          </span>
+                        )}
+                      </span>
+                    </span>
+                    <Badge variant={e.status === "open" ? "default" : "secondary"}>
+                      {te(`status_${e.status}`)}
+                    </Badge>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       {admin && (
         <Card>

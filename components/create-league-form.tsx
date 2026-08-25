@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { createLeagueAction, type ActionState } from "@/app/actions/leagues";
 import { FORMATS_BY_GAME, type Game } from "@/lib/league-format";
+import { NONE } from "@/components/create-event-form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,8 +24,10 @@ function addMonths(yyyyMm: string, delta: number): string {
 }
 
 export function CreateLeagueForm({
+  stores,
   labels,
 }: {
+  stores: { id: string; name: string }[];
   labels: {
     name: string;
     game: string;
@@ -34,6 +37,8 @@ export function CreateLeagueForm({
     description: string;
     startMonth: string;
     endMonth: string;
+    store: string;
+    storeNone: string;
     cta: string;
   };
 }) {
@@ -41,6 +46,7 @@ export function CreateLeagueForm({
     createLeagueAction,
     {},
   );
+  const [storeId, setStoreId] = useState("");
   const [game, setGame] = useState("");
   const [format, setFormat] = useState("");
   const [startMonth, setStartMonth] = useState("");
@@ -61,6 +67,7 @@ export function CreateLeagueForm({
     <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="game" value={game} />
       <input type="hidden" name="format" value={format} />
+      <input type="hidden" name="store_id" value={storeId} />
       <input
         type="hidden"
         name="starts_month"
@@ -140,6 +147,26 @@ export function CreateLeagueForm({
             onChange={(e) => setEndMonth(e.target.value)}
           />
         </div>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium">{labels.store}</label>
+        <Select
+          value={storeId === "" ? NONE : storeId}
+          onValueChange={(v) => setStoreId(v === NONE ? "" : v)}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={NONE}>{labels.storeNone}</SelectItem>
+            {stores.map((s) => (
+              <SelectItem key={s.id} value={s.id}>
+                {s.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex flex-col gap-1.5">
