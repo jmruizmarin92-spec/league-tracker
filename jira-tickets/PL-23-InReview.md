@@ -60,6 +60,6 @@ Clarified in chat (2026-09-02):
 - 2026-09-02 — Created (To Do → In Progress).
 - 2026-09-02 — Tests, typecheck, lint and server render verified; In Progress → In Review.
 - 2026-09-02 — `d474e2b`: `docs/features/events.md` section + this ticket (accidental early commit, see Development needed).
-- 2026-09-02 — Code commit on `main` (page, tabs, `UpcomingRow`, `lib/week-groups`, `platform.md`, es.json dedupe, INDEX rename): hash recorded in the follow-up line.
+- 2026-09-02 — Code commit on `main` (page, tabs, `UpcomingRow`, `lib/week-groups`, `platform.md`, es.json dedupe, INDEX rename): `61e15bf`.
 
 Last updated: 2026-09-02
