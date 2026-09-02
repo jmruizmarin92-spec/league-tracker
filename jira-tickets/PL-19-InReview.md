@@ -33,7 +33,8 @@ Clarified in chat (2026-09-02):
 * ✅ `app/events/[slug]/page.tsx`: `searchParams.guest`, cookie + headers read, guest branch of the registration card, "Sin cuenta" badge in the roster, edit form default + labels.
 * ✅ `messages/es.json` (`events.fAllowGuests` / `allowGuestsHint`, `event.eAllowGuests` / `eAllowGuestsHint` / `guest*` / `noAccount`), `docs/features/events.md` (server actions, components, database, new "Guest lists (0048, PL-19)" section).
 * ✅ Migration 0048 applied in Supabase (José María, 2026-09-02), verified live via REST.
-* ✅ Commit `ffcf75c` on `main` (2026-09-02), PL-19 paths only; PL-20's hunks in `create-event-form.tsx` and `INDEX.md` staged around, not included.
+* ✅ Commit `ffcf75c` on `main` (2026-09-02), PL-19 paths only; PL-20's hunks in `create-event-form.tsx` and `INDEX.md` staged around, not included. Pushed to `origin/main` (`e141129..ad4c15b`, with the ticket commit `ad4c15b`).
+* ✅ Vercel deployment for `ad4c15b` finished `success` (GitHub deployments API, 2026-09-02).
 
 ## QA — Dev
 
@@ -41,6 +42,8 @@ Clarified in chat (2026-09-02):
 - [x] ✅ `npx tsc --noEmit` clean (2026-09-02).
 - [x] ✅ `eslint` clean on every touched file (2026-09-02).
 - [x] ✅ Migration 0048 applied on Supabase and probed via REST with the anon key (2026-09-02): `events.allow_guest_lists` selectable (false); `event_guest_entries` → 42501 permission denied for anon; `guest_submit_event_list` (unknown event) → "Unknown event"; `guest_get_event_entry` (bogus token) → `[]`; `guest_update_event_list` (bogus token) → "Unknown guest entry"; `create_event` with 18 args → "Admins only".
+- [x] ✅ Committed tree checked in a detached worktree of `ffcf75c` (2026-09-02): `tsc --noEmit` clean, vitest 117 passed; the one suite that could not run (`tdf-sequence.test.ts`) reads the untracked `TOMFiles/` fixtures, absent from any fresh checkout — unrelated.
+- [x] ✅ Prod smoke on `pkmgranada.vercel.app` after the deploy (2026-09-02): `/` 200; `/events/september-5-2026-9-30am` 200 and, with `allow_guest_lists` off, still shows "Entra para inscribirte"; same page with a bogus `?guest=` token 200; `/admin/events` 307 → login when anonymous.
 - [ ] Browser (logged out): event with the flag on → form with name + ID + list → submit → registered badge, "Inscripción de X (ID n)", private link; reload keeps it (cookie); open the private link in another browser → same list; edit → "Guardado."; admin roster shows the player with the ID, "Lista enviada" and "Sin cuenta"; list editor shows the content.
 - [ ] Browser: same ID again from a fresh browser → "Ya hay una inscripción con ese Player ID…"; ID of an account holder → "…Inicia sesión para inscribirte."; flag off → "Entra para inscribirte."; past the deadline → read-only list + deadline notice; event closed → "La inscripción está cerrada."
 - [ ] Browser: admin removes the guest from the roster → the guest's link/cookie shows the blank form again; re-submitting with the same ID reuses the player.
@@ -70,5 +73,6 @@ Clarified in chat (2026-09-02):
 - 2026-09-02 — implementation done locally; unit tests, typecheck and lint green. Waiting on: migration 0048 applied, commit, browser QA.
 - 2026-09-02 — migration 0048 applied by José María, verified live via six anon REST probes (column, table lock-down, three guest RPCs, create_event 18 args). Next: commit, browser QA.
 - 2026-09-02 — In Progress → In Review: PL-19 paths committed on main (PL-20's uncommitted hunks in `create-event-form.tsx` / `INDEX.md` left out of the commit). Browser QA still open.
+- 2026-09-02 — pushed (`ad4c15b`); Vercel deploy succeeded; prod smoke OK. Next: switch the flag on for one event and run the guest-flow browser QA.
 
 Last updated: 2026-09-02
