@@ -37,7 +37,8 @@ Clarified in chat (2026-08-25, second pass — after 0044 was already applied):
 * ✅ Pages: `app/admin/events/page.tsx`, `app/admin/stores/page.tsx` (new), `app/events/[slug]/page.tsx`, `app/leagues/page.tsx`, `app/leagues/[slug]/page.tsx`, `app/leagues/[slug]/admin/page.tsx`.
 * ✅ `messages/es.json` (`events.*`, `event.*`, `leagues.*`, `league.eventsTitle`, `leagueAdmin.fieldStore` / `storeNone` / `storeHint`, new `stores` namespace, `nav.adminStores`); `docs/features/events.md` ("Play! Pokémon paste (0044)" + "Stores (0045)"), `docs/features/leagues.md`.
 * ✅ Migration 0045 applied in Supabase (José María, 2026-08-25).
-* Commit — pending.
+* ✅ Commit `e16e9b1` on `main` (2026-08-25), PL-16 paths only; pushed to `origin/main` (`3239c04..e16e9b1`).
+* ✅ Vercel deployment for `e16e9b1` finished `success` (GitHub deployments API, 2026-08-25).
 
 ## QA — Dev
 
@@ -46,6 +47,7 @@ Clarified in chat (2026-08-25, second pass — after 0044 was already applied):
 - [x] ✅ `eslint` clean on every touched file (2026-08-25).
 - [x] ✅ Migration 0044 applied and probed live via REST (2026-08-25).
 - [x] ✅ Migration 0045 applied on Supabase and probed via REST with the anon key (2026-08-25): `create_store`, `create_league` (7 args) and `create_event` (17 args) all answer `Admins only`; `stores` selectable (empty); `leagues.store_id` / `events.store_id` present, all null; `leagues.play_league_id` → "column does not exist".
+- [x] ✅ Prod smoke on `pkmgranada.vercel.app` after the deploy (2026-08-25): `/`, `/leagues` 200; `/admin/stores` and `/admin/events` 307 → `/login` when anonymous (admin gate intact). `/events` 404 is pre-existing — there is no index route, only `/events/[slug]`.
 - [ ] Browser: `/admin/stores` → create "War Lotus" with `6236068` (and Dune with its id) → counts show 0; set the store on War Lotus 26/27, VGC Lotus 26/27 and GLC Dune 26/27 from their admin pages.
 - [ ] Browser: paste the Mid Year Celebration text on `/admin/events` → store "War Lotus" detected, league "War Lotus 26/27" detected (TCG, Standard, 2026-08 inside the range), form filled (name, TCG, others, 2026-08-02 10:00, location, capacity 15, tournament id, status Finalizado, URL, subtitle) → create → event page shows Tienda + Liga link + tournament id; league page shows the event and the store badge.
 - [ ] Browser: paste a VGC page with the same League ID → same store, league VGC Lotus 26/27.
@@ -95,6 +97,7 @@ Clarified in chat (2026-08-25, second pass — after 0044 was already applied):
 - 2026-08-25 — migration 0044 applied by José María, verified live via REST.
 - 2026-08-25 — model changed: Play! League ID belongs to a store, not a league. Store layer built (0045).
 - 2026-08-25 — migration 0045 applied by José María, verified live via REST.
-- 2026-08-25 — In Progress → In Review: committed on main; browser QA still open.
+- 2026-08-25 — In Progress → In Review: committed on main (`e16e9b1`) and pushed; browser QA still open.
+- 2026-08-25 — Vercel deploy of `e16e9b1` succeeded; prod smoke OK. Next: stores + league links on prod, then the paste QA.
 
 Last updated: 2026-08-25

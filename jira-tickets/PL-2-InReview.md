@@ -86,7 +86,7 @@ Clarified in chat (2026-08-21):
 - `components/rounds-tabs.tsx` (modified); `components/my-match-card.tsx` (modified).
 
 **i18n / docs**
-- `messages/es.json` (modified); `docs/features/sessions-rounds.md` (modified); `jira-tickets/PL-1.md` (note on the component rename).
+- `messages/es.json` (modified); `docs/features/sessions-rounds.md` (modified); `jira-tickets/PL-1-Done.md` (note on the component rename).
 
 ## Activity
 
