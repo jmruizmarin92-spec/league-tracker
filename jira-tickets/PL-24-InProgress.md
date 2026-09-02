@@ -51,5 +51,6 @@ Interpretation: defaults, not locks. Both switches follow the category on the cr
 - 2026-09-02 — created (In Progress directly: the ask was specific enough to skip the clarifying round).
 - 2026-09-02 — implemented; tests, typecheck and lint green. Waiting on: migration 0050 applied, commit, browser QA.
 - 2026-09-02 — committed and pushed (`532060b`), deploy green; 0050 applied and verified. Flipping the flag exposed a PL-19 bug on the anonymous event page (500), fixed under PL-19.
+- 2026-09-02 — PL-19 fix deployed (`f93811c`); the September 5 cup now shows the guest form to anonymous visitors on prod.
 
 Last updated: 2026-09-02

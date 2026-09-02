@@ -76,5 +76,6 @@ Clarified in chat (2026-09-02):
 - 2026-09-02 — In Progress → In Review: PL-19 paths committed on main (PL-20's uncommitted hunks in `create-event-form.tsx` / `INDEX.md` left out of the commit). Browser QA still open.
 - 2026-09-02 — pushed (`ad4c15b`); Vercel deploy succeeded; prod smoke OK. Next: switch the flag on for one event and run the guest-flow browser QA.
 - 2026-09-02 — 0050 (PL-24) turned the flag on for the cups/challenges → anonymous event page 500 (function prop to a client component). Fixed, verified locally, committed.
+- 2026-09-02 — fix `f93811c` pushed; Vercel deploy `success`; prod `/events/september-5-2026-9-30am` anonymous → 200 with the guest form rendered (`name="pokemon_id"` present). Browser QA of the guest flow still open.
 
 Last updated: 2026-09-02
