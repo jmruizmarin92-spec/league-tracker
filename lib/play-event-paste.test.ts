@@ -3,6 +3,7 @@ import {
   parsePlayEventPaste,
   parseStartDate,
   categoryFromType,
+  composeEventName,
   gameFromProduct,
   PlayPasteError,
 } from "./play-event-paste";
@@ -80,6 +81,30 @@ Synced
 August 7, 2026 10:36AM
 `;
 
+// Header of a League Cup page (26-09-005657): no title, the date takes its place.
+const CUP_SAMPLE = `September 5, 2026 9:30AM
+
+September 5, 2026 9:30AM
+League ID: 6234028
+
+September 5, 2026 9:30AM
+Tournament ID:
+26-09-005657
+League ID:
+6234028
+Tournament Info
+Activity Group
+DUNE COMICS
+Product
+Trading Card Game
+Event Type
+League Cup
+Premier Event Series
+TCG League Cup Season 1
+Format
+TCG - Standard
+`;
+
 describe("parsePlayEventPaste", () => {
   it("reads every field off a real page", () => {
     const p = parsePlayEventPaste(SAMPLE);
@@ -125,6 +150,16 @@ describe("parsePlayEventPaste", () => {
     expect(p.category).toBe("others");
   });
 
+  it("treats a date as the page title as no name at all (a League Cup page)", () => {
+    // Cups and challenges have no title on the Play! site; the header is the date.
+    const p = parsePlayEventPaste(CUP_SAMPLE);
+    expect(p.name).toBeNull();
+    expect(p.series).toBe("TCG League Cup Season 1");
+    expect(p.startsAtLocal).toBe("2026-09-05T09:30");
+    expect(p.category).toBe("cup");
+    expect(p.activityGroup).toBe("DUNE COMICS");
+  });
+
   it("does not mistake an inline 'League ID:' header for the name", () => {
     const p = parsePlayEventPaste("League ID: 6236068\nTournament ID:\n26-08-000002\n");
     expect(p.name).toBeNull();
@@ -163,5 +198,58 @@ describe("gameFromProduct", () => {
     expect(gameFromProduct("Video Game")).toBe("vgc");
     expect(gameFromProduct("Pokémon GO")).toBeNull();
     expect(gameFromProduct(null)).toBeNull();
+  });
+});
+
+describe("composeEventName", () => {
+  it("builds '<type> <store> Q<n> <GAME>' from the series line", () => {
+    expect(
+      composeEventName({
+        title: null,
+        series: "TCG League Cup Season 1",
+        eventType: "League Cup",
+        game: "tcg",
+        storeName: "Dune Cómics",
+      }),
+    ).toBe("League Cup Dune Cómics Q1 TCG");
+    expect(
+      composeEventName({
+        title: null,
+        series: "VGC League Challenge Season 2",
+        eventType: "League Challenge",
+        game: "vgc",
+        storeName: "War Lotus",
+      }),
+    ).toBe("League Challenge War Lotus Q2 VGC");
+  });
+
+  it("composes even when the page has a title of its own", () => {
+    expect(
+      composeEventName({
+        title: "Mid Year Celebration",
+        series: "TCG Mid Year Celebration",
+        eventType: "Premier Event Series",
+        game: "tcg",
+        storeName: "War Lotus",
+      }),
+    ).toBe("Mid Year Celebration War Lotus TCG");
+  });
+
+  it("falls back to the event type, then the title, and skips what is missing", () => {
+    expect(
+      composeEventName({ title: null, series: null, eventType: "League Cup", game: "tcg", storeName: null }),
+    ).toBe("League Cup TCG");
+    expect(
+      composeEventName({ title: "Torneo de verano", series: null, eventType: null, game: null, storeName: "War Lotus" }),
+    ).toBe("Torneo de verano War Lotus");
+    expect(
+      composeEventName({ title: null, series: null, eventType: null, game: "tcg", storeName: "War Lotus" }),
+    ).toBeNull();
+  });
+
+  it("takes the game from the series token when Product is missing", () => {
+    expect(
+      composeEventName({ title: null, series: "VGC League Cup Season 3", eventType: null, game: null, storeName: "Dune Cómics" }),
+    ).toBe("League Cup Dune Cómics Q3 VGC");
   });
 });

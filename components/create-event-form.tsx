@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { createEventAction, type ActionState } from "@/app/actions/events";
 import {
+  composeEventName,
   parsePlayEventPaste,
   PlayPasteError,
   type PlayEventStatus,
@@ -132,7 +133,23 @@ export function CreateEventForm({
     if (p.startsAtLocal) setLocal(p.startsAtLocal);
     setStatus(p.status);
 
-    const name = p.name ?? "";
+    // Two-step link: the League ID names the store; the season league is
+    // whichever of the store's leagues fits game + format + date. Resolved
+    // before the fields are filled because the name carries the store (PL-20).
+    const resolved = resolvePasteStore(stores, p.playLeagueId, fixedStoreId);
+    const resolvedStore =
+      "storeId" in resolved ? stores.find((s) => s.id === resolved.storeId) : undefined;
+    // "League Cup Dune Cómics Q1 TCG" — the page title is never the name: cups
+    // have none (the header is the date) and the series line says nothing
+    // about where. The series line itself becomes the subtitle.
+    const name =
+      composeEventName({
+        title: p.name,
+        series: p.series,
+        eventType: p.eventType,
+        game: p.game,
+        storeName: resolvedStore?.name ?? p.activityGroup,
+      }) ?? "";
     const seriesLabel = p.series ?? p.eventType ?? "";
     const subtitle =
       seriesLabel && seriesLabel.toLowerCase() !== name.toLowerCase() ? seriesLabel : "";
@@ -142,7 +159,7 @@ export function CreateEventForm({
         : "";
     setFields((f) => ({
       ...f,
-      name,
+      name: name.slice(0, 100),
       subtitle: subtitle.slice(0, 80),
       location: (p.location ?? "").slice(0, 120),
       capacity,
@@ -150,9 +167,6 @@ export function CreateEventForm({
       externalUrl: p.website ?? "",
     }));
 
-    // Two-step link: the League ID names the store; the season league is
-    // whichever of the store's leagues fits game + format + date.
-    const resolved = resolvePasteStore(stores, p.playLeagueId, fixedStoreId);
     if (resolved.kind === "no-id") {
       notes.push({ kind: "warn", text: labels.pasteNoLeagueId });
       setPasteNotes(notes);
@@ -177,7 +191,7 @@ export function CreateEventForm({
       setPasteNotes(notes);
       return;
     }
-    const store = stores.find((s) => s.id === resolved.storeId);
+    const store = resolvedStore;
     setStoreId(resolved.storeId);
     if (resolved.kind === "matched" && store) {
       notes.push({ kind: "ok", text: labels.pasteStoreMatched.replace("{name}", store.name) });

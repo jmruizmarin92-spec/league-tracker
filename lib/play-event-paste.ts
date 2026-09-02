@@ -150,9 +150,14 @@ export function parsePlayEventPaste(text: string): PlayEventPaste {
   const playLeagueId = leagueMatch ? leagueMatch[1] : null;
 
   // The name is the page title — first line — as long as it isn't one of the
-  // label lines. A partial paste starting lower down gets null.
+  // label lines. A partial paste starting lower down gets null. League Cups
+  // and Challenges have no title of their own on the Play! site: the header
+  // shows the start date instead, which is no name either (PL-20).
   const first = ls[0] ?? null;
-  const name = first && !/^(Tournament|League) ID/i.test(first) ? first : null;
+  const name =
+    first && !/^(Tournament|League) ID/i.test(first) && parseStartDate(first) === null
+      ? first
+      : null;
 
   const startsAtLocal = ls.map(parseStartDate).find((d) => d !== null) ?? null;
 
@@ -195,4 +200,50 @@ export function parsePlayEventPaste(text: string): PlayEventPaste {
     players,
     status: parseStatus(ls),
   };
+}
+
+// The name we actually give the event (PL-20). The Play! title is useless as
+// a name: cups and challenges don't have one (the header is the date) and the
+// series line reads "TCG League Cup Season 1", which says nothing about where.
+// So the name is always composed as "<type> <store> Q<n> <GAME>":
+// "League Cup Dune Cómics Q1 TCG". The type comes from the series line (or
+// the event type, or the page title as a last resort) minus its leading game
+// token and its "Season n", which becomes the quarter. The store is our store
+// name when the League ID matched one, else the page's Activity Group.
+export type EventNameParts = {
+  title: string | null;
+  series: string | null;
+  eventType: string | null;
+  game: Game | null;
+  storeName: string | null;
+};
+
+const GAME_TOKEN_RE = /^(TCG|VGC|Pok[eé]mon GO|GO) +/i;
+const SEASON_RE = /(?:^| )Season +([0-9]+) */i;
+
+export function composeEventName(parts: EventNameParts): string | null {
+  const base = parts.series ?? parts.eventType ?? parts.title;
+  if (!base) return null;
+
+  const tokenMatch = GAME_TOKEN_RE.exec(base);
+  let type = tokenMatch ? base.slice(tokenMatch[0].length) : base;
+
+  let quarter: string | null = null;
+  const seasonMatch = SEASON_RE.exec(type);
+  if (seasonMatch) {
+    quarter = "Q" + Number(seasonMatch[1]);
+    type = type.slice(0, seasonMatch.index) + " " + type.slice(seasonMatch.index + seasonMatch[0].length);
+  }
+  type = type.replace(/ +/g, " ").trim();
+
+  const gameLabel =
+    parts.game === "tcg" ? "TCG"
+    : parts.game === "vgc" ? "VGC"
+    : tokenMatch ? tokenMatch[1].toUpperCase()
+    : null;
+
+  const out = [type, parts.storeName?.trim() || null, quarter, gameLabel]
+    .filter((x): x is string => !!x)
+    .join(" ");
+  return out === "" ? null : out;
 }
