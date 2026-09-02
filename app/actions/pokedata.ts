@@ -1,5 +1,6 @@
 "use server";
 
+import { requiresListByDefault } from "@/lib/event-category";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -115,7 +116,7 @@ export async function importPokedataEventsAction(
       p_description: "",
       p_external_url: ev.url ?? "",
       p_prizes: "",
-      p_list_required: false,
+      p_list_required: requiresListByDefault(ev.category),
       p_capacity: null,
       p_category: ev.category,
       p_subtitle: subtitle ? subtitle.slice(0, 80) : null,
@@ -124,7 +125,7 @@ export async function importPokedataEventsAction(
       p_tournament_id: tournamentId,
       p_status: "open",
       p_store_id: store.id,
-      p_allow_guest_lists: false,
+      p_allow_guest_lists: requiresListByDefault(ev.category),
     });
     if (error) {
       results.push({

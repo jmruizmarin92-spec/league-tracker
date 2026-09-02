@@ -11,6 +11,7 @@ import {
 import { matchSeasonLeague, type SeasonCandidate } from "@/lib/season-match";
 import { resolvePasteStore } from "@/lib/paste-store";
 import { CategorySelect } from "@/components/category-select";
+import { requiresListByDefault } from "@/lib/event-category";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -83,6 +84,16 @@ export function CreateEventForm({
   const [local, setLocal] = useState("");
   const [listRequired, setListRequired] = useState(false);
   const [allowGuests, setAllowGuests] = useState(false);
+  // Cups and challenges ask for a list and take guests by default (PL-24);
+  // once the TO touches either switch the category stops driving them.
+  const [togglesTouched, setTogglesTouched] = useState(false);
+  function applyCategory(next: string) {
+    setCategory(next);
+    if (togglesTouched) return;
+    const wanted = requiresListByDefault(next);
+    setListRequired(wanted);
+    setAllowGuests(wanted);
+  }
   const [storeId, setStoreId] = useState(fixedStoreId ?? "");
   const [leagueId, setLeagueId] = useState("");
   const [status, setStatus] = useState<PlayEventStatus>("open");
@@ -129,7 +140,7 @@ export function CreateEventForm({
     const notes: Note[] = [{ kind: "ok", text: labels.pasteFilled }];
 
     if (p.game) setGame(p.game);
-    setCategory(p.category);
+    applyCategory(p.category);
     if (p.startsAtLocal) setLocal(p.startsAtLocal);
     setStatus(p.status);
 
@@ -288,7 +299,7 @@ export function CreateEventForm({
           <label className="text-sm font-medium">{labels.category}</label>
           <CategorySelect
             value={category}
-            onChange={setCategory}
+            onChange={applyCategory}
             placeholder={labels.categoryPlaceholder}
             noneLabel={labels.categoryNone}
           />
@@ -470,13 +481,13 @@ export function CreateEventForm({
       </div>
 
       <div className="flex items-center gap-2">
-        <Switch id="e_listreq" checked={listRequired} onCheckedChange={setListRequired} />
+        <Switch id="e_listreq" checked={listRequired} onCheckedChange={(v) => { setTogglesTouched(true); setListRequired(v); }} />
         <label htmlFor="e_listreq" className="text-sm">{labels.listRequired}</label>
       </div>
 
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
-          <Switch id="e_guests" checked={allowGuests} onCheckedChange={setAllowGuests} />
+          <Switch id="e_guests" checked={allowGuests} onCheckedChange={(v) => { setTogglesTouched(true); setAllowGuests(v); }} />
           <label htmlFor="e_guests" className="text-sm">{labels.allowGuests}</label>
         </div>
         <p className="text-xs text-muted-foreground">{labels.allowGuestsHint}</p>

@@ -17,3 +17,11 @@ export function categoryMeta(category: string | null | undefined) {
 export function isCategory(value: string): value is Category {
   return CATEGORIES.some((c) => c.value === value);
 }
+
+// Cups and challenges are sanctioned tournaments: a list is mandatory and
+// walk-ins without an account may hand one in (PL-24). Both event flags
+// default from this on creation (form + pokedata importer); the TO can still
+// switch either off.
+export function requiresListByDefault(category: string | null | undefined): boolean {
+  return category === "cup" || category === "challenge";
+}
