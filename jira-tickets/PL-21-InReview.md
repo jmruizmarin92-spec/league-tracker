@@ -29,7 +29,8 @@ What the API gives per event (checked live 2026-09-02): `type` (League Cup / Lea
 * ✅ `app/admin/events/import/page.tsx` + `components/pokedata-import.tsx` (`ImportRow`, `ImportLabels`, `PokedataImport`).
 * ✅ `app/admin/events/page.tsx` (link), `messages/es.json` (`eventImport` namespace, `events.importLink`).
 * ✅ `docs/features/events.md` (route, action, lib bullets + "Import from the locator (pokedata.ovh, PL-21)" section), `docs/features/admin.md` (route row).
-* ✅ Commit `da39808` on `main` (2026-09-02), PL-21 paths only; PL-20's working-tree changes staged around, not included. Not pushed.
+* ✅ Commit `da39808` on `main` (2026-09-02), PL-21 paths only. Pushed to `origin/main` (`76f117e..db7ac52`, together with PL-20 and the PL-18 files).
+* ✅ Vercel deployment for `db7ac52` finished `success` (GitHub deployments API, 2026-09-02).
 
 ## QA — Dev
 
@@ -41,7 +42,7 @@ What the API gives per event (checked live 2026-09-02): `type` (League Cup / Lea
 - [ ] Browser: reload the import page → the imported event shows "Ya importado" with its link; importing it again is not possible (unchecked).
 - [ ] Browser: an event of an unknown League ID shows the id and cannot be ticked.
 - [ ] Browser: pokedata.ovh unreachable → page renders the error, nothing else breaks.
-- [ ] Prod: deploy + smoke (`/admin/events/import` 307 → login anonymous).
+- [x] ✅ Prod smoke on `pkmgranada.vercel.app` after the deploy (2026-09-02): `/` 200; `/admin/events/import` 307 → `/login` when anonymous (it was 404 on the previous build); `/admin/events` 307 → `/login`.
 
 ## Changes made
 
@@ -63,6 +64,7 @@ What the API gives per event (checked live 2026-09-02): `type` (League Cup / Lea
 
 - 2026-09-02 — Ticket created (José María, via Claude). Status: In Progress.
 - 2026-09-02 — Implementation done, tests/tsc/eslint green. Status: In Review.
-- 2026-09-02 — Committed as `da39808` on `main`. Pending: browser QA, push, deploy.
+- 2026-09-02 — Committed as `da39808` on `main`.
+- 2026-09-02 — Pushed (`db7ac52` tip), Vercel deploy success, prod smoke OK. Pending: browser QA of the import flow.
 
 Last updated: 2026-09-02

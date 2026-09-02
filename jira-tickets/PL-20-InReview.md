@@ -49,5 +49,6 @@ Clarified in chat (2026-09-02):
 - 2026-09-02 — Created (José María), status In Progress.
 - 2026-09-02 — Implementation done, unit tests / tsc / eslint green.
 - 2026-09-02 — Committed as `c780f59` on `main`, pushed with PL-21. Status: In Review. Browser checks and the prod rename pending.
+- 2026-09-02 — Vercel deployment for `db7ac52` finished `success`; prod smoke OK.
 
 Last updated: 2026-09-02
