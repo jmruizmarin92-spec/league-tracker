@@ -27,7 +27,7 @@ Clarified in chat (2026-09-02):
 * ✅ `app/page.tsx` "Esta semana" → `PageTabs` over `groupThisWeek(thisWeekItems)`; `components/page-tabs.tsx` doc comment mentions the landing page.
 * ✅ `messages/es.json` (`landing.weekTab*`).
 * ✅ `docs/features/events.md`, `docs/features/platform.md`.
-* ✅ Commit on `main`, PL-23 paths only. `messages/es.json`, `docs/features/events.md` and `jira-tickets/INDEX.md` also carry uncommitted PL-22 hunks from another session, so those three were staged as HEAD + the PL-23 edits (blob written with `git hash-object`, index pointed at it); the working tree keeps both sets of changes. Not pushed.
+* ✅ Committed on `main`. The tree was shared with the PL-22 session, which committed while this was in flight: `d963140` (PL-22) already carried the four `landing.weekTab*` keys and `1ec5e5a` the PL-23 ticket/INDEX row; `d474e2b` (meant to be ticket-only) landed the `events.md` landing section and, by re-applying the keys on top of `d963140`, duplicated them in `messages/es.json`. The code commit below removes the duplicate. Not pushed.
 
 ## QA — Dev
 
@@ -59,6 +59,7 @@ Clarified in chat (2026-09-02):
 
 - 2026-09-02 — Created (To Do → In Progress).
 - 2026-09-02 — Tests, typecheck, lint and server render verified; In Progress → In Review.
-- 2026-09-02 — Committed on `main`: `9ea1172` (code, i18n, docs, ticket). Ticket hash line in a follow-up commit.
+- 2026-09-02 — `d474e2b`: `docs/features/events.md` section + this ticket (accidental early commit, see Development needed).
+- 2026-09-02 — Code commit on `main` (page, tabs, `UpcomingRow`, `lib/week-groups`, `platform.md`, es.json dedupe, INDEX rename): hash recorded in the follow-up line.
 
 Last updated: 2026-09-02

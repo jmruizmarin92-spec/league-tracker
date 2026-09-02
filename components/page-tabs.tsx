@@ -10,9 +10,9 @@ export type PageTab = {
 };
 
 /**
- * Top-level tab strip for the session and event pages. Every panel is rendered
- * on the server up front — the tabs only decide what is visible, they don't
- * defer any fetching. `line` variant so the round pills nested inside the
+ * Top-level tab strip for the session and event pages and the landing page's
+ * "Esta semana" block. Every panel is rendered on the server up front — the
+ * tabs only decide what is visible, they don't defer any fetching. `line` variant so the round pills nested inside the
  * rounds/pairings panel still read as a separate, lower level of navigation.
  */
 export function PageTabs({

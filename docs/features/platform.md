@@ -40,4 +40,5 @@ i18n, theming, realtime updates, site navigation, game-specific domain routing, 
 - `lib/utils.ts` — `cn()`, clsx + tailwind-merge class combiner (shadcn convention).
 - `lib/validation.ts` — server-side text trimming/capping (`capText`, `capTextOrNull`), month/date string normalization (`toMonthDate`), and `isHttpUrl` URL validator.
 - `lib/weekday.ts` — weekday enum (0=Sun..6=Sat, matching JS `getDay()` and Postgres `dow`) with label lookup and `HH:MM` time formatter.
+- `lib/week-groups.ts` — pure grouping of the landing page's "Esta semana" items into the `sessions` / `tcg` / `vgc` / `others` tabs (unit-tested; see `docs/features/events.md`, landing-page section).
 - `lib/filter-href.ts` — builds query-string-preserving filter links (`buildFilterHref`) for game/category/type chips, plus a fixed-color `ACTIVE_FILTER_CLASS` for active-chip styling independent of theme tokens.
