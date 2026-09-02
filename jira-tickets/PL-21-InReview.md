@@ -29,7 +29,7 @@ What the API gives per event (checked live 2026-09-02): `type` (League Cup / Lea
 * ✅ `app/admin/events/import/page.tsx` + `components/pokedata-import.tsx` (`ImportRow`, `ImportLabels`, `PokedataImport`).
 * ✅ `app/admin/events/page.tsx` (link), `messages/es.json` (`eventImport` namespace, `events.importLink`).
 * ✅ `docs/features/events.md` (route, action, lib bullets + "Import from the locator (pokedata.ovh, PL-21)" section), `docs/features/admin.md` (route row).
-* Commit on `main` — not yet (nothing committed in this session; PL-20's working-tree changes are still uncommitted too).
+* ✅ Commit `da39808` on `main` (2026-09-02), PL-21 paths only; PL-20's working-tree changes staged around, not included. Not pushed.
 
 ## QA — Dev
 
@@ -62,6 +62,7 @@ What the API gives per event (checked live 2026-09-02): `type` (League Cup / Lea
 ## Activity
 
 - 2026-09-02 — Ticket created (José María, via Claude). Status: In Progress.
-- 2026-09-02 — Implementation done, tests/tsc/eslint green. Status: In Review. Pending: browser QA, commit, deploy.
+- 2026-09-02 — Implementation done, tests/tsc/eslint green. Status: In Review.
+- 2026-09-02 — Committed as `da39808` on `main`. Pending: browser QA, push, deploy.
 
 Last updated: 2026-09-02
