@@ -33,7 +33,7 @@ Clarified in chat (2026-09-02):
 * ✅ `app/events/[slug]/page.tsx`: `searchParams.guest`, cookie + headers read, guest branch of the registration card, "Sin cuenta" badge in the roster, edit form default + labels.
 * ✅ `messages/es.json` (`events.fAllowGuests` / `allowGuestsHint`, `event.eAllowGuests` / `eAllowGuestsHint` / `guest*` / `noAccount`), `docs/features/events.md` (server actions, components, database, new "Guest lists (0048, PL-19)" section).
 * ✅ Migration 0048 applied in Supabase (José María, 2026-09-02), verified live via REST.
-* Commit — pending.
+* ✅ Commit `ffcf75c` on `main` (2026-09-02), PL-19 paths only; PL-20's hunks in `create-event-form.tsx` and `INDEX.md` staged around, not included.
 
 ## QA — Dev
 
