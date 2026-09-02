@@ -27,7 +27,7 @@ Clarified in chat (2026-09-02):
 * ✅ `app/page.tsx` "Esta semana" → `PageTabs` over `groupThisWeek(thisWeekItems)`; `components/page-tabs.tsx` doc comment mentions the landing page.
 * ✅ `messages/es.json` (`landing.weekTab*`).
 * ✅ `docs/features/events.md`, `docs/features/platform.md`.
-* ✅ Committed on `main`. The tree was shared with the PL-22 session, which committed while this was in flight: `d963140` (PL-22) already carried the four `landing.weekTab*` keys and `1ec5e5a` the PL-23 ticket/INDEX row; `d474e2b` (meant to be ticket-only) landed the `events.md` landing section and, by re-applying the keys on top of `d963140`, duplicated them in `messages/es.json`. The code commit below removes the duplicate. Not pushed.
+* ✅ Committed on `main`. The tree was shared with the PL-22 session, which committed while this was in flight: `d963140` (PL-22) already carried the four `landing.weekTab*` keys and `1ec5e5a` the PL-23 ticket/INDEX row; `d474e2b` (meant to be ticket-only) landed the `events.md` landing section and, by re-applying the keys on top of `d963140`, duplicated them in `messages/es.json`. The code commit below removes the duplicate. Pushed 2026-09-02 (`9ea1172..929d19b`), Vercel deployment `success`.
 
 ## QA — Dev
 
@@ -37,7 +37,7 @@ Clarified in chat (2026-09-02):
 - [x] ✅ Server render against the real DB (`next dev -p 3123`, `curl /`, 2026-09-02): one tablist with "Ligas (2)", "TCG (4)", "VG (4)"; the sessions panel is the visible one, tcg/vgc panels `hidden`; no "Otros" tab because the week has no demo/prerelease/otros; 10 "ESTA SEMANA" rows; Próximos still paginates ("Página 1 de 14"). No Hoy items today, so that section was not exercised.
 - [ ] Browser: click through the tabs, rows look exactly like before (card border, tint, badges); Hoy card and Próximos rows unchanged visually.
 - [ ] Browser: a week with a demo/prerelease/otros shows the "Otros" tab; a week with only league sessions shows a single "Ligas (n)" tab.
-- [ ] Prod smoke after the push/deploy.
+- [x] ✅ Prod smoke (2026-09-02, `curl https://pkmgranada.vercel.app/` after the Vercel deployment of `929d19b` reported `success` via the GitHub deployments API): 200, one tablist with "Ligas (2)", "TCG (4)", "VG (4)", two hidden panels, Próximos "Página 1 de 14", `weekTab*` keys served once.
 
 ## Changes made
 
@@ -61,5 +61,6 @@ Clarified in chat (2026-09-02):
 - 2026-09-02 — Tests, typecheck, lint and server render verified; In Progress → In Review.
 - 2026-09-02 — `d474e2b`: `docs/features/events.md` section + this ticket (accidental early commit, see Development needed).
 - 2026-09-02 — Code commit on `main` (page, tabs, `UpcomingRow`, `lib/week-groups`, `platform.md`, es.json dedupe, INDEX rename): `61e15bf`.
+- 2026-09-02 — Pushed to `origin/main` (`9ea1172..929d19b`); Vercel production deployment `success`; prod smoke verified.
 
 Last updated: 2026-09-02
