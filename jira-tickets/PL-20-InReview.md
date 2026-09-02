@@ -24,6 +24,7 @@ Clarified in chat (2026-09-02):
 * ✅ `lib/play-event-paste.test.ts`: League Cup header sample (date as title, `name` null); `composeEventName` cases (cup, VGC challenge, titled event, fallbacks, series game token).
 * ✅ `components/create-event-form.tsx`: store resolution moved before the field fill; `name` from `composeEventName` with the resolved store's name / Activity Group.
 * ✅ `docs/features/events.md`: paste section — name rule.
+* ✅ Commit `c780f59` on `main` (2026-09-02).
 
 ## QA — Dev
 
@@ -46,6 +47,7 @@ Clarified in chat (2026-09-02):
 ## Activity
 
 - 2026-09-02 — Created (José María), status In Progress.
-- 2026-09-02 — Implementation done, unit tests / tsc / eslint green. Not committed yet; browser checks and the prod rename pending.
+- 2026-09-02 — Implementation done, unit tests / tsc / eslint green.
+- 2026-09-02 — Committed as `c780f59` on `main`, pushed with PL-21. Status: In Review. Browser checks and the prod rename pending.
 
 Last updated: 2026-09-02
