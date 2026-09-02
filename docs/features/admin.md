@@ -7,6 +7,7 @@ Site-wide and league/event-scoped admin tooling: managing admins/staff, players,
 | Route | Purpose | Access gate |
 |---|---|---|
 | `app/admin/events/page.tsx` | Site-wide form to create a standalone (non-league) event | `await requireAdmin()` |
+| `app/admin/events/import/page.tsx` | Import the League Cups / Challenges the Play! locator announces around Granada (via pokedata.ovh) into standalone events, one click per batch (PL-21) | `await requireAdmin()` |
 | `app/admin/players/page.tsx` | Tabbed console: approve/reject player-claim requests, create "managed" (loginless) players, list/quick-edit all players, merge players | `await requireAdmin()` |
 | `app/admin/players/[id]/page.tsx` | Edit one player's fields (alias, name, Pokémon ID, game ID) | `await requireAdmin()` |
 | `app/admin/arquetipos/page.tsx` | Manage global custom archetypes per game (TCG/VGC): add, toggle active, delete | `await requireAdmin()` |

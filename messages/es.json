@@ -102,7 +102,8 @@
     "status_open": "Abierto",
     "status_closed": "Cerrado",
     "status_complete": "Finalizado",
-    "pasteStoreMismatch": "La página pegada es de otra tienda (League ID {id}). El evento se creará en esta tienda igualmente; revisa la liga."
+    "pasteStoreMismatch": "La página pegada es de otra tienda (League ID {id}). El evento se creará en esta tienda igualmente; revisa la liga.",
+    "importLink": "Importar cups y challenges anunciados en Play! Pokémon"
   },
   "event": {
     "capacity": "Aforo",
@@ -773,5 +774,32 @@
     "manage": "Administrar",
     "adminsTitle": "Administradores",
     "adminsHint": "Los administradores gestionan todas las ligas y eventos de la tienda y pueden crear nuevos. Solo los propietarios cambian esta lista; a los propietarios los pone o quita un admin del sitio."
+  },
+  "eventImport": {
+    "title": "Importar eventos de Play! Pokémon",
+    "hint": "League Cups y League Challenges (TCG y VGC) anunciados en el localizador oficial, a {radius} km de Granada, del {start} al {end}. Datos vía pokedata.ovh.",
+    "storesHint": "Solo se pueden importar los de tiendas cuyo League ID esté dado de alta en Tiendas. El nombre, la liga y la fecha se calculan igual que al pegar la página; revísalos en el evento una vez creado.",
+    "back": "Volver a crear evento",
+    "source": "Ver respuesta de la API",
+    "apiError": "No se ha podido consultar pokedata.ovh: {error}",
+    "empty": "No hay cups ni challenges anunciados en la zona para esas fechas.",
+    "selectAll": "Seleccionar todos los importables",
+    "importCta": "Importar seleccionados ({n})",
+    "importing": "Importando…",
+    "alreadyImported": "Ya importado",
+    "view": "Ver evento",
+    "unknownStore": "Tienda desconocida (League ID {id})",
+    "unsupported": "Producto no soportado",
+    "noId": "Sin Tournament ID",
+    "shop": "Tienda en Play!: {shop}",
+    "store": "Tienda: {name}",
+    "league": "Liga: {name}",
+    "leagueNone": "Ninguna liga encaja",
+    "leagueMany": "Varias ligas encajan",
+    "free": "Gratis",
+    "resultsTitle": "Resultado de la importación",
+    "resultOk": "Creado",
+    "resultError": "Error",
+    "playPage": "Página en pokemon.com"
   }
 }

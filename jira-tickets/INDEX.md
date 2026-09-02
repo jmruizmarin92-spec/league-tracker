@@ -1,11 +1,12 @@
 # Local tickets — Project League
 
-One row per ticket, newest first. Keys are sequential `PL-<n>`; next free key: PL-20.
+One row per ticket, newest first. Keys are sequential `PL-<n>`; next free key: PL-22.
 
 File names carry the status: `PL-<n>-<Status>.md` with `ToDo`, `InProgress`, `InReview`, `Done`. When a ticket changes status, rename the file (`git mv`) and update the link here.
 
 | Key | Title | Status | Created | Done |
 |-----|-------|--------|---------|------|
+| [PL-21](PL-21-InReview.md) | Import nearby League Cups and Challenges from the pokedata.ovh events API | In Review | 2026-09-02 | — |
 | [PL-19](PL-19-InReview.md) | Guest decklist submission on standalone events (no account needed) | In Review | 2026-09-02 | — |
 | [PL-18](PL-18-InReview.md) | "Generar sesiones" fails: bulk generator inserts sessions without a slug | In Review | 2026-09-02 | — |
 | [PL-17](PL-17-InReview.md) | Store admins: per-store owners/admins who create events and run the store's leagues | In Review | 2026-08-25 | — |

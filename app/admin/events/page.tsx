@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
 import { listLeagues } from "@/lib/leagues";
@@ -28,7 +29,14 @@ export default async function AdminEventsPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
-      <h1 className="text-2xl font-semibold tracking-tight">{t("createTitle")}</h1>
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-semibold tracking-tight">{t("createTitle")}</h1>
+        <p className="text-sm">
+          <Link href="/admin/events/import" className="underline">
+            {t("importLink")}
+          </Link>
+        </p>
+      </div>
 
       <Card>
         <CardContent className="pt-6">
