@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth";
+import { isStoreAdmin } from "@/lib/stores";
 import { capText } from "@/lib/validation";
 
 export type ActionState = { error?: string; ok?: boolean };
@@ -19,12 +20,15 @@ function friendlyStoreError(message: string, playLeagueId: string): string {
   return message;
 }
 
-// Everything the store admin page changes ripples into league and event
-// headers, so revalidate broadly rather than tracking every page.
-function revalidateStores() {
+// Everything the store pages change ripples into league and event headers
+// (and, for the roster, into who sees admin controls there), so revalidate
+// broadly rather than tracking every page.
+function revalidateStores(slug?: string) {
   revalidatePath("/admin/stores");
+  if (slug) revalidatePath(`/stores/${slug}/admin`);
   revalidatePath("/leagues", "layout");
   revalidatePath("/events", "layout");
+  revalidatePath("/", "layout");
 }
 
 export async function createStoreAction(
@@ -49,15 +53,18 @@ export async function createStoreAction(
   return { ok: true };
 }
 
+// Store admins edit their own store (RLS since 0046); the check here only
+// gives a readable message instead of a silent no-row update.
 export async function updateStoreAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireAdmin();
   const id = String(formData.get("store_id") ?? "");
+  const slug = String(formData.get("slug") ?? "");
   const name = capText(String(formData.get("name") ?? ""), 80);
   const playLeagueId = String(formData.get("play_league_id") ?? "").trim();
   if (!id) return { error: "Tienda no válida." };
+  if (!(await isStoreAdmin(id))) return { error: "No tienes permiso." };
   if (!name) return { error: "Introduce un nombre." };
   if (playLeagueId && !PLAY_ID_RE.test(playLeagueId)) {
     return { error: "El ID de liga de Play! Pokémon debe ser un número." };
@@ -69,7 +76,7 @@ export async function updateStoreAction(
     .update({ name, play_league_id: playLeagueId || null })
     .eq("id", id);
   if (error) return { error: friendlyStoreError(error.message, playLeagueId) };
-  revalidateStores();
+  revalidateStores(slug || undefined);
   return { ok: true };
 }
 
@@ -82,4 +89,45 @@ export async function deleteStoreAction(formData: FormData): Promise<void> {
   const supabase = await createClient();
   await supabase.from("stores").delete().eq("id", id);
   revalidateStores();
+}
+
+// --- Roster (0046). The RPCs decide who may do what: owners add/remove
+// admins, only site admins add/remove owners.
+
+function friendlyRosterError(message: string): string {
+  if (/Not allowed/i.test(message)) return "No tienes permiso para cambiar los administradores.";
+  if (/Unknown user/i.test(message)) return "Usuario no válido.";
+  return message;
+}
+
+export async function addStoreAdminAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const storeId = String(formData.get("store_id") ?? "");
+  const userId = String(formData.get("user_id") ?? "");
+  const role = String(formData.get("role") ?? "admin");
+  const slug = String(formData.get("slug") ?? "");
+  if (!storeId || !userId) return { error: "Elige un usuario." };
+  if (role !== "owner" && role !== "admin") return { error: "Rol no válido." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("add_store_admin", {
+    p_store: storeId,
+    p_user: userId,
+    p_role: role,
+  });
+  if (error) return { error: friendlyRosterError(error.message) };
+  revalidateStores(slug || undefined);
+  return { ok: true };
+}
+
+export async function removeStoreAdminAction(formData: FormData): Promise<void> {
+  const storeId = String(formData.get("store_id") ?? "");
+  const userId = String(formData.get("user_id") ?? "");
+  const slug = String(formData.get("slug") ?? "");
+  if (!storeId || !userId) return;
+  const supabase = await createClient();
+  await supabase.rpc("remove_store_admin", { p_store: storeId, p_user: userId });
+  revalidateStores(slug || undefined);
 }

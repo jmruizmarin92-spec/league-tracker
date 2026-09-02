@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import {
   createStoreAction,
@@ -7,16 +8,20 @@ import {
   deleteStoreAction,
   type ActionState,
 } from "@/app/actions/stores";
+import type { StoreAdmin } from "@/lib/stores";
 import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
+import { StoreRoster, type RosterLabels } from "@/components/store-roster";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 export type StoreRow = {
   id: string;
   name: string;
+  slug: string;
   playLeagueId: string | null;
   leagues: number;
   events: number;
+  admins: StoreAdmin[];
 };
 
 type Labels = {
@@ -30,17 +35,30 @@ type Labels = {
   leaguesCount: string; // "{n} ligas"
   eventsCount: string; // "{n} eventos"
   createCta: string;
+  console: string;
+  adminsTitle: string;
+  roster: RosterLabels;
 };
 
 // One inline edit form per store; the counts say what the delete will
-// detach (rows stay, they only lose their store).
-function StoreEditor({ store, labels }: { store: StoreRow; labels: Labels }) {
+// detach (rows stay, they only lose their store). The roster below it is
+// where site admins hand a store to its owners (PL-17).
+function StoreEditor({
+  store,
+  users,
+  labels,
+}: {
+  store: StoreRow;
+  users: { id: string; display_name: string }[];
+  labels: Labels;
+}) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     updateStoreAction,
     {},
   );
+  const onRoster = new Set(store.admins.map((a) => a.user_id));
   return (
-    <li className="flex flex-col gap-2 py-3">
+    <li className="flex flex-col gap-3 py-4">
       <form action={formAction} className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <input type="hidden" name="store_id" value={store.id} />
         <div className="flex flex-1 flex-col gap-1">
@@ -74,6 +92,9 @@ function StoreEditor({ store, labels }: { store: StoreRow; labels: Labels }) {
       <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
         <span>{labels.leaguesCount.replace("{n}", String(store.leagues))}</span>
         <span>{labels.eventsCount.replace("{n}", String(store.events))}</span>
+        <Link href={`/stores/${store.slug}/admin`} className="underline-offset-4 hover:underline">
+          {labels.console}
+        </Link>
         {state?.error && <span className="text-destructive">{state.error}</span>}
         {state?.ok && <span className="text-primary">{labels.saved}</span>}
         <form action={deleteStoreAction} className="ml-auto">
@@ -83,15 +104,35 @@ function StoreEditor({ store, labels }: { store: StoreRow; labels: Labels }) {
           </ConfirmDeleteButton>
         </form>
       </div>
+      <div className="flex flex-col gap-2 rounded-md border p-3">
+        <span className="text-xs font-medium text-muted-foreground">{labels.adminsTitle}</span>
+        <StoreRoster
+          storeId={store.id}
+          slug={store.slug}
+          admins={store.admins}
+          users={users.filter((u) => !onRoster.has(u.id))}
+          canManage
+          canSetOwner
+          labels={labels.roster}
+        />
+      </div>
     </li>
   );
 }
 
-export function StoreList({ stores, labels }: { stores: StoreRow[]; labels: Labels }) {
+export function StoreList({
+  stores,
+  users,
+  labels,
+}: {
+  stores: StoreRow[];
+  users: { id: string; display_name: string }[];
+  labels: Labels;
+}) {
   return (
     <ul className="flex flex-col divide-y">
       {stores.map((s) => (
-        <StoreEditor key={s.id} store={s} labels={labels} />
+        <StoreEditor key={s.id} store={s} users={users} labels={labels} />
       ))}
     </ul>
   );

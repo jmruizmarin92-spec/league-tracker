@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth";
 import { listLeagues } from "@/lib/leagues";
 import { listStores } from "@/lib/stores";
+import { eventFormLabels } from "@/lib/form-labels";
 import { CreateEventForm } from "@/components/create-event-form";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -34,53 +35,7 @@ export default async function AdminEventsPage() {
           <CreateEventForm
             stores={stores}
             leagues={leagues}
-            labels={{
-              name: t("fName"),
-              subtitle: t("fSubtitle"),
-              subtitleHint: t("subtitleHint"),
-              category: t("fCategory"),
-              categoryPlaceholder: t("categoryPlaceholder"),
-              categoryNone: t("categoryNone"),
-              game: t("fGame"),
-              gamePlaceholder: t("gamePlaceholder"),
-              store: t("fStore"),
-              storeNone: t("storeNone"),
-              league: t("fLeague"),
-              leaguePlaceholder: t("leaguePlaceholder"),
-              leagueNone: t("leagueNone"),
-              tournamentId: t("fTournamentId"),
-              tournamentIdHint: t("tournamentIdHint"),
-              status: t("fStatus"),
-              statusOpen: t("status_open"),
-              statusClosed: t("status_closed"),
-              statusComplete: t("status_complete"),
-              startsAt: t("fStartsAt"),
-              location: t("fLocation"),
-              cost: t("fCost"),
-              capacity: t("fCapacity"),
-              capacityHint: t("capacityHint"),
-              externalUrl: t("fExternalUrl"),
-              externalUrlHint: t("externalUrlHint"),
-              description: t("fDescription"),
-              prizes: t("fPrizes"),
-              prizesHint: t("prizesHint"),
-              listRequired: t("fListRequired"),
-              listLock: t("fListLock"),
-              listLockHint: t("listLockHint"),
-              pasteTitle: t("pasteTitle"),
-              pasteHint: t("pasteHint"),
-              pastePlaceholder: t("pastePlaceholder"),
-              pasteCta: t("pasteCta"),
-              pasteFilled: t("pasteFilled"),
-              pasteError: t("pasteError"),
-              pasteStoreMatched: t("pasteStoreMatched", { name: "{name}" }),
-              pasteStoreMissing: t("pasteStoreMissing", { id: "{id}" }),
-              pasteLeagueMatched: t("pasteLeagueMatched", { name: "{name}" }),
-              pasteLeagueNone: t("pasteLeagueNone"),
-              pasteLeagueMany: t("pasteLeagueMany"),
-              pasteNoLeagueId: t("pasteNoLeagueId"),
-              cta: t("createCta"),
-            }}
+            labels={eventFormLabels(t)}
           />
         </CardContent>
       </Card>

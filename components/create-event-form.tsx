@@ -8,6 +8,7 @@ import {
   type PlayEventStatus,
 } from "@/lib/play-event-paste";
 import { matchSeasonLeague, type SeasonCandidate } from "@/lib/season-match";
+import { resolvePasteStore } from "@/lib/paste-store";
 import { CategorySelect } from "@/components/category-select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -58,14 +59,19 @@ const EMPTY: Fields = {
 
 type Note = { kind: "ok" | "warn" | "error"; text: string };
 
+// fixedStoreId: the form lives on a store's own console (PL-17) — the store
+// is not a choice and a pasted page can only confirm it or be flagged as
+// another store's.
 export function CreateEventForm({
   stores,
   leagues,
   labels,
+  fixedStoreId,
 }: {
   stores: StoreOption[];
   leagues: LeagueOption[];
   labels: Record<string, string>;
+  fixedStoreId?: string;
 }) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     createEventAction,
@@ -75,7 +81,7 @@ export function CreateEventForm({
   const [category, setCategory] = useState("");
   const [local, setLocal] = useState("");
   const [listRequired, setListRequired] = useState(false);
-  const [storeId, setStoreId] = useState("");
+  const [storeId, setStoreId] = useState(fixedStoreId ?? "");
   const [leagueId, setLeagueId] = useState("");
   const [status, setStatus] = useState<PlayEventStatus>("open");
   const [fields, setFields] = useState<Fields>(EMPTY);
@@ -145,26 +151,38 @@ export function CreateEventForm({
 
     // Two-step link: the League ID names the store; the season league is
     // whichever of the store's leagues fits game + format + date.
-    if (!p.playLeagueId) {
+    const resolved = resolvePasteStore(stores, p.playLeagueId, fixedStoreId);
+    if (resolved.kind === "no-id") {
       notes.push({ kind: "warn", text: labels.pasteNoLeagueId });
       setPasteNotes(notes);
       return;
     }
-    const store = stores.find((s) => s.playLeagueId === p.playLeagueId);
-    if (!store) {
+    if (resolved.kind === "unknown") {
       setStoreId("");
       setLeagueId("");
       notes.push({
         kind: "warn",
-        text: labels.pasteStoreMissing.replace("{id}", p.playLeagueId),
+        text: labels.pasteStoreMissing.replace("{id}", resolved.playLeagueId),
       });
       setPasteNotes(notes);
       return;
     }
-    setStoreId(store.id);
-    notes.push({ kind: "ok", text: labels.pasteStoreMatched.replace("{name}", store.name) });
+    if (resolved.kind === "mismatch") {
+      setLeagueId("");
+      notes.push({
+        kind: "warn",
+        text: labels.pasteStoreMismatch.replace("{id}", resolved.playLeagueId),
+      });
+      setPasteNotes(notes);
+      return;
+    }
+    const store = stores.find((s) => s.id === resolved.storeId);
+    setStoreId(resolved.storeId);
+    if (resolved.kind === "matched" && store) {
+      notes.push({ kind: "ok", text: labels.pasteStoreMatched.replace("{name}", store.name) });
+    }
     const season = matchSeasonLeague(leagues, {
-      storeId: store.id,
+      storeId: resolved.storeId,
       game: p.game,
       format: p.format,
       startsAtLocal: p.startsAtLocal,
@@ -275,22 +293,24 @@ export function CreateEventForm({
           <label htmlFor="e_starts" className="text-sm font-medium">{labels.startsAt}</label>
           <Input id="e_starts" type="datetime-local" value={local} onChange={(e) => setLocal(e.target.value)} />
         </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium">{labels.store}</label>
-          <Select value={storeId === "" ? NONE : storeId} onValueChange={onStoreChange}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={NONE}>{labels.storeNone}</SelectItem>
-              {stores.map((s) => (
-                <SelectItem key={s.id} value={s.id}>
-                  {s.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {!fixedStoreId && (
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium">{labels.store}</label>
+            <Select value={storeId === "" ? NONE : storeId} onValueChange={onStoreChange}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NONE}>{labels.storeNone}</SelectItem>
+                {stores.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium">{labels.league}</label>
           <Select

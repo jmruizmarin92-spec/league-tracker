@@ -31,7 +31,7 @@ Google OAuth via Supabase Auth (PKCE flow). Session lives in cookies, refreshed 
 
 ## Role model
 
-Single boolean flag: `profiles.is_admin`. Checked code-side in `requireAdmin()` and via the `isAdmin` prop passed into `UserMenu`. Also enforced at DB level by the anti-escalation trigger. No general RLS gating by `is_admin` was found beyond the `profiles` self-escalation guard — per-domain admin checks (league/event) are separate, see `docs/features/admin.md`.
+Single boolean flag: `profiles.is_admin`. Checked code-side in `requireAdmin()` and via the `isAdmin` prop passed into `UserMenu`. Also enforced at DB level by the anti-escalation trigger. No general RLS gating by `is_admin` was found beyond the `profiles` self-escalation guard — per-domain admin checks (store/league/event) are separate, see `docs/features/admin.md`. Since 0046 there is a third layer between site admin and league/event rosters: `store_admins` (owner|admin per store), whose members are admins of every league and event of their store.
 
 ## Player linkage
 

@@ -19,12 +19,15 @@ export function UserMenu({
   email,
   avatarUrl,
   isAdmin,
+  stores,
   labels,
 }: {
   name: string;
   email: string;
   avatarUrl: string | null;
   isAdmin: boolean;
+  // Stores the user is on the roster of (PL-17): one console link each.
+  stores: { name: string; slug: string }[];
   labels: {
     profile: string;
     settings: string;
@@ -34,6 +37,7 @@ export function UserMenu({
     archetypes: string;
     adminEvents: string;
     adminStores: string;
+    storeAdmin: string; // "Administrar {name}"
   };
 }) {
   const initials =
@@ -102,6 +106,15 @@ export function UserMenu({
             </DropdownMenuItem>
           </>
         )}
+        {stores.map((s) => (
+          <DropdownMenuItem key={s.slug} asChild>
+            <Link href={`/stores/${s.slug}/admin`}>
+              <Store className="mr-2 h-4 w-4" />
+              {labels.storeAdmin.replace("{name}", s.name)}
+            </Link>
+          </DropdownMenuItem>
+        ))}
+        {stores.length > 0 && <DropdownMenuSeparator />}
         <DropdownMenuItem asChild>
           <Link href="/me">
             <User className="mr-2 h-4 w-4" />

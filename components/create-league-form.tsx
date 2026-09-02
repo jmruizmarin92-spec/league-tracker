@@ -23,11 +23,15 @@ function addMonths(yyyyMm: string, delta: number): string {
   return `${ny}-${String(nm).padStart(2, "0")}`;
 }
 
+// fixedStoreId: the form lives on a store's console (PL-17); the season is
+// created under that store and the picker is not shown.
 export function CreateLeagueForm({
   stores,
   labels,
+  fixedStoreId,
 }: {
   stores: { id: string; name: string }[];
+  fixedStoreId?: string;
   labels: {
     name: string;
     game: string;
@@ -46,7 +50,7 @@ export function CreateLeagueForm({
     createLeagueAction,
     {},
   );
-  const [storeId, setStoreId] = useState("");
+  const [storeId, setStoreId] = useState(fixedStoreId ?? "");
   const [game, setGame] = useState("");
   const [format, setFormat] = useState("");
   const [startMonth, setStartMonth] = useState("");
@@ -149,25 +153,27 @@ export function CreateLeagueForm({
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium">{labels.store}</label>
-        <Select
-          value={storeId === "" ? NONE : storeId}
-          onValueChange={(v) => setStoreId(v === NONE ? "" : v)}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={NONE}>{labels.storeNone}</SelectItem>
-            {stores.map((s) => (
-              <SelectItem key={s.id} value={s.id}>
-                {s.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {!fixedStoreId && (
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium">{labels.store}</label>
+          <Select
+            value={storeId === "" ? NONE : storeId}
+            onValueChange={(v) => setStoreId(v === NONE ? "" : v)}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NONE}>{labels.storeNone}</SelectItem>
+              {stores.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="description" className="text-sm font-medium">

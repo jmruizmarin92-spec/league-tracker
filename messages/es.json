@@ -43,7 +43,8 @@
     "leagues": "Ligas",
     "statistics": "Estadísticas",
     "adminEvents": "Eventos",
-    "adminStores": "Tiendas"
+    "adminStores": "Tiendas",
+    "storeAdmin": "Administrar {name}"
   },
   "events": {
     "title": "Eventos",
@@ -98,7 +99,8 @@
     "pasteNoLeagueId": "El texto no incluye ningún League ID; elige tienda y liga a mano si procede.",
     "status_open": "Abierto",
     "status_closed": "Cerrado",
-    "status_complete": "Finalizado"
+    "status_complete": "Finalizado",
+    "pasteStoreMismatch": "La página pegada es de otra tienda (League ID {id}). El evento se creará en esta tienda igualmente; revisa la liga."
   },
   "event": {
     "capacity": "Aforo",
@@ -551,7 +553,19 @@
     "deleteConfirm": "¿Eliminar esta tienda? Sus ligas y eventos se quedan sin tienda, no se borran.",
     "leaguesCount": "{n} ligas",
     "eventsCount": "{n} eventos",
-    "noPlayId": "Sin League ID"
+    "noPlayId": "Sin League ID",
+    "console": "Panel de la tienda",
+    "adminsTitle": "Administradores",
+    "adminsHint": "Los administradores de una tienda gestionan todas sus ligas y eventos y pueden crear nuevos. Los propietarios además eligen a los administradores; los propietarios solo los pone o quita un admin del sitio.",
+    "noAdmins": "Aún no hay administradores.",
+    "roleOwner": "Propietario",
+    "roleAdmin": "Admin",
+    "roleLabel": "Rol",
+    "remove": "Quitar",
+    "addAdmin": "Añadir administrador",
+    "addAdminPlaceholder": "Elige un usuario",
+    "add": "Añadir",
+    "added": "Añadido."
   },
   "leagueAdmin": {
     "title": "Administrar liga",
@@ -723,5 +737,22 @@
   },
   "theme": {
     "toggle": "Cambiar tema"
+  },
+  "storeAdmin": {
+    "title": "Administrar tienda",
+    "playLeagueId": "League ID {id}",
+    "allStores": "Todas las tiendas",
+    "detailsTitle": "Datos de la tienda",
+    "leaguesTitle": "Ligas de la tienda",
+    "noLeagues": "Esta tienda aún no tiene ligas.",
+    "createLeagueTitle": "Crear liga",
+    "archived": "Finalizada",
+    "eventsTitle": "Eventos de la tienda",
+    "noEvents": "Esta tienda aún no tiene eventos.",
+    "createEventTitle": "Crear evento",
+    "view": "Ver",
+    "manage": "Administrar",
+    "adminsTitle": "Administradores",
+    "adminsHint": "Los administradores gestionan todas las ligas y eventos de la tienda y pueden crear nuevos. Solo los propietarios cambian esta lista; a los propietarios los pone o quita un admin del sitio."
   }
 }

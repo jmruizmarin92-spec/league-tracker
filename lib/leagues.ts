@@ -111,20 +111,16 @@ export async function listLeagueAdmins(leagueId: string): Promise<LeagueAdmin[]>
     .sort((a, b) => (a.role === "owner" ? -1 : b.role === "owner" ? 1 : 0));
 }
 
-// Is the current user an admin (owner/co-admin or site admin) of this league?
+// Is the current user an admin of this league: site admin, owner/co-admin
+// in league_members, or (0046) an admin of the league's store. Delegates to
+// the SQL helper so the page gate and RLS can never disagree.
 export async function isLeagueAdmin(leagueId: string): Promise<boolean> {
   const profile = await getProfile();
   if (profile?.is_admin) return true;
-  const user = await getUser();
-  if (!user) return false;
+  if (!(await getUser())) return false;
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("league_members")
-    .select("user_id")
-    .eq("league_id", leagueId)
-    .eq("user_id", user.id)
-    .maybeSingle();
-  return !!data;
+  const { data } = await supabase.rpc("is_league_admin", { p_league: leagueId });
+  return data === true;
 }
 
 export type SessionMatches = {

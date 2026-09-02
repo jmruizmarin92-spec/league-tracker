@@ -63,19 +63,15 @@ export const getEventBySlug = cache(async (slug: string): Promise<EventRow | nul
   return data as EventRow | null;
 });
 
+// Site admin, event_admins row, or (0046) admin of the event's store. Same
+// SQL helper the RLS policies and RPCs use.
 export async function isEventAdmin(eventId: string): Promise<boolean> {
   const profile = await getProfile();
   if (profile?.is_admin) return true;
-  const user = await getUser();
-  if (!user) return false;
+  if (!(await getUser())) return false;
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("event_admins")
-    .select("user_id")
-    .eq("event_id", eventId)
-    .eq("user_id", user.id)
-    .maybeSingle();
-  return !!data;
+  const { data } = await supabase.rpc("is_event_admin", { p_event: eventId });
+  return data === true;
 }
 
 export type EventParticipant = {

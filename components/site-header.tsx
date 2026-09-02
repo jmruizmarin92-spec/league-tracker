@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { getUser, getProfile } from "@/lib/auth";
 import { getMyPlayer } from "@/lib/players";
+import { listMyStores } from "@/lib/stores";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/user-menu";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ export async function SiteHeader() {
   const user = await getUser();
   const profile = await getProfile();
   const myPlayer = user ? await getMyPlayer() : null;
+  const myStores = user ? await listMyStores() : [];
   const t = await getTranslations("nav");
 
   return (
@@ -48,6 +50,7 @@ export async function SiteHeader() {
               email={user.email ?? ""}
               avatarUrl={profile.avatar_url}
               isAdmin={profile.is_admin}
+              stores={myStores.map((s) => ({ name: s.name, slug: s.slug }))}
               labels={{
                 profile: t("profile"),
                 settings: t("settings"),
@@ -57,6 +60,7 @@ export async function SiteHeader() {
                 archetypes: t("archetypes"),
                 adminEvents: t("adminEvents"),
                 adminStores: t("adminStores"),
+                storeAdmin: t("storeAdmin", { name: "{name}" }),
               }}
             />
           ) : (

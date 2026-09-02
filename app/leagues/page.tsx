@@ -5,6 +5,7 @@ import { getProfile } from "@/lib/auth";
 import { formatMonthRange } from "@/lib/format";
 import { CreateLeagueForm } from "@/components/create-league-form";
 import { listStores } from "@/lib/stores";
+import { leagueFormLabels } from "@/lib/form-labels";
 import { GameBadge } from "@/components/game-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -64,19 +65,7 @@ export default async function LeaguesPage() {
           <CardContent>
             <CreateLeagueForm
               stores={stores.map((s) => ({ id: s.id, name: s.name }))}
-              labels={{
-                name: t("fieldName"),
-                game: t("fieldGame"),
-                gamePlaceholder: t("gamePlaceholder"),
-                format: t("fieldFormat"),
-                formatPlaceholder: t("formatPlaceholder"),
-                description: t("fieldDescription"),
-                startMonth: t("fieldStartMonth"),
-                endMonth: t("fieldEndMonth"),
-                store: t("fieldStore"),
-                storeNone: t("storeNone"),
-                cta: t("createCta"),
-              }}
+              labels={leagueFormLabels(t)}
             />
           </CardContent>
         </Card>

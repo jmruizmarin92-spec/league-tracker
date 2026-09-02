@@ -4,7 +4,7 @@ A League is the top-level recurring competitive container: a schedule, a points 
 
 ## Routes
 
-- `app/leagues/page.tsx` — lists all leagues as cards (name, game badge, format, subtitle, month range); shows `CreateLeagueForm` to site admins.
+- `app/leagues/page.tsx` — lists all leagues as cards (name, game badge, format, subtitle, month range); shows `CreateLeagueForm` to site admins. Store admins create seasons from their store console instead (`/stores/[slug]/admin`, store fixed).
 - `app/leagues/[slug]/page.tsx` — league home: header (name/game/format/subtitle/store/archived badges), description, duration + weekday/time summary, links to standings/archetypes/admin, session list, an "Eventos de la liga" card listing standalone events with `events.league_id` = this league (only rendered when there are any; `listLeagueEvents` from `lib/events.ts`), and (for league admins) a create-session form.
 - `app/leagues/[slug]/admin/page.tsx` — league admin console: details form, points config, duration form, weekly schedule + bulk session generation, locations picklist (add/remove/default), admins management (add/remove co-admins), archive/reactivate toggle, and (site-admin only) hard delete.
 - `app/leagues/[slug]/clasificacion/page.tsx` — standings page; filters by trimestre or "general" (overall), computes `computeLeagueStandings` from all session matches, renders ranked table with points/wins/attended and prizes text.
@@ -17,7 +17,7 @@ A League is the top-level recurring competitive container: a schedule, a points 
 - `updateLeagueDetailsAction` — updates name, subtitle, game, format, prizes and `store_id`.
 - `updateLeagueDurationAction` — updates `starts_month`/`ends_month` (validates end ≥ start).
 - `updateLeagueScheduleAction` — updates `session_weekday`, `session_time`, `default_cost`.
-- `generateLeagueSessionsAction` — calls RPC `generate_league_sessions`, returns count created.
+- `generateLeagueSessionsAction` — calls RPC `generate_league_sessions`, returns count created. Since 0047 the RPC assigns each generated session a slug (`session_base_slug`, date-based, deduped per league); between 0031 and 0047 it inserted no slug and every call failed on the `not null` constraint (PL-18).
 - `updateLeaguePointsAction` — updates `win_value`, `attendance_value`, `draw_value`.
 - `addLeagueLocationAction` / `removeLeagueLocationAction` / `setDefaultLocationAction` — manage the `locations` array and `default_location`.
 - `addLeagueAdminAction` / `removeLeagueAdminAction` — call RPCs `add_league_admin`/`remove_league_admin`.
@@ -26,7 +26,7 @@ A League is the top-level recurring competitive container: a schedule, a points 
 
 ## Lib logic
 
-- `lib/leagues.ts` — `League` type (with `store_id` since 0045); `listLeagues`, `listActiveLeagues`, cached `getLeagueBySlug`, cached `getLeagueById` (the event header's league link), `listLeagueAdmins`, `isLeagueAdmin` (site-admin or league_member check), `getLeagueMatchesBySession` (matches grouped by session, feeds standings), `listAddableUsers`. Re-exports `Game`, `FORMATS_BY_GAME`, `formatLabel` from `league-format.ts`.
+- `lib/leagues.ts` — `League` type (with `store_id` since 0045); `listLeagues`, `listActiveLeagues`, cached `getLeagueBySlug`, cached `getLeagueById` (the event header's league link), `listLeagueAdmins`, `isLeagueAdmin` (site-admin short-circuit, then the `is_league_admin` RPC — league_members or, since 0046, admin of the league's store), `getLeagueMatchesBySession` (matches grouped by session, feeds standings), `listAddableUsers`. Re-exports `Game`, `FORMATS_BY_GAME`, `formatLabel` from `league-format.ts`.
 - `lib/league-standings.ts` — pure `computeLeagueStandings(sessions: MatchInput[][], cfg)`: aggregates wins/draws/losses/attendance across sessions; league points = wins×win + draws×draw + attended×attendance; attendance credited once per session regardless of game count; sorted by points then wins then id; ranked. Covered by `lib/league-standings.test.ts` (cross-session aggregation, bye counts as a win, attendance counted once per session even with multiple games, pending-only sessions yield no rows, configurable draw value).
 - `lib/league-format.ts` — `Game` type, `GAME_ROW_TINT` (UI color), `FORMATS_BY_GAME` (tcg: standard/glc; vgc: champions), `formatLabel`.
 - `lib/trimestre.ts` — defines 4 fixed quarters starting in July (1=Jul-Sep … 4=Apr-Jun); `trimestreOf(iso)`, `currentTrimestre()`, `ALL_TRIMESTRES`. Drives the standings-page quarter filter.
