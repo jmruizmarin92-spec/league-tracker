@@ -1,6 +1,6 @@
 # PL-22 — Event staff can see the roster and the submitted lists (read-only)
 
-Status: In Progress | Type: Story | Assignee: José María | Created: 2026-09-02 | Done: —
+Status: In Review | Type: Story | Assignee: José María | Created: 2026-09-02 | Done: —
 
 ## Description
 
@@ -33,7 +33,7 @@ Judges deck-check against the submitted list. Until now `event_lists` was readab
 * ✅ `docs/features/events.md` (routes, lib, components, database, new "Staff access" section), `docs/features/sessions-rounds.md` (`participants-list.tsx` line).
 * ✅ `npx tsc --noEmit` clean, `eslint` clean on the touched files, `vitest run` 145/145 (2026-09-02).
 * ✅ Migration 0049 applied in Supabase (José María, 2026-09-02), verified live via REST: `rpc/is_event_staff` returns `false` as anon (function exists; before, a missing function would 404).
-* Commit on `main` and push.
+* ✅ Commit `d963140` on `main` (2026-09-02), code + migration + docs, pushed to `origin/main`.
 
 ## QA — Dev
 
@@ -55,6 +55,7 @@ Modified: `lib/events.ts`, `components/participants-list.tsx`, `components/parti
 ## Activity
 
 - 2026-09-02 — Created (To Do) after clarifying scope and who counts as staff.
-- 2026-09-02 — Status: In Progress. Code, migration file and docs written; typecheck, lint and unit tests pass. Migration not yet applied, nothing committed.
+- 2026-09-02 — Status: In Progress. Code, migration file and docs written; typecheck, lint and unit tests pass.
+- 2026-09-02 — Migration 0049 applied by José María, RPC verified live. Code committed as `d963140`. Status: In Review — browser and staff-user RLS checks still open.
 
 Last updated: 2026-09-02
