@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server";
 import {
   getEventBySlug,
   isEventAdmin,
+  isEventStaff,
   listRegistrations,
   getMyRegistration,
   getEventLists,
@@ -94,6 +95,7 @@ export default async function EventPage({
   const tb = await getTranslations("breadcrumbs");
   const [
     admin,
+    staffViewer,
     regs,
     myReg,
     user,
@@ -107,6 +109,7 @@ export default async function EventPage({
     myDecks,
   ] = await Promise.all([
     isEventAdmin(event.id),
+    isEventStaff(event.id),
     listRegistrations(event.id),
     getMyRegistration(event.id),
     getUser(),
@@ -120,7 +123,10 @@ export default async function EventPage({
     listMyDecks(event.game),
   ]);
   const isSiteAdmin = !!viewerProfile?.is_admin;
-  const lists = admin ? await getEventLists(event.id) : new Map();
+  // Staff with a linked account (PL-22) get the roster and the lists read-only
+  // so they can deck-check; RLS (0049) is what actually lets the query through.
+  const canViewRoster = admin || staffViewer;
+  const lists = canViewRoster ? await getEventLists(event.id) : new Map();
   const [league, store] = await Promise.all([
     event.league_id ? getLeagueById(event.league_id) : null,
     event.store_id ? getStoreById(event.store_id) : null,
@@ -380,6 +386,7 @@ export default async function EventPage({
     adminAction: adminSetEventParticipantArchetypesAction,
     extraFields: { slug },
     setCheckedInAction: adminSetEventCheckedInAction.bind(null, slug),
+    readOnly: !admin,
     labels: {
       checkedIn: t("checkedIn"),
       edit: t("archEditCta"),
@@ -422,7 +429,7 @@ export default async function EventPage({
         a2: r.archetype2 ?? "",
         isPublic: r.archetype_public,
       },
-      actions: (
+      actions: admin ? (
         <form action={adminRemoveRegistrationAction}>
           <input type="hidden" name="slug" value={slug} />
           <input type="hidden" name="event_id" value={event.id} />
@@ -431,12 +438,13 @@ export default async function EventPage({
             {t("remove")}
           </Button>
         </form>
-      ),
+      ) : undefined,
       extra: (
         <ParticipantListEditor
           slug={slug}
           eventId={event.id}
           playerId={r.player_id}
+          readOnly={!admin}
           initial={{ content: list?.content ?? null, url: list?.url ?? null }}
           labels={{
             viewList: t("viewList"),
@@ -667,15 +675,19 @@ export default async function EventPage({
     });
   }
 
-  // Participants — admin-only: the roster carries player IDs and links to
-  // every submitted list, so it isn't something the field should browse.
-  if (admin) {
+  // Participants — admins and event staff only: the roster carries player IDs
+  // and every submitted list, so it isn't something the field should browse.
+  // Staff get it read-only (no check-in, remove, archetype or list edits).
+  if (canViewRoster) {
     tabs.push({
       value: "participants",
       label: `${t("participants")} (${registered.length})`,
       content: (
         <Card>
           <CardContent className="flex flex-col gap-4">
+            {!admin && (
+              <p className="text-sm text-muted-foreground">{t("staffReadOnly")}</p>
+            )}
             {registered.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t("noParticipants")}</p>
             ) : (
@@ -721,12 +733,16 @@ export default async function EventPage({
                     {missingPokemonIds.map((p, i) => (
                       <span key={p.id}>
                         {i > 0 && ", "}
-                        <Link
-                          href={`/admin/players/${p.id}`}
-                          className="text-primary hover:underline"
-                        >
-                          {p.name}
-                        </Link>
+                        {admin ? (
+                          <Link
+                            href={`/admin/players/${p.id}`}
+                            className="text-primary hover:underline"
+                          >
+                            {p.name}
+                          </Link>
+                        ) : (
+                          p.name
+                        )}
                       </span>
                     ))}
                   </p>
@@ -919,9 +935,11 @@ export default async function EventPage({
     });
   }
 
-  // Before anything is imported an admin's job is the roster (check-in, IDs to
-  // upload into TOM), not pairings that don't exist yet — land them there.
-  const initialTab = admin && tomRounds.length === 0 ? "participants" : "pairings";
+  // Before anything is imported an admin's (or judge's) job is the roster
+  // (check-in, IDs to upload into TOM, deck checks), not pairings that don't
+  // exist yet — land them there.
+  const initialTab =
+    canViewRoster && tomRounds.length === 0 ? "participants" : "pairings";
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">

@@ -7,19 +7,22 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
 
-// Admin-only inline view + editor for a single registrant's list. Unlike the
-// player's own form this ignores the entry cutoff (admin_submit_event_list,
-// 0039), so lists can still be fixed or entered at the venue.
+// Inline view + editor for a single registrant's list. Unlike the player's
+// own form this ignores the entry cutoff (admin_submit_event_list, 0039), so
+// lists can still be fixed or entered at the venue. With `readOnly` (event
+// staff, PL-22) only the view half renders — no edit toggle, no form.
 export function ParticipantListEditor({
   slug,
   eventId,
   playerId,
   initial,
   labels,
+  readOnly = false,
 }: {
   slug: string;
   eventId: string;
   playerId: string;
+  readOnly?: boolean;
   initial: { content: string | null; url: string | null };
   labels: {
     viewList: string;
@@ -70,17 +73,19 @@ export function ParticipantListEditor({
         ) : (
           <span className="text-sm text-muted-foreground">{labels.noList}</span>
         )}
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => setOpen((o) => !o)}
-        >
-          {open ? labels.close : labels.edit}
-        </Button>
+        {!readOnly && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setOpen((o) => !o)}
+          >
+            {open ? labels.close : labels.edit}
+          </Button>
+        )}
       </div>
 
-      {open && (
+      {open && !readOnly && (
         <form action={formAction} className="flex flex-col gap-3">
           <input type="hidden" name="slug" value={slug} />
           <input type="hidden" name="event_id" value={eventId} />

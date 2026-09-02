@@ -4,6 +4,7 @@ import { useState, useTransition, type ReactNode } from "react";
 import { ArchetypePicker } from "@/components/archetype-picker";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { CircleCheck, Circle } from "lucide-react";
 import type { ArchetypeChip } from "@/lib/archetypes";
 import type { ActionState } from "@/app/actions/sessions";
 
@@ -53,6 +54,10 @@ type SharedProps = {
   adminAction: (prev: ActionState, formData: FormData) => Promise<ActionState>;
   extraFields?: Record<string, string>;
   labels: Labels;
+  // Read-only roster (event staff, PL-22): check-in is shown as a static
+  // indicator and the archetype picker is hidden. Every action prop may be
+  // omitted in that mode.
+  readOnly?: boolean;
 };
 
 export function ParticipantsList({
@@ -64,7 +69,7 @@ export function ParticipantsList({
   ...shared
 }: SharedProps & {
   rows: ParticipantRowData[];
-  setCheckedInAction: (
+  setCheckedInAction?: (
     contextId: string,
     playerId: string,
     checkedIn: boolean,
@@ -80,6 +85,7 @@ export function ParticipantsList({
 
   const isChecked = (id: string) => checked[id] ?? false;
   const toggle = (id: string, value: boolean) => {
+    if (shared.readOnly || !setCheckedInAction) return;
     setChecked((prev) => ({ ...prev, [id]: value }));
     startTransition(() => setCheckedInAction(shared.contextId, id, value));
   };
@@ -134,6 +140,7 @@ function ParticipantRow({
   adminAction,
   extraFields,
   labels,
+  readOnly = false,
 }: SharedProps & {
   row: ParticipantRowData;
   checked: boolean;
@@ -146,13 +153,27 @@ function ParticipantRow({
   return (
     <li className="flex flex-col gap-2 py-2">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <Switch
-          id={checkId}
-          checked={checked}
-          onCheckedChange={onCheckedChange}
-          aria-label={labels.checkedIn}
-          className="shrink-0"
-        />
+        {readOnly ? (
+          checked ? (
+            <CircleCheck
+              className="size-5 shrink-0 text-primary"
+              aria-label={labels.checkedIn}
+            />
+          ) : (
+            <Circle
+              className="size-5 shrink-0 text-muted-foreground/50"
+              aria-hidden
+            />
+          )
+        ) : (
+          <Switch
+            id={checkId}
+            checked={checked}
+            onCheckedChange={onCheckedChange}
+            aria-label={labels.checkedIn}
+            className="shrink-0"
+          />
+        )}
         <span className="flex min-w-0 flex-1 basis-32 flex-col">
           <span className="truncate">{row.name}</span>
           {showId && (
@@ -177,18 +198,20 @@ function ParticipantRow({
           )}
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setOpen((o) => !o)}
-          >
-            {open ? labels.close : labels.edit}
-          </Button>
+          {!readOnly && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setOpen((o) => !o)}
+            >
+              {open ? labels.close : labels.edit}
+            </Button>
+          )}
           {row.actions}
         </div>
       </div>
-      {open && (
+      {open && !readOnly && (
         <ArchetypePicker
           contextId={contextId}
           contextIdField={contextIdField}

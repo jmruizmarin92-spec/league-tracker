@@ -76,6 +76,16 @@ export async function isEventAdmin(eventId: string): Promise<boolean> {
   return data === true;
 }
 
+// Event staff whose player row is linked to the logged-in user (0049, PL-22).
+// Buys read-only access to the roster and the submitted lists so judges can
+// deck-check; admins are a separate, wider check (isEventAdmin).
+export async function isEventStaff(eventId: string): Promise<boolean> {
+  if (!(await getUser())) return false;
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("is_event_staff", { p_event: eventId });
+  return data === true;
+}
+
 export type EventParticipant = {
   player_id: string;
   status: "registered" | "waitlisted";
