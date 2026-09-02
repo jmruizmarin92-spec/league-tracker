@@ -21,15 +21,15 @@ Interpretation: defaults, not locks. Both switches follow the category on the cr
 * ✅ `lib/event-category.ts` (`requiresListByDefault`) + `lib/event-category.test.ts`.
 * ✅ `components/create-event-form.tsx`: `applyCategory`, `togglesTouched`.
 * ✅ `app/actions/pokedata.ts`: both flags from the category.
-* ✅ `supabase/migrations/0050_cup_challenge_list_defaults.sql` (written; apply pending — José María).
+* ✅ `supabase/migrations/0050_cup_challenge_list_defaults.sql` — applied 2026-09-02, verified via REST.
 * ✅ `docs/features/events.md`.
-* Commit — pending.
+* ✅ Commit `532060b` on `main`, pushed; Vercel deploy `success` (2026-09-02).
 
 ## QA — Dev
 
 - [x] ✅ `vitest run`: 15 files, 157 tests green incl. `event-category.test.ts` (2026-09-02).
 - [x] ✅ `npx tsc --noEmit` clean; `eslint` clean on the four touched code files (2026-09-02).
-- [ ] Migration 0050 applied; REST check: every `category in (cup,challenge)` event has both flags true, others unchanged.
+- [x] ✅ Migration 0050 applied (José María, 2026-09-02); REST check: 4 cups + 4 challenges with both flags true, the 4 `others` events unchanged (false/false).
 - [ ] Browser: `/admin/events` → pick Cup → both switches on; pick Otros → both off; flip one by hand, then change category → switches stay as set.
 - [ ] Browser: logged out on `/events/september-5-2026-9-30am` → "Inscripción sin cuenta" form visible (PL-19 QA can start here).
 - [ ] Browser: pokedata import of a cup creates it with both flags on.
@@ -50,5 +50,6 @@ Interpretation: defaults, not locks. Both switches follow the category on the cr
 
 - 2026-09-02 — created (In Progress directly: the ask was specific enough to skip the clarifying round).
 - 2026-09-02 — implemented; tests, typecheck and lint green. Waiting on: migration 0050 applied, commit, browser QA.
+- 2026-09-02 — committed and pushed (`532060b`), deploy green; 0050 applied and verified. Flipping the flag exposed a PL-19 bug on the anonymous event page (500), fixed under PL-19.
 
 Last updated: 2026-09-02

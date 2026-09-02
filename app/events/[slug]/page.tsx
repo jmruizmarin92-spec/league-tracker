@@ -1126,7 +1126,8 @@ export default async function EventPage({
                 save: t("saveList"),
                 saved: t("saved"),
                 submitted: t("guestSubmitted"),
-                submittedAs: (name, id) => t("guestSubmittedAs", { name, id }),
+                // Template, not a function: props to a client component must serialise.
+                submittedAs: t("guestSubmittedAs", { name: "{name}", id: "{id}" }),
                 registeredIn: t("registeredIn"),
                 waitlisted: t("waitlisted"),
                 linkLabel: t("guestLinkLabel"),

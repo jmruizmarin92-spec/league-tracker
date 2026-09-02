@@ -28,7 +28,9 @@ type Labels = {
   save: string;
   saved: string;
   submitted: string;
-  submittedAs: (name: string, id: string) => string;
+  // "{name}" / "{id}" template; filled here because a function prop cannot
+  // cross the server/client boundary.
+  submittedAs: string;
   registeredIn: string;
   waitlisted: string;
   linkLabel: string;
@@ -173,7 +175,9 @@ export function EventGuestRegister({
             {entry.status === "registered" ? labels.registeredIn : labels.waitlisted}
           </Badge>
           <span className="text-sm text-muted-foreground">
-            {labels.submittedAs(entry.display_name, entry.pokemon_id ?? "—")}
+            {labels.submittedAs
+              .replace("{name}", entry.display_name)
+              .replace("{id}", entry.pokemon_id ?? "—")}
           </span>
         </div>
         {privateLink}
