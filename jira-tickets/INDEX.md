@@ -1,11 +1,13 @@
 # Local tickets — Project League
 
-One row per ticket, newest first. Keys are sequential `PL-<n>`; next free key: PL-22.
+One row per ticket, newest first. Keys are sequential `PL-<n>`; next free key: PL-24.
 
 File names carry the status: `PL-<n>-<Status>.md` with `ToDo`, `InProgress`, `InReview`, `Done`. When a ticket changes status, rename the file (`git mv`) and update the link here.
 
 | Key | Title | Status | Created | Done |
 |-----|-------|--------|---------|------|
+| [PL-23](PL-23-InProgress.md) | Landing page: "Esta semana" split into tabs (Ligas / TCG / VG / Otros) | In Progress | 2026-09-02 | — |
+| [PL-22](PL-22-InProgress.md) | Event staff can see the roster and the submitted lists (read-only) | In Progress | 2026-09-02 | — |
 | [PL-21](PL-21-InReview.md) | Import nearby League Cups and Challenges from the pokedata.ovh events API | In Review | 2026-09-02 | — |
 | [PL-20](PL-20-InReview.md) | Pasted Play! events get a composed name: "<type> <store> Q<n> <GAME>" | In Review | 2026-09-02 | — |
 | [PL-19](PL-19-InReview.md) | Guest decklist submission on standalone events (no account needed) | In Review | 2026-09-02 | — |
