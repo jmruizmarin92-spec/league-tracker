@@ -2,10 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { capText, isHttpUrl } from "@/lib/validation";
 import { isCategory } from "@/lib/event-category";
 import { getEventBySlug, isEventAdmin } from "@/lib/events";
+import {
+  GUEST_COOKIE_MAX_AGE_SECONDS,
+  guestCookieName,
+  guestCookiePath,
+  isGuestToken,
+  isValidPokemonId,
+  normalizePokemonId,
+} from "@/lib/event-guest";
 import {
   isEventEntryLocked,
   DEFAULT_LIST_LOCK_MINUTES,
@@ -51,6 +60,7 @@ export async function createEventAction(
   const externalUrl = capText(String(formData.get("external_url") ?? ""), 500);
   const prizes = capText(String(formData.get("prizes") ?? ""), 1000);
   const listRequired = String(formData.get("list_required") ?? "") === "true";
+  const allowGuests = String(formData.get("allow_guest_lists") ?? "") === "true";
   const lockMinutes = parseLockMinutes(String(formData.get("list_lock_minutes") ?? ""));
   const storeId = String(formData.get("store_id") ?? "").trim();
   const leagueId = String(formData.get("league_id") ?? "").trim();
@@ -96,6 +106,7 @@ export async function createEventAction(
     p_tournament_id: tournamentId,
     p_status: status,
     p_store_id: storeId || null,
+    p_allow_guest_lists: allowGuests,
   });
   if (error) return { error: friendlyEventError(error.message, tournamentId) };
 
@@ -142,6 +153,7 @@ export async function updateEventAction(
   const externalUrl = capText(String(formData.get("external_url") ?? ""), 500);
   const prizes = capText(String(formData.get("prizes") ?? ""), 1000);
   const listRequired = String(formData.get("list_required") ?? "") === "true";
+  const allowGuests = String(formData.get("allow_guest_lists") ?? "") === "true";
   const lockMinutes = parseLockMinutes(String(formData.get("list_lock_minutes") ?? ""));
   const storeId = String(formData.get("store_id") ?? "").trim();
   const leagueId = String(formData.get("league_id") ?? "").trim();
@@ -177,6 +189,7 @@ export async function updateEventAction(
       external_url: externalUrl || null,
       prizes: prizes || null,
       list_required: listRequired,
+      allow_guest_lists: allowGuests,
       list_lock_minutes: lockMinutes ?? DEFAULT_LIST_LOCK_MINUTES,
       capacity,
       store_id: storeId || null,
@@ -236,6 +249,122 @@ export async function submitListAction(
   if (error) return { error: error.message };
   revalidatePath(`/events/${slug}`);
   return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// Guest submissions (PL-19, 0048): no account, name + Pokémon ID + list. The
+// RPC hands back an edit token that lives in an httpOnly cookie scoped to the
+// event page (and is echoed to the client once, for the private link).
+// ---------------------------------------------------------------------------
+
+export type GuestActionState = ActionState & { token?: string };
+
+// The RPCs raise in English; map the ones a guest can actually trigger.
+function friendlyGuestError(message: string): string {
+  if (message.includes("not enabled")) {
+    return "Este evento no admite inscripciones sin cuenta.";
+  }
+  if (message.includes("Registration is closed")) return "La inscripción está cerrada.";
+  if (message.includes("deadline has passed")) {
+    return "El plazo para inscribirse y enviar listas ya está cerrado.";
+  }
+  if (message.includes("belongs to a registered user")) {
+    return "Ese Player ID pertenece a alguien con cuenta. Inicia sesión para inscribirte.";
+  }
+  if (message.includes("already registered")) {
+    return "Ya hay una inscripción con ese Player ID en este evento. Si es la tuya, abre tu enlace privado o habla con la organización.";
+  }
+  if (message.includes("Unknown guest entry")) {
+    return "No encontramos tu inscripción. Puede que la organización la haya retirado.";
+  }
+  if (message.includes("A list is required")) return "Pega tu lista o su enlace.";
+  return message;
+}
+
+function guestListError(content: string, url: string): string | null {
+  if (url && !isHttpUrl(url)) return "El enlace no es una URL válida.";
+  if (!content && !url) return "Pega tu lista o su enlace.";
+  return null;
+}
+
+export async function guestSubmitListAction(
+  _prev: GuestActionState,
+  formData: FormData,
+): Promise<GuestActionState> {
+  const slug = String(formData.get("slug") ?? "");
+  const eventId = String(formData.get("event_id") ?? "");
+  const name = capText(String(formData.get("name") ?? ""), 100);
+  const pokemonIdRaw = String(formData.get("pokemon_id") ?? "");
+  const content = capText(String(formData.get("content") ?? ""), LIST_CONTENT_MAX);
+  const url = capText(String(formData.get("url") ?? ""), 500);
+
+  if (!name) return { error: "Introduce tu nombre y apellidos." };
+  if (!isValidPokemonId(pokemonIdRaw)) {
+    return { error: "El Player ID debe tener entre 1 y 10 dígitos." };
+  }
+  const listErr = guestListError(content, url);
+  if (listErr) return { error: listErr };
+  // Readable message before the RPC; the RPC enforces it too. Admins get no
+  // bypass here on purpose — a logged-in admin is not a guest.
+  const event = await getEventBySlug(slug);
+  if (event && isEventEntryLocked(event)) {
+    return { error: "El plazo para inscribirse y enviar listas ya está cerrado." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("guest_submit_event_list", {
+    p_event: eventId,
+    p_name: name,
+    p_pokemon_id: normalizePokemonId(pokemonIdRaw),
+    p_content: content,
+    p_url: url,
+  });
+  if (error) return { error: friendlyGuestError(error.message) };
+  const token = typeof data === "string" ? data : "";
+  if (!isGuestToken(token)) return { error: "No se pudo guardar la inscripción." };
+
+  const cookieStore = await cookies();
+  cookieStore.set(guestCookieName(eventId), token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: guestCookiePath(slug),
+    maxAge: GUEST_COOKIE_MAX_AGE_SECONDS,
+  });
+  revalidatePath(`/events/${slug}`);
+  return { ok: true, token };
+}
+
+export async function guestUpdateListAction(
+  _prev: GuestActionState,
+  formData: FormData,
+): Promise<GuestActionState> {
+  const slug = String(formData.get("slug") ?? "");
+  const eventId = String(formData.get("event_id") ?? "");
+  const token = String(formData.get("token") ?? "");
+  const content = capText(String(formData.get("content") ?? ""), LIST_CONTENT_MAX);
+  const url = capText(String(formData.get("url") ?? ""), 500);
+
+  if (!isGuestToken(token)) {
+    return { error: "No encontramos tu inscripción. Abre tu enlace privado." };
+  }
+  const listErr = guestListError(content, url);
+  if (listErr) return { error: listErr };
+  const event = await getEventBySlug(slug);
+  if (event && isEventEntryLocked(event)) {
+    return { error: "El plazo para inscribirse y enviar listas ya está cerrado." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("guest_update_event_list", {
+    p_event: eventId,
+    p_token: token,
+    p_content: content,
+    p_url: url,
+  });
+  if (error) return { error: friendlyGuestError(error.message) };
+  revalidatePath(`/events/${slug}`);
+  return { ok: true, token };
 }
 
 // Admin: write a registrant's list on their behalf, cutoff or not.

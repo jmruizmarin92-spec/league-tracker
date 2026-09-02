@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cookies, headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import {
   getEventBySlug,
@@ -7,10 +8,13 @@ import {
   listRegistrations,
   getMyRegistration,
   getEventLists,
+  getGuestEntry,
   listEventStaff,
   type EventParticipant,
+  type GuestEntry,
 } from "@/lib/events";
 import { eventEntryDeadline, isEventEntryLocked } from "@/lib/event-deadline";
+import { guestCookieName, isGuestToken } from "@/lib/event-guest";
 import {
   getEventRounds,
   getEventMatches,
@@ -53,6 +57,7 @@ import { EventRealtimeRefresher } from "@/components/event-realtime-refresher";
 import { TdfImport } from "@/components/tdf-import";
 import { StandingsTable } from "@/components/standings-table";
 import { EventRegister } from "@/components/event-register";
+import { EventGuestRegister } from "@/components/event-guest-register";
 import { ParticipantListEditor } from "@/components/participant-list-editor";
 import { EditEventForm } from "@/components/edit-event-form";
 import { AddStaffForm } from "@/components/add-staff-form";
@@ -73,8 +78,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function EventPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  // `guest` carries a guest's edit token when they open their private link
+  // (PL-19); otherwise the token comes from the httpOnly cookie.
+  searchParams: Promise<{ guest?: string }>;
 }) {
   const { slug } = await params;
   const event = await getEventBySlug(slug);
@@ -179,6 +188,29 @@ export default async function EventPage({
   const entryDeadline = eventEntryDeadline(event);
   const entryLocked = isEventEntryLocked(event) && !admin;
   const deadlineWhen = entryDeadline ? formatDateTime(entryDeadline.toISOString()) : null;
+
+  // Guest submissions (PL-19): only for logged-out viewers on events that opt
+  // in. The private link's ?guest= wins over the cookie so a guest can pick
+  // their entry up on another device; a bad token just shows the blank form.
+  const showGuestForm = !user && event.allow_guest_lists;
+  let guestToken: string | null = null;
+  let guestEntry: GuestEntry | null = null;
+  let guestBaseUrl = "";
+  if (showGuestForm) {
+    const sp = await searchParams;
+    const cookieStore = await cookies();
+    const fromLink = sp.guest;
+    const fromCookie = cookieStore.get(guestCookieName(event.id))?.value;
+    const candidate = isGuestToken(fromLink) ? fromLink : fromCookie;
+    if (isGuestToken(candidate)) {
+      guestEntry = await getGuestEntry(event.id, candidate);
+      guestToken = guestEntry ? candidate : null;
+    }
+    const h = await headers();
+    const host = h.get("x-forwarded-host") ?? h.get("host");
+    const proto = h.get("x-forwarded-proto") ?? "https";
+    guestBaseUrl = host ? `${proto}://${host}` : "";
+  }
 
   // Pokémon IDs of every registrant (registered + waitlist) for tournament
   // upload; players without an ID are omitted from the copy list but surfaced
@@ -378,6 +410,7 @@ export default async function EventPage({
         <span className="flex items-center gap-2">
           {pairingName(r)}
           {r.has_list && <Badge variant="outline">{t("listSubmitted")}</Badge>}
+          {!r.has_account && <Badge variant="secondary">{t("noAccount")}</Badge>}
         </span>
       ),
       chips: [r.archetype1, r.archetype2]
@@ -799,6 +832,7 @@ export default async function EventPage({
                   description: event.description,
                   prizes: event.prizes,
                   listRequired: event.list_required,
+                  allowGuestLists: event.allow_guest_lists,
                   listLockMinutes: event.list_lock_minutes,
                 }}
                 labels={{
@@ -819,6 +853,8 @@ export default async function EventPage({
                   prizes: t("ePrizes"),
                   prizesHint: t("ePrizesHint"),
                   listRequired: t("eListRequired"),
+                  allowGuests: t("eAllowGuests"),
+                  allowGuestsHint: t("eAllowGuestsHint"),
                   listLock: t("eListLock"),
                   listLockHint: t("eListLockHint"),
                   store: t("eStore"),
@@ -1030,6 +1066,58 @@ export default async function EventPage({
                 unregister: t("unregister"),
                 closed: t("closed"),
                 privateNote: t("privateNote"),
+                entryLocked: deadlineWhen
+                  ? t("entryLockedAt", { when: deadlineWhen })
+                  : t("entryLocked"),
+                deadlineNote: deadlineWhen
+                  ? t("entryDeadlineNote", { when: deadlineWhen })
+                  : null,
+                noList: t("noListSubmitted"),
+                openList: t("openList"),
+              }}
+            />
+          </CardContent>
+        </Card>
+      ) : showGuestForm ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("guestTitle")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <EventGuestRegister
+              slug={slug}
+              eventId={event.id}
+              isOpen={event.status === "open"}
+              locked={entryLocked}
+              entry={guestEntry}
+              token={guestToken}
+              baseUrl={guestBaseUrl}
+              labels={{
+                intro: t("guestIntro"),
+                name: t("guestName"),
+                namePlaceholder: t("guestNamePlaceholder"),
+                pokemonId: t("guestPokemonId"),
+                pokemonIdHint: t("guestPokemonIdHint"),
+                listLabel: isTcg ? t("listLabelTcg") : t("listLabelVgc"),
+                listPlaceholder: isTcg
+                  ? t("listPlaceholderTcg")
+                  : t("listPlaceholderVgc"),
+                urlLabel: t("urlLabel"),
+                urlPlaceholder: t("urlPlaceholder"),
+                submit: t("guestSubmit"),
+                save: t("saveList"),
+                saved: t("saved"),
+                submitted: t("guestSubmitted"),
+                submittedAs: (name, id) => t("guestSubmittedAs", { name, id }),
+                registeredIn: t("registeredIn"),
+                waitlisted: t("waitlisted"),
+                linkLabel: t("guestLinkLabel"),
+                linkHint: t("guestLinkHint"),
+                copyLink: t("guestCopyLink"),
+                copied: t("guestCopied"),
+                accountHint: t("guestAccountHint"),
+                privateNote: t("privateNote"),
+                closed: t("closed"),
                 entryLocked: deadlineWhen
                   ? t("entryLockedAt", { when: deadlineWhen })
                   : t("entryLocked"),

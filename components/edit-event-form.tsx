@@ -54,6 +54,7 @@ export function EditEventForm({
     description: string | null;
     prizes: string | null;
     listRequired: boolean;
+    allowGuestLists: boolean;
     listLockMinutes: number;
   };
   labels: Record<string, string>;
@@ -64,6 +65,7 @@ export function EditEventForm({
   );
   const [local, setLocal] = useState(toDatetimeLocalValue(defaults.startsAt));
   const [listRequired, setListRequired] = useState(defaults.listRequired);
+  const [allowGuests, setAllowGuests] = useState(defaults.allowGuestLists);
   const [category, setCategory] = useState(defaults.category ?? "");
   const [storeId, setStoreId] = useState(defaults.storeId ?? "");
   const [leagueId, setLeagueId] = useState(defaults.leagueId ?? "");
@@ -88,6 +90,7 @@ export function EditEventForm({
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="starts_at_iso" value={iso} />
       <input type="hidden" name="list_required" value={String(listRequired)} />
+      <input type="hidden" name="allow_guest_lists" value={String(allowGuests)} />
       <input type="hidden" name="category" value={category} />
       <input type="hidden" name="store_id" value={storeId} />
       <input type="hidden" name="league_id" value={leagueId} />
@@ -279,6 +282,16 @@ export function EditEventForm({
         <label htmlFor="ee_listreq" className="text-sm">
           {labels.listRequired}
         </label>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <Switch id="ee_guests" checked={allowGuests} onCheckedChange={setAllowGuests} />
+          <label htmlFor="ee_guests" className="text-sm">
+            {labels.allowGuests}
+          </label>
+        </div>
+        <p className="text-xs text-muted-foreground">{labels.allowGuestsHint}</p>
       </div>
 
       <div className="flex items-center gap-3">

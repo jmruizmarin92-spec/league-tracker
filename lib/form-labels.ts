@@ -36,6 +36,8 @@ export function eventFormLabels(t: Translator): Record<string, string> {
     prizes: t("fPrizes"),
     prizesHint: t("prizesHint"),
     listRequired: t("fListRequired"),
+    allowGuests: t("fAllowGuests"),
+    allowGuestsHint: t("allowGuestsHint"),
     listLock: t("fListLock"),
     listLockHint: t("listLockHint"),
     pasteTitle: t("pasteTitle"),

@@ -27,6 +27,8 @@ export type EventRow = {
   store_id: string | null;
   league_id: string | null;
   tournament_id: string | null;
+  // Guests (no account) may hand in a list with name + Pokémon ID (0048).
+  allow_guest_lists: boolean;
   created_at: string;
 };
 
@@ -82,6 +84,9 @@ export type EventParticipant = {
   first_name: string | null;
   last_name: string | null;
   pokemon_id: string | null;
+  // False for managed players (guest submissions, TDF-created, staff created
+  // by hand) — the roster flags them so the TO knows who has no login.
+  has_account: boolean;
   archetype1: string | null;
   archetype2: string | null;
   archetype_public: boolean;
@@ -102,6 +107,7 @@ type RegRow = {
     first_name: string | null;
     last_name: string | null;
     pokemon_id: string | null;
+    user_id: string | null;
   } | null;
 };
 
@@ -112,7 +118,7 @@ export async function listRegistrations(
   const { data } = await supabase
     .from("event_registrations")
     .select(
-      "player_id, status, has_list, registered_at, archetype1, archetype2, archetype_public, checked_in, players(display_name, first_name, last_name, pokemon_id)",
+      "player_id, status, has_list, registered_at, archetype1, archetype2, archetype_public, checked_in, players(display_name, first_name, last_name, pokemon_id, user_id)",
     )
     .eq("event_id", eventId)
     .order("registered_at");
@@ -124,6 +130,7 @@ export async function listRegistrations(
     first_name: r.players?.first_name ?? null,
     last_name: r.players?.last_name ?? null,
     pokemon_id: r.players?.pokemon_id ?? null,
+    has_account: !!r.players?.user_id,
     archetype1: r.archetype1,
     archetype2: r.archetype2,
     archetype_public: r.archetype_public,
@@ -214,6 +221,32 @@ export async function listEventStaff(eventId: string): Promise<EventStaffMember[
 }
 
 // Admin: all submitted lists for an event, keyed by player_id (RLS allows admins).
+// A guest's own submission (0048), looked up by the edit token it received on
+// submit. Null when the token is unknown for this event or the TO removed the
+// registration since. The RPC is security definer: event_guest_entries has no
+// grants, so this is the only read path.
+export type GuestEntry = {
+  player_id: string;
+  display_name: string;
+  pokemon_id: string | null;
+  status: "registered" | "waitlisted";
+  content: string | null;
+  url: string | null;
+};
+
+export async function getGuestEntry(
+  eventId: string,
+  token: string,
+): Promise<GuestEntry | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("guest_get_event_entry", {
+    p_event: eventId,
+    p_token: token,
+  });
+  const rows = (data as GuestEntry[] | null) ?? [];
+  return rows[0] ?? null;
+}
+
 export async function getEventLists(
   eventId: string,
 ): Promise<Map<string, { content: string | null; url: string | null }>> {

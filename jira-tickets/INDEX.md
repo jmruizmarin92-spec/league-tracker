@@ -6,7 +6,7 @@ File names carry the status: `PL-<n>-<Status>.md` with `ToDo`, `InProgress`, `In
 
 | Key | Title | Status | Created | Done |
 |-----|-------|--------|---------|------|
-| [PL-19](PL-19-InProgress.md) | Guest decklist submission on standalone events (no account needed) | In Progress | 2026-09-02 | — |
+| [PL-19](PL-19-InReview.md) | Guest decklist submission on standalone events (no account needed) | In Review | 2026-09-02 | — |
 | [PL-18](PL-18-InReview.md) | "Generar sesiones" fails: bulk generator inserts sessions without a slug | In Review | 2026-09-02 | — |
 | [PL-17](PL-17-InReview.md) | Store admins: per-store owners/admins who create events and run the store's leagues | In Review | 2026-08-25 | — |
 | [PL-16](PL-16-InReview.md) | Create an event by pasting its Play! Pokémon tournament page, linked to its store and season league | In Review | 2026-08-25 | — |

@@ -81,6 +81,7 @@ export function CreateEventForm({
   const [category, setCategory] = useState("");
   const [local, setLocal] = useState("");
   const [listRequired, setListRequired] = useState(false);
+  const [allowGuests, setAllowGuests] = useState(false);
   const [storeId, setStoreId] = useState(fixedStoreId ?? "");
   const [leagueId, setLeagueId] = useState("");
   const [status, setStatus] = useState<PlayEventStatus>("open");
@@ -209,6 +210,7 @@ export function CreateEventForm({
       <input type="hidden" name="category" value={category} />
       <input type="hidden" name="starts_at_iso" value={iso} />
       <input type="hidden" name="list_required" value={String(listRequired)} />
+      <input type="hidden" name="allow_guest_lists" value={String(allowGuests)} />
       <input type="hidden" name="store_id" value={storeId} />
       <input type="hidden" name="league_id" value={leagueId} />
       <input type="hidden" name="status" value={status} />
@@ -456,6 +458,14 @@ export function CreateEventForm({
       <div className="flex items-center gap-2">
         <Switch id="e_listreq" checked={listRequired} onCheckedChange={setListRequired} />
         <label htmlFor="e_listreq" className="text-sm">{labels.listRequired}</label>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <Switch id="e_guests" checked={allowGuests} onCheckedChange={setAllowGuests} />
+          <label htmlFor="e_guests" className="text-sm">{labels.allowGuests}</label>
+        </div>
+        <p className="text-xs text-muted-foreground">{labels.allowGuestsHint}</p>
       </div>
 
       <div className="flex items-center gap-3">
