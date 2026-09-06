@@ -83,20 +83,29 @@ export async function getUpcoming(): Promise<UpcomingItem[]> {
 
   for (const e of (events as EventRow[] | null) ?? []) {
     if (!e.starts_at) continue;
-    items.push({
-      kind: "event",
-      href: `/events/${e.slug}`,
-      name: e.name,
-      game: e.game,
-      format: null,
-      category: e.category,
-      startsAt: e.starts_at,
-      location: e.location,
-      cost: e.cost,
-      subtitle: e.subtitle,
-    });
+    items.push(eventToUpcomingItem(e));
   }
 
   items.sort((a, b) => a.startsAt.localeCompare(b.startsAt));
   return items;
+}
+
+// The `UpcomingRow` shape of a standalone event; shared by the landing feed
+// and the /events history (PL-30). An undated event gets an empty `startsAt`
+// so the row simply omits the date.
+export function eventToUpcomingItem(
+  e: Omit<EventRow, "starts_at"> & { starts_at: string | null },
+): UpcomingItem {
+  return {
+    kind: "event",
+    href: `/events/${e.slug}`,
+    name: e.name,
+    game: e.game,
+    format: null,
+    category: e.category,
+    startsAt: e.starts_at ?? "",
+    location: e.location,
+    cost: e.cost,
+    subtitle: e.subtitle,
+  };
 }

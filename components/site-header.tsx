@@ -28,6 +28,12 @@ export async function SiteHeader() {
             {t("leagues")}
           </Link>
           <Link
+            href="/events"
+            className="shrink-0 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {t("events")}
+          </Link>
+          <Link
             href="/arquetipos"
             className="shrink-0 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >

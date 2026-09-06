@@ -25,11 +25,14 @@ export function UpcomingRow({
   variant,
   badge,
   sessionLabel,
+  trailing,
 }: {
   item: UpcomingItem;
   variant: keyof typeof VARIANT_CLASS;
   badge?: string;
   sessionLabel: string;
+  // Right-hand slot, e.g. the status badge of a past event on /events.
+  trailing?: React.ReactNode;
 }) {
   return (
     <Link
@@ -69,6 +72,7 @@ export function UpcomingRow({
           </span>
         </span>
       </span>
+      {trailing && <span className="shrink-0">{trailing}</span>}
     </Link>
   );
 }
