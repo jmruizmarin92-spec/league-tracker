@@ -28,11 +28,13 @@ On the day the TO re-drops the file after every round. Three clicks and a review
 * ✅ `app/events/[slug]/page.tsx`: new `import` tab; TOM card out of `manage`.
 * ✅ `messages/es.json`: `event.tabImport`; 16 unused `eventTom.import*` keys removed; `importHint` reworded.
 * ✅ `docs/features/events.md` + `docs/features/sessions-rounds.md`.
+* ✅ Commit `48f60fc` on `main`, pushed; Vercel deployment 6291010351 `success` (2026-09-06).
 
 ## QA — Dev
 
 - [x] ✅ `vitest run`: 15 files, 157 tests green (2026-09-06).
 - [x] ✅ `npx tsc --noEmit` clean; `eslint` clean on the four touched code files (2026-09-06).
+- [x] ✅ Prod smoke after deploy (anonymous curl, 2026-09-06): landing with `?tab=tcg`, `/events/september-5-2026-9-30am` and the same with `?tab=standings` all 200, tab strip present, no application error.
 - [ ] Browser: admin on an event → "Importar TOM" tab shows picker + last import + clear; Gestión no longer has the TOM card.
 - [ ] Browser: import a `.tdf` → lands on Emparejamientos with the rounds; re-import the next round from the import tab → lands on Emparejamientos again with the new round selected.
 - [ ] Browser: import a non-TDF file → error under the form, no redirect.
@@ -55,6 +57,7 @@ On the day the TO re-drops the file after every round. Three clicks and a review
 
 - 2026-09-06 — created after the clarifying round (skip review always when the file parses; whole TOM card moves; every import lands on pairings). In Progress.
 - 2026-09-06 — implemented; tests, typecheck and lint green. In Review. Not committed; browser QA pending (needs an admin session and a `.tdf`).
+- 2026-09-06 — committed and pushed (`48f60fc`), Vercel deploy green, anonymous prod smoke OK. Admin-side browser QA (import tab, redirect, name-only match) still open.
 - 2026-09-06 — ticket file recreated: a parallel session (PL-27, tap feedback) wrote its ticket to the same `PL-26-InProgress.md` path at the same moment and then renamed it to PL-27, which took this ticket's text with it. INDEX row kept by that session.
 
 Last updated: 2026-09-06
