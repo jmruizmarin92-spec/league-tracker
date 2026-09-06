@@ -16,6 +16,8 @@ import { eventFormLabels, leagueFormLabels } from "@/lib/form-labels";
 import { CreateEventForm } from "@/components/create-event-form";
 import { CreateLeagueForm } from "@/components/create-league-form";
 import { StoreDetailsForm } from "@/components/store-details-form";
+import { StorePrizeDefaultsForm } from "@/components/store-prize-defaults-form";
+import { getStorePrizeDefaults } from "@/lib/event-prize-budget";
 import { StoreRoster } from "@/components/store-roster";
 import { GameBadge } from "@/components/game-badge";
 import { Badge } from "@/components/ui/badge";
@@ -36,7 +38,7 @@ export default async function StoreAdminPage({
   if (!store) notFound();
   if (!(await isStoreAdmin(store.id))) redirect("/");
 
-  const [t, ts, te, tl, profile, isOwner, admins, addable, allLeagues, allEvents] =
+  const [t, ts, te, tl, profile, isOwner, admins, addable, allLeagues, allEvents, prizeDefaults] =
     await Promise.all([
       getTranslations("storeAdmin"),
       getTranslations("stores"),
@@ -48,6 +50,7 @@ export default async function StoreAdminPage({
       listAddableStoreUsers(store.id),
       listLeagues(),
       listEvents(),
+      getStorePrizeDefaults(store.id),
     ]);
   const isSiteAdmin = !!profile?.is_admin;
   const leagues = allLeagues.filter((l) => l.store_id === store.id);
@@ -103,6 +106,26 @@ export default async function StoreAdminPage({
               playLeagueIdHint: ts("playLeagueIdHint"),
               save: ts("save"),
               saved: ts("saved"),
+            }}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Prize budget defaults (PL-29) */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("prizeDefaultsTitle")}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <p className="text-sm text-muted-foreground">{t("prizeDefaultsHint")}</p>
+          <StorePrizeDefaultsForm
+            storeId={store.id}
+            slug={store.slug}
+            defaults={{
+              venueFee: prizeDefaults?.venue_fee ?? 0,
+              judgeFee: prizeDefaults?.judge_fee ?? 0,
+              entryPack: prizeDefaults?.entry_pack ?? false,
+              packValue: prizeDefaults?.pack_value ?? 0,
             }}
           />
         </CardContent>

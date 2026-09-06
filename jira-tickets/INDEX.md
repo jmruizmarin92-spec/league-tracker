@@ -1,11 +1,12 @@
 # Local tickets — Project League
 
-One row per ticket, newest first. Keys are sequential `PL-<n>`; next free key: PL-29.
+One row per ticket, newest first. Keys are sequential `PL-<n>`; next free key: PL-30.
 
 File names carry the status: `PL-<n>-<Status>.md` with `ToDo`, `InProgress`, `InReview`, `Done`. When a ticket changes status, rename the file (`git mv`) and update the link here.
 
 | Key | Title | Status | Created | Done |
 |-----|-------|--------|---------|------|
+| [PL-29](PL-29-InReview.md) | Prize budget calculator for cups and other standalone events | In Review | 2026-09-06 | — |
 | [PL-28](PL-28-InReview.md) | Registration card disappears once entry is closed | In Review | 2026-09-06 | — |
 | [PL-27](PL-27-InReview.md) | Tap feedback on the phone: pending spinner on action buttons and a top progress bar on navigation | In Review | 2026-09-06 | — |
 | [PL-26](PL-26-InReview.md) | TOM import: own tab, one step, lands on the pairings | In Review | 2026-09-06 | — |

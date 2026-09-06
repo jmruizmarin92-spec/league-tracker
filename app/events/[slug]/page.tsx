@@ -46,6 +46,16 @@ import {
   adminSetEventCheckedInAction,
 } from "@/app/actions/events";
 import { clearEventTdfAction } from "@/app/actions/event-tdf";
+import {
+  countTdfPlayers,
+  getEventPrizeBudget,
+  getStorePrizeDefaults,
+} from "@/lib/event-prize-budget";
+import { DEFAULT_TOP_CUT, defaultShares } from "@/lib/event-prizes";
+import {
+  EventPrizeBudget,
+  type PrizeBudgetDefaults,
+} from "@/components/event-prize-budget";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { PageTabs, type PageTab } from "@/components/page-tabs";
 import {
@@ -92,6 +102,7 @@ export default async function EventPage({
 
   const t = await getTranslations("event");
   const tt = await getTranslations("eventTom");
+  const tp = await getTranslations("eventPrizes");
   const tb = await getTranslations("breadcrumbs");
   const [
     admin,
@@ -151,6 +162,41 @@ export default async function EventPage({
         ),
       ])
     : [[], []];
+
+  // Prize budget (PL-29): the saved budget, else the store's defaults, else
+  // zeros; the player count is what TOM brought in, or the registered count
+  // as a labelled estimate until a .tdf is imported. Admin-only card.
+  const [prizeBudget, storePrizeDefaults, tdfPlayerCount] = admin
+    ? await Promise.all([
+        getEventPrizeBudget(event.id),
+        event.store_id ? getStorePrizeDefaults(event.store_id) : null,
+        countTdfPlayers(event.id),
+      ])
+    : [null, null, 0];
+  const prizeDefaults: PrizeBudgetDefaults = prizeBudget
+    ? {
+        venueFee: prizeBudget.venue_fee,
+        judgeFee: prizeBudget.judge_fee,
+        entryPack: prizeBudget.entry_pack,
+        packValue: prizeBudget.pack_value,
+        extraCosts: prizeBudget.extra_costs,
+        extraCostsNote: prizeBudget.extra_costs_note ?? "",
+        prizeKind: prizeBudget.prize_kind,
+        topCut: prizeBudget.top_cut,
+        shares: prizeBudget.shares,
+      }
+    : {
+        venueFee: storePrizeDefaults?.venue_fee ?? 0,
+        judgeFee: storePrizeDefaults?.judge_fee ?? 0,
+        entryPack: storePrizeDefaults?.entry_pack ?? false,
+        packValue: storePrizeDefaults?.pack_value ?? 0,
+        extraCosts: 0,
+        extraCostsNote: "",
+        prizeKind: "packs",
+        topCut: DEFAULT_TOP_CUT,
+        shares: defaultShares(DEFAULT_TOP_CUT),
+      };
+  const prizeDefaultsSource = prizeBudget ? "event" : storePrizeDefaults ? "store" : "none";
 
   const staffIds = new Set(staff.map((s) => s.player_id));
   const addableStaff = admin
@@ -883,6 +929,24 @@ export default async function EventPage({
                   save: t("save"),
                   saved: t("saved"),
                 }}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Prize budget (PL-29) */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{tp("title")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <EventPrizeBudget
+                eventId={event.id}
+                slug={slug}
+                entryFee={event.cost}
+                players={tdfPlayerCount > 0 ? tdfPlayerCount : registered.length}
+                playersSource={tdfPlayerCount > 0 ? "tdf" : "registered"}
+                defaults={prizeDefaults}
+                defaultsSource={prizeDefaultsSource}
               />
             </CardContent>
           </Card>
