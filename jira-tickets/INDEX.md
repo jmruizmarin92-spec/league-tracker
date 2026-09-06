@@ -1,11 +1,14 @@
 # Local tickets — Project League
 
-One row per ticket, newest first. Keys are sequential `PL-<n>`; next free key: PL-25.
+One row per ticket, newest first. Keys are sequential `PL-<n>`; next free key: PL-28.
 
 File names carry the status: `PL-<n>-<Status>.md` with `ToDo`, `InProgress`, `InReview`, `Done`. When a ticket changes status, rename the file (`git mv`) and update the link here.
 
 | Key | Title | Status | Created | Done |
 |-----|-------|--------|---------|------|
+| [PL-27](PL-27-InReview.md) | Tap feedback on the phone: pending spinner on action buttons and a top progress bar on navigation | In Review | 2026-09-06 | — |
+| [PL-26](PL-26-InReview.md) | TOM import: own tab, one step, lands on the pairings | In Review | 2026-09-06 | — |
+| [PL-25](PL-25-InReview.md) | Guest list submission fails on prod: `gen_random_bytes` does not exist | In Review | 2026-09-04 | — |
 | [PL-24](PL-24-InProgress.md) | Cups and challenges: list mandatory and guest lists on by default | In Progress | 2026-09-02 | — |
 | [PL-23](PL-23-InReview.md) | Landing page: "Esta semana" split into tabs (Ligas / TCG / VG / Otros) | In Review | 2026-09-02 | — |
 | [PL-22](PL-22-InReview.md) | Event staff can see the roster and the submitted lists (read-only) | In Review | 2026-09-02 | — |

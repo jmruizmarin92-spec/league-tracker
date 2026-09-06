@@ -26,6 +26,13 @@ i18n, theming, realtime updates, site navigation, game-specific domain routing, 
 - `components/breadcrumbs.tsx` — presentational nav rendering a list of `{label, href?}` items with chevron separators; the last/href-less item renders as plain text (current page).
 - `app/settings/page.tsx` — currently a placeholder page (`requireUser()` guard + "coming soon" text via the `placeholder` i18n namespace); no real settings implemented yet.
 
+## Tap feedback (PL-27)
+
+Every page is dynamic (auth cookies) and there is no `loading.tsx`, so without this a tap on the phone showed nothing until the server answered.
+
+- `components/ui/button.tsx` — client component. Calls `useFormStatus()` and, when the button is a submit button (`type="submit"` or no `type`) inside a `<form>` whose action is running, renders a `LoaderCircle` spinner (`animate-spin`, `data-icon="inline-start"`) before the label, sets `aria-busy` / `data-pending`, and disables the button with `disabled:opacity-100` so it keeps full opacity instead of the usual 50% fade. Works for plain `<form action={serverAction}>` buttons with no wiring; merges with the explicit `disabled={pending}` that the `useActionState` forms already pass. `asChild` (links styled as buttons) and non-submit buttons never enter the pending state. The base classes also got `active:scale-[0.97]` so the press itself is visible.
+- `components/navigation-progress.tsx` — client component mounted once in `app/layout.tsx` (before `SiteHeader`; wraps its inner in `Suspense` because it uses `useSearchParams`). Fixed 3 px bar at the top (`.nav-progress` in `globals.css`, primary color, `transform-origin: left`). A document-level click listener starts it when the click was taken over by Next's `<Link>` (`e.defaultPrevented`), is the primary button, targets a same-origin anchor and its pathname+search differs from the current URL (same-URL and `#hash` clicks would never produce a "done" signal). Phases drive inline `transform`/`opacity`: `loading` creeps to `scaleX(0.9)` over 8 s with the opacity fade delayed 120 ms so prefetched/instant navigations never flash it; `done` (set when `usePathname`/`useSearchParams` commit a different URL) fills to 100% and fades; a 15 s stall timeout resets a navigation that never lands. `router.refresh()` from the realtime refreshers does not change the URL, so it never shows the bar.
+
 ## Game-specific domain routing
 
 - `proxy.ts` (root) — Next.js 16 renamed `middleware.ts` to `proxy.ts` (same runtime behavior, Node.js runtime, same `config.matcher`).
