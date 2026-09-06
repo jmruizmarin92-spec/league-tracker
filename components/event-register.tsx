@@ -46,8 +46,9 @@ export function EventRegister({
   eventId: string;
   isOpen: boolean;
   listRequired: boolean;
-  // Cutoff has passed for this viewer (event admins are passed false — they
-  // keep editing after the deadline).
+  // Entry is closed (cutoff passed, or the event isn't open). The page only
+  // renders this component past that point for a viewer who is registered,
+  // so the locked branches are always the read-only "what you sent" view.
   locked: boolean;
   myReg:
     | { status: "registered" | "waitlisted"; content: string | null; url: string | null }

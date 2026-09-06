@@ -189,11 +189,20 @@ export default async function EventPage({
   const prefillDeck = !myHasPicks ? latestDeck(myDecks, event.game) : null;
 
   // Registration + list submission close a set number of minutes before the
-  // start (default 60). Admins are never locked out so they can still fix a
-  // list or sign someone up on the day.
+  // start (default 60), and a closed/complete event is closed full stop. Past
+  // that point the registration card goes away (PL-28): a viewer who is in
+  // keeps a read-only copy of what they sent, everyone else sees nothing —
+  // admins included. They sign people up and fix lists from the roster tools
+  // in Inscritos, and on the day the card only got in the way of the tabs.
   const entryDeadline = eventEntryDeadline(event);
-  const entryLocked = isEventEntryLocked(event) && !admin;
+  const entryClosed = event.status !== "open" || isEventEntryLocked(event);
   const deadlineWhen = entryDeadline ? formatDateTime(entryDeadline.toISOString()) : null;
+  const entryClosedLabel =
+    event.status !== "open"
+      ? t("closed")
+      : deadlineWhen
+        ? t("entryLockedAt", { when: deadlineWhen })
+        : t("entryLocked");
 
   // Guest submissions (PL-19): only for logged-out viewers on events that opt
   // in. The private link's ?guest= wins over the cookie so a guest can pick
@@ -758,7 +767,9 @@ export default async function EventPage({
     // drop after every round is what the TO does most on the day. One step:
     // pick the .tdf, import, and the action redirects to `?tab=pairings`. The
     // last-import line and the undo live here too; Gestión is for the event.
-    tabs.push({
+    // Always the second tab for whoever can see it: right after Emparejamientos
+    // once there are rounds, right after Inscritos before that.
+    tabs.splice(Math.min(1, tabs.length), 0, {
       value: "import",
       label: t("tabImport"),
       content: (
@@ -1041,8 +1052,10 @@ export default async function EventPage({
         </Card>
       )}
 
-      {/* Registration + list */}
+      {/* Registration + list. Gone once entry is closed unless the viewer is
+          in, in which case it stays as a read-only copy of what they sent. */}
       {user ? (
+        (!entryClosed || myReg) && (
         <Card>
           <CardHeader>
             <CardTitle>{t("registration")}</CardTitle>
@@ -1053,7 +1066,7 @@ export default async function EventPage({
               eventId={event.id}
               isOpen={event.status === "open"}
               listRequired={event.list_required}
-              locked={entryLocked}
+              locked={entryClosed}
               myReg={
                 myReg
                   ? { status: myReg.status, content: myReg.content, url: myReg.url }
@@ -1075,9 +1088,7 @@ export default async function EventPage({
                 unregister: t("unregister"),
                 closed: t("closed"),
                 privateNote: t("privateNote"),
-                entryLocked: deadlineWhen
-                  ? t("entryLockedAt", { when: deadlineWhen })
-                  : t("entryLocked"),
+                entryLocked: entryClosedLabel,
                 deadlineNote: deadlineWhen
                   ? t("entryDeadlineNote", { when: deadlineWhen })
                   : null,
@@ -1087,7 +1098,8 @@ export default async function EventPage({
             />
           </CardContent>
         </Card>
-      ) : showGuestForm ? (
+        )
+      ) : entryClosed && !guestEntry ? null : showGuestForm ? (
         <Card>
           <CardHeader>
             <CardTitle>{t("guestTitle")}</CardTitle>
@@ -1097,7 +1109,7 @@ export default async function EventPage({
               slug={slug}
               eventId={event.id}
               isOpen={event.status === "open"}
-              locked={entryLocked}
+              locked={entryClosed}
               entry={guestEntry}
               token={guestToken}
               baseUrl={guestBaseUrl}
@@ -1128,9 +1140,7 @@ export default async function EventPage({
                 accountHint: t("guestAccountHint"),
                 privateNote: t("privateNote"),
                 closed: t("closed"),
-                entryLocked: deadlineWhen
-                  ? t("entryLockedAt", { when: deadlineWhen })
-                  : t("entryLocked"),
+                entryLocked: entryClosedLabel,
                 deadlineNote: deadlineWhen
                   ? t("entryDeadlineNote", { when: deadlineWhen })
                   : null,
