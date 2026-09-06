@@ -21,13 +21,14 @@ Clarified: a viewer who is registered keeps the box as a read-only copy of what 
 * ✅ `app/events/[slug]/page.tsx`: `entryClosed` / `entryClosedLabel`, card gating for the three viewer kinds.
 * ✅ `components/event-register.tsx`: `locked` prop comment.
 * ✅ `docs/features/events.md`.
+* ✅ Commit `247e197` on `main`, pushed; Vercel deployment 6291100723 `success` (2026-09-06).
 
 ## QA — Dev
 
 - [x] ✅ `vitest run` 157 green, `npx tsc --noEmit` clean, `eslint` clean on the two touched code files (2026-09-06).
 - [ ] Browser, admin not registered, event past its cutoff → no Inscripción card, tabs directly under the header.
 - [ ] Browser, registered player past the cutoff → card with Inscrito badge + list read-only, no form.
-- [ ] Browser, logged out past the cutoff → no guest card and no "Entra para inscribirte"; with a `?guest=` link → read-only guest card.
+- [x] ✅ Logged out past the cutoff → no guest card and no "Entra para inscribirte" (anonymous curl of `/events/september-5-2026-9-30am` on prod after the deploy, 2026-09-06: 200, neither rendered, tab strip present). Still open: the `?guest=` link → read-only guest card.
 - [ ] Browser, event set to Cerrado before the cutoff → card gone for non-registered viewers, "La inscripción está cerrada." for registered ones.
 
 ## Changes made
@@ -39,6 +40,7 @@ Clarified: a viewer who is registered keeps the box as a read-only copy of what 
 
 - 2026-09-06 — created after the clarifying round (registered keep a read-only card; admins lose it too; closed/complete same rule). In Progress.
 
-- 2026-09-06 — implemented; tests, typecheck and lint green. In Review. Not committed; browser QA pending.
+- 2026-09-06 — implemented; tests, typecheck and lint green. In Review.
+- 2026-09-06 — committed and pushed (`247e197`), Vercel deploy green, anonymous prod smoke OK on the past-cutoff cup. Admin / registered-player / guest-link browser checks still open.
 
 Last updated: 2026-09-06

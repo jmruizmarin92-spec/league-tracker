@@ -61,7 +61,7 @@ On the day the TO re-drops the file after every round. Three clicks and a review
 - 2026-09-06 — created after the clarifying round (skip review always when the file parses; whole TOM card moves; every import lands on pairings). In Progress.
 - 2026-09-06 — implemented; tests, typecheck and lint green. In Review. Not committed; browser QA pending (needs an admin session and a `.tdf`).
 - 2026-09-06 — committed and pushed (`48f60fc`), Vercel deploy green, anonymous prod smoke OK. Admin-side browser QA (import tab, redirect, name-only match) still open.
-- 2026-09-06 — follow-up from José María after seeing it on prod: "Importar TOM" must be the second tab for anyone with access. Done (`tabs.splice`), same checks green, not committed yet.
+- 2026-09-06 — follow-up from José María after seeing it on prod: "Importar TOM" must be the second tab for anyone with access. Done (`tabs.splice`), same checks green; committed with PL-28 in `247e197`, deployed (Vercel 6291100723 success).
 - 2026-09-06 — ticket file recreated: a parallel session (PL-27, tap feedback) wrote its ticket to the same `PL-26-InProgress.md` path at the same moment and then renamed it to PL-27, which took this ticket's text with it. INDEX row kept by that session.
 
 Last updated: 2026-09-06
