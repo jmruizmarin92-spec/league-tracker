@@ -39,7 +39,7 @@ Until now the 52 files in `supabase/migrations/` were pasted by hand in the Supa
 - [x] ✅ Baseline pasted (2026-09-06). Count was 54: two stale rows from 2026-07-19 (`20260719105951` = 0035, `20260719111839` = 0036, an early CLI/dashboard push) deleted by hand → 52. `supabase migration list --db-url <pooler>` from the laptop shows local and remote matching on 0001–0052 and `db push --dry-run` would apply only `20260906120000_migration_versions.sql`.
 - [x] ✅ First workflow run (push `dd1d492`, 2026-09-06 17:40, run 34043034403): all steps green, applied `20260906120000_migration_versions`, deploy hook called. Anon `POST /rest/v1/rpc/migration_versions` returns 53 versions ending in `0052, 20260906120000`. Vercel deployment of `dd1d492` success.
 - [ ] Gate check on Vercel: a later push with a migration shows the Git-triggered build as "Canceled" by the Ignored Build Step and the hook-triggered build as the one that goes live.
-- [ ] A push without migrations deploys through the Git integration as before (workflow does not run).
+- [x] ✅ Push without migrations (`1f52e68`, ticket only, 2026-09-06 17:42): no db-migrate run for that sha, Vercel commit status "Deployment has completed" 90 s later through the Git integration, prod home 200.
 
 ## Changes made
 
@@ -62,5 +62,7 @@ Until now the 52 files in `supabase/migrations/` were pasted by hand in the Supa
 - 2026-09-06 — baseline applied and reconciled (54 → 52 rows); dry run against prod through the session pooler OK. Waiting on: secrets, deploy hook, Ignored Build Step, 0051 commit, push.
 
 - 2026-09-06 — secrets, deploy hook and Ignored Build Step configured by José María; 0051 committed (`dd1d492`) and pushed. db-migrate run green, RPC live with 53 versions, Vercel deploy success. Open: gate proof on the next real migration; this ticket commit is the no-migration push check.
+
+- 2026-09-06 — no-migration push verified (`1f52e68`: no workflow run, Git build deployed). Only the gate proof on a real migration remains; stays In Review until the next migration-carrying push shows the Git build canceled with `[db-gate] skip:` and the hook build live.
 
 Last updated: 2026-09-06
