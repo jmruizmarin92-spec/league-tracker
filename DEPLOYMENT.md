@@ -1,67 +1,111 @@
 # Deployment
 
-This project has two moving parts that deploy separately: the **app**
-(Vercel, from GitHub) and the **database** (Supabase, applied manually).
-Neither auto-triggers the other, so the order you do things in matters.
+Two moving parts: the **app** (Vercel, from GitHub) and the **database**
+(Supabase Postgres). Since PL-31 both deploy from a push to `main`; the
+database step runs first and gates the app when a push carries a migration.
 
 ## Stack
 
 - **App**: Next.js 16, hosted on [Vercel](https://vercel.com), auto-deploys
   from the `main` branch of
   `https://github.com/jmruizmarin92-spec/league-tracker.git`.
-- **Database**: Supabase Postgres. Schema changes live as SQL files in
-  `supabase/migrations/`, applied by hand in the Supabase SQL Editor —
-  there is no CLI/CI step that runs them automatically.
+- **Database**: Supabase Postgres. Schema and seed changes live as SQL files
+  in `supabase/migrations/`, applied by the `db-migrate` GitHub Actions
+  workflow with the Supabase CLI. The CLI records every applied file in
+  `supabase_migrations.schema_migrations` (version + name) and never runs
+  the same version twice.
 
-## The golden rule
+## How a push deploys
 
-**Never push a commit that depends on a migration before that migration has
-been applied to the live Supabase project.** Vercel deploys the instant you
-push; if the code expects a column, table, or RPC that doesn't exist yet in
-production, the live site breaks for real users immediately.
+1. Vercel's Git integration starts a build for the commit and runs the
+   **Ignored Build Step** (`node scripts/vercel-ignore-build.mjs`). The
+   script lists the versions in `supabase/migrations/` and asks the database
+   which ones are applied (`public.migration_versions()` RPC, anon key).
+   - Every version applied → build proceeds. This is the whole story for a
+     push without migrations: nothing else runs.
+   - A version missing → the build is **canceled**. The app is never
+     deployed against a database that lacks its migration.
+   - The check cannot run (no env, RPC missing, network) → build proceeds,
+     same as before PL-31. It fails open on purpose so it can never brick
+     deploys; the log line starts with `[db-gate]`.
+2. If the push touched `supabase/migrations/**`, the `db-migrate` workflow
+   runs (`.github/workflows/db-migrate.yml`): idempotency lint → dry run
+   (refuses to continue if the history table is empty) → `supabase db push`
+   → POST to the Vercel deploy hook.
+3. The deploy hook starts a new build for `main`. It runs the Ignored Build
+   Step again, this time every version is applied, and the app goes live.
 
-So the order is always:
+A failed migration therefore means no app deploy: the Git build was
+canceled and the hook is never called. Fix the file (new migration if the
+broken one already partially ran — see below), push again.
 
-1. Migration applied to Supabase (if the change needs one)
-2. Verified as actually applied
-3. *Then* push to `main`
+## Normal flow
 
-## Normal deploy flow
-
-1. **Build the feature** — edit code, and if the change needs a schema
-   change, add a new numbered file to `supabase/migrations/`
-   (`00NN_description.sql`, next number after whatever's already there).
-2. **Test locally**:
+1. **Build the feature.** If it needs a schema or data change, add a file
+   `supabase/migrations/<YYYYMMDDHHmmss>_<snake_case_name>.sql` (UTC
+   timestamp). Timestamps instead of the old `00NN` counter: several
+   sessions work in parallel and two `0053`s would collide.
+2. **Write it idempotent.** The rule and the exact checks are in `CLAUDE.md`
+   (Database migrations). `npm run lint:migrations` runs the same checks as
+   CI; `npm test` includes them.
+3. **Test locally**:
    ```
-   npm test        # vitest — pure logic (pairing, scoring, standings, profile)
-   npm run build    # next build — full compile + typecheck
+   npm test          # vitest — pure logic + migration lint
+   npm run build     # next build — full compile + typecheck
    ```
-   Both must pass clean before anything ships.
-3. **If there's a migration**, hand the SQL to whoever has the Supabase
-   dashboard open and wait for confirmation it ran. Don't push yet.
-4. **Verify the migration actually landed** — don't just trust "it ran".
-   Query the REST API directly with the anon/publishable key, e.g.:
-   ```powershell
-   Invoke-WebRequest -Uri 'https://<project>.supabase.co/rest/v1/<table>?select=<new_column>&limit=1' `
-     -Headers @{ apikey = '<publishable-key>' }
-   ```
-   HTTP 200 = the column/table/function exists. HTTP 400 = it doesn't —
-   stop and re-check before going further.
-5. **Commit** — use a heredoc for the commit message (see note below on
-   Windows/PowerShell quoting) and never include literal double quotes in
-   a message passed through a PowerShell here-string.
-6. **Push to `main`**:
-   ```
-   git push origin main
-   ```
-   This alone triggers the Vercel deploy — no separate deploy command.
-7. Vercel builds and deploys automatically (typically 1–2 minutes). No
-   manual step on the Vercel side is needed as long as the GitHub
-   integration is connected.
+4. **Commit and push to `main`.** Nothing else. Watch the `db-migrate` run
+   on GitHub and the deployment list on Vercel: the Git-triggered build
+   should show as canceled by the Ignored Build Step and the deploy-hook
+   build as the one that went live.
+5. **Verify** as before when it matters: `POST /rest/v1/rpc/<new function>`
+   with correctly-shaped args, or `GET /rest/v1/<table>?select=<column>`
+   with the anon key. `POST /rest/v1/rpc/migration_versions` returns the
+   applied version list.
 
-## If there's no schema change
+Never edit a migration file after it has been pushed. The CLI does not
+checksum files, so the edit would silently never reach the database (PL-25
+happened exactly like this when files were pasted by hand). Write a new
+migration instead.
 
-Skip straight to build → test → commit → push. No need to touch Supabase.
+## One-time setup (done once per Supabase project / Vercel project)
+
+1. **Baseline the history.** In the Supabase SQL editor, run
+   `supabase/baseline.sql`. It creates `supabase_migrations.schema_migrations`
+   and inserts 0001–0052 as applied. Safe to run twice. Check:
+   `select count(*) from supabase_migrations.schema_migrations;` → 52.
+   The workflow refuses to run while this table is empty (it would re-run
+   0001 on a live database).
+2. **GitHub secrets** (repo → Settings → Secrets and variables → Actions):
+   - `SUPABASE_DB_URL`: the **session pooler** connection string from
+     Supabase → Project settings → Database → Connection string
+     (`postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres`).
+     Not the direct host: it is IPv6-only and GitHub runners have no IPv6.
+     Percent-encode the password if it has special characters.
+   - `VERCEL_DEPLOY_HOOK_URL`: Vercel → project → Settings → Git → Deploy
+     Hooks → create one named `db-migrate` on branch `main`, copy the URL.
+3. **Vercel Ignored Build Step**: project → Settings → Git → Ignored Build
+   Step → Command: `node scripts/vercel-ignore-build.mjs`. The project env
+   vars `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` must be
+   present (they already are for the app itself).
+4. Push. The first run applies `20260906120000_migration_versions.sql`, which
+   creates the RPC the gate uses; until then the gate fails open.
+
+## Migrations directory
+
+- `<digits>_<name>.sql`, applied in version order, each once. Files not
+  matching that pattern are silently skipped by the CLI (the lint flags
+  them).
+- Postgres functions can't have parameters added via `create or replace
+  function` — `drop function if exists <old signature>` first, then
+  `create or replace function` with the new signature and re-`grant execute`.
+- New tables need explicit `grant select`/`grant insert`/etc. to `anon`
+  and/or `authenticated` — RLS policies alone are not enough for the REST
+  API to allow access.
+- `supabase/baseline.sql` is not a migration and is not picked up by the
+  CLI; it lives next to the folder on purpose.
+- Local dev against the prod database: `npx supabase db push --db-url
+  "<session pooler url>" --dry-run` shows what CI would apply. Don't run it
+  without `--dry-run` from a laptop; that's what the workflow is for.
 
 ## Vercel project settings that matter
 
@@ -71,30 +115,35 @@ Skip straight to build → test → commit → push. No need to touch Supabase.
   setting first.
 - Environment variables (Supabase URL + keys) are configured in the
   Vercel project settings, mirroring `.env.local` used for local dev.
-
-## Migrations directory
-
-- Files are named `00NN_short_description.sql` and applied **in order**.
-- Postgres functions can't have parameters added via `create or replace
-  function` — if a function needs a new parameter, the migration must
-  `drop function if exists <old signature>` first, then `create function`
-  with the new signature (and re-`grant execute`).
-- New tables need explicit `grant select`/`grant insert`/etc. to `anon`
-  and/or `authenticated` — this project's Supabase setup does not
-  auto-grant, RLS policies alone are not enough for the REST API to allow
-  access.
-- Nothing in `supabase/migrations/` runs itself. It's a historical record
-  + the literal SQL to copy into the Supabase SQL Editor by hand.
+- Ignored Build Step and the `db-migrate` deploy hook, see above.
 
 ## Troubleshooting
 
+- **Migration failed in the workflow**: the CLI runs each file in a
+  transaction, so a failed file leaves nothing behind and is not recorded.
+  Fix the file only if it never reached the database (the workflow log
+  shows which versions were recorded); otherwise add a new migration. The
+  app was not deployed (Git build canceled, hook never called), so prod is
+  still on the previous commit.
+- **Workflow says the history is empty**: run `supabase/baseline.sql`
+  (one-time setup, step 1).
+- **Workflow cannot connect**: check the `SUPABASE_DB_URL` secret is the
+  pooler URL and that Network Restrictions on Supabase allow it.
+- **Vercel build canceled and no `db-migrate` run**: the push changed a
+  migration file the database doesn't have, but the workflow didn't
+  trigger (paths filter only watches `supabase/migrations/**`). Run the
+  workflow by hand (Actions → db-migrate → Run workflow).
+- **Live site broken after a deploy with a migration**: read the
+  `[db-gate]` line in the Vercel build log. If it built because the check
+  could not run, the migration may not be applied; check
+  `migration_versions` via REST.
 - **Git push rejected / wrong account (403)**: the machine's stored Git
   credential can drift to the wrong GitHub account. Fix with
   `cmdkey /delete:git:https://github.com`, then push again to re-trigger
   the browser auth flow and pick the right account
   (`jmruizmarin92-spec`).
-- **Live site suddenly broken after a deploy**: almost always a migration
-  that wasn't applied (or wasn't applied before the push). Check the
-  relevant table/column/function via the REST API as in step 4 above.
 - **Build stuck / taking forever on Vercel**: check the Framework Preset
   (see above).
+- **Commit messages on Windows/PowerShell**: use a heredoc and never
+  include literal double quotes in a message passed through a PowerShell
+  here-string.

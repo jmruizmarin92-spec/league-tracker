@@ -1,11 +1,12 @@
 # Local tickets — Project League
 
-One row per ticket, newest first. Keys are sequential `PL-<n>`; next free key: PL-31.
+One row per ticket, newest first. Keys are sequential `PL-<n>`; next free key: PL-32.
 
 File names carry the status: `PL-<n>-<Status>.md` with `ToDo`, `InProgress`, `InReview`, `Done`. When a ticket changes status, rename the file (`git mv`) and update the link here.
 
 | Key | Title | Status | Created | Done |
 |-----|-------|--------|---------|------|
+| [PL-31](PL-31-InReview.md) | DB migrations applied by CI: Supabase CLI history table, deploy gate on Vercel, idempotency lint | In Review | 2026-09-06 | — |
 | [PL-30](PL-30-InReview.md) | Public /events page: upcoming and past standalone events (history) | In Review | 2026-09-06 | — |
 | [PL-29](PL-29-InReview.md) | Prize budget calculator for cups and other standalone events | In Review | 2026-09-06 | — |
 | [PL-28](PL-28-InReview.md) | Registration card disappears once entry is closed | In Review | 2026-09-06 | — |

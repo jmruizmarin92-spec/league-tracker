@@ -21,3 +21,27 @@ There is no Jira for this project. Every task we tackle gets a local ticket file
 - "Log 2h on PL-3" adds a worklog line under `## Activity` — no Jira call.
 - Done = committed and QA — Dev verified. Set `Done:` to the date, flip Status, update INDEX.md.
 - QA — Dev stays honest: anything not actually verified (browser checks, deploys) stays unchecked and gets called out in chat.
+
+# Database migrations
+
+Schema and data changes are SQL files in `supabase/migrations/`, applied to prod by the
+`db-migrate` GitHub workflow with the Supabase CLI (history in
+`supabase_migrations.schema_migrations`); the app deploy on Vercel is gated until the migration
+is applied. Full flow in `DEPLOYMENT.md`. Rules for every new migration:
+
+- File name `<YYYYMMDDHHmmss>_<snake_case_name>.sql` (UTC timestamp, not the old `00NN`
+  counter — parallel sessions would collide). Anything else is skipped by the CLI.
+- **Idempotent, always.** The file must be safe to run twice: `create table if not exists`,
+  `add column if not exists`, `create or replace function`, `drop ... if exists`,
+  `drop policy if exists` + `create policy`, `insert ... on conflict do nothing`, and a
+  `do $$ ... $$` block that checks the catalog for the cases Postgres gives no `if not
+  exists` for (types, constraints, renames, publications). Run `npm run lint:migrations`
+  (also part of `npm test`) — it enforces these on every file after the 0052 baseline and
+  fails CI otherwise. The exact rule list is in `scripts/migration-lint.mjs`.
+- Never edit a migration once it has been pushed; the CLI does not checksum files and the
+  edit would never reach the database. Add a new migration.
+- Changing a function's parameters: `drop function if exists <old signature>` first, then
+  `create or replace function`, then re-`grant execute`.
+- New tables need explicit `grant`s to `anon`/`authenticated` on top of RLS policies.
+- Do not hand the SQL to the SQL editor any more: the push applies it. Verification is still
+  a REST probe of the new function/column after the deploy-hook build goes green.

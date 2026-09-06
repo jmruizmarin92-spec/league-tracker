@@ -1,0 +1,81 @@
+name: db-migrate
+
+# Applies pending files from supabase/migrations/ to the production Supabase
+# project, then triggers the Vercel production deploy. Only runs when a push
+# to main touches the migrations folder; pushes without schema changes are
+# deployed by Vercel's normal Git integration and never come through here.
+#
+# The Vercel side (Settings → Git → Ignored Build Step) runs
+# scripts/vercel-ignore-build.mjs, which cancels the Git-triggered build when
+# the commit carries a migration the database does not have yet. This
+# workflow is what applies it and re-triggers the build through the deploy
+# hook once the database is ready. See DEPLOYMENT.md.
+#
+# Secrets:
+#   SUPABASE_DB_URL         session-pooler connection string (IPv4; GitHub
+#                           runners cannot reach the direct IPv6 host)
+#   VERCEL_DEPLOY_HOOK_URL  deploy hook for the main branch
+
+on:
+  push:
+    branches: [main]
+    paths: ["supabase/migrations/**"]
+  workflow_dispatch:
+
+concurrency:
+  group: db-migrate
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Lint migrations (idempotency and naming)
+        run: node scripts/migration-lint.mjs
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.116.0
+
+      - name: Dry run and refuse an un-baselined database
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::SUPABASE_DB_URL secret is not set"; exit 1
+          fi
+          out=$(supabase db push --db-url "$SUPABASE_DB_URL" --dry-run 2>&1) || { echo "$out"; exit 1; }
+          echo "$out"
+          if grep -q '"_tag":"Error"' <<<"$out"; then
+            echo "::error::supabase db push could not connect"; exit 1
+          fi
+          # 0001 is the first hand-applied migration. If the dry run wants to
+          # apply it, supabase_migrations.schema_migrations has no history and
+          # the whole folder would be re-run on a live database. Stop.
+          if grep -q '0001_auth_profiles' <<<"$out"; then
+            echo "::error::migration history is empty — run supabase/baseline.sql in the SQL editor first (see DEPLOYMENT.md)"; exit 1
+          fi
+
+      - name: Apply pending migrations
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: supabase db push --db-url "$SUPABASE_DB_URL"
+
+      - name: Trigger the Vercel production deploy
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "$HOOK" ]; then
+            echo "::error::VERCEL_DEPLOY_HOOK_URL secret is not set — migrations are applied but the app was not redeployed"; exit 1
+          fi
+          curl --fail --silent --show-error -X POST "$HOOK"
+          echo

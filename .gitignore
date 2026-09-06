@@ -46,3 +46,7 @@ next-env.d.ts
 # read them (lib/tdf-sequence.test.ts) skip themselves when they're absent.
 /TOMFiles
 /tombye
+
+# supabase cli
+supabase/.temp/
+supabase/.branches/
