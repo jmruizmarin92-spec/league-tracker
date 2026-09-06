@@ -36,7 +36,7 @@ Until now the 52 files in `supabase/migrations/` were pasted by hand in the Supa
 - [x] ✅ `node scripts/migration-lint.mjs` passes on the current folder (only the new 2026… file is after the baseline); the unit suite covers each rule with a passing and a failing snippet.
 - [x] ✅ `scripts/vercel-ignore-build.mjs` run locally with the prod URL + anon key: RPC not there yet → prints the HTTP status and exits 1 (build). Without env vars → exits 1 (build).
 - [x] ✅ `npx supabase db push --db-url <dead url> --dry-run` runs without a linked project or `config.toml` (fails only at the connection), so the workflow needs no `supabase link`.
-- [ ] Baseline pasted; `select count(*) from supabase_migrations.schema_migrations` = 52.
+- [x] ✅ Baseline pasted (2026-09-06). Count was 54: two stale rows from 2026-07-19 (`20260719105951` = 0035, `20260719111839` = 0036, an early CLI/dashboard push) deleted by hand → 52. `supabase migration list --db-url <pooler>` from the laptop shows local and remote matching on 0001–0052 and `db push --dry-run` would apply only `20260906120000_migration_versions.sql`.
 - [ ] First workflow run (the push of this ticket, after the secrets exist) applies `20260906120000_migration_versions` and triggers the deploy hook; `POST /rest/v1/rpc/migration_versions` with the anon key returns 53 versions.
 - [ ] Gate check on Vercel: a later push with a migration shows the Git-triggered build as "Canceled" by the Ignored Build Step and the hook-triggered build as the one that goes live.
 - [ ] A push without migrations deploys through the Git integration as before (workflow does not run).
@@ -58,5 +58,7 @@ Until now the 52 files in `supabase/migrations/` were pasted by hand in the Supa
 - 2026-09-06 — created after the clarifying round (Supabase CLI, gate only on pushes with DB changes, CI against prod only, idempotency as a standing rule). In Progress.
 - 2026-09-06 — implemented; lint, gate script (fail-open against prod confirmed), unit tests and isolated typecheck green. Committed (`6055989`), not pushed: the push only makes sense once the baseline is pasted and the two secrets exist, otherwise the workflow just fails red. In Progress → In Review.
 - 2026-09-06 — note for the first push: `supabase db push` fails when the remote history has a version the checkout lacks, and `baseline.sql` records 0051 (applied on prod, PL-25) which is still uncommitted in another session. Commit 0051 before or together with this ticket.
+
+- 2026-09-06 — baseline applied and reconciled (54 → 52 rows); dry run against prod through the session pooler OK. Waiting on: secrets, deploy hook, Ignored Build Step, 0051 commit, push.
 
 Last updated: 2026-09-06
