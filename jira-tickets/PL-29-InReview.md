@@ -32,11 +32,11 @@ Assumptions taken: one pot for the whole event (no per-division pots — a Junio
 ## QA — Dev
 
 - [x] ✅ `vitest run` 176 green (19 new in `lib/event-prizes.test.ts`), `npx tsc --noEmit` clean, eslint clean on the eight touched code files (2026-09-06).
-- [ ] Migration applied on Supabase.
+- [x] ✅ Migration applied on Supabase (2026-09-06; anonymous REST probe of both tables answers `42501 permission denied` instead of `PGRST205`).
 - [ ] Browser, admin on a cup with a `.tdf` imported: Gestión → "Presupuesto de premios" shows the TOM player count, inputs prefilled from the store defaults, live breakdown, whole-number awards.
 - [ ] Browser: "Guardar y publicar" fills the public Premios card with one line per placing.
 - [ ] Browser, store console: defaults card saves and a new cup of that store starts from them.
-- [ ] Non-admin cannot read `event_prize_budgets` / `store_prize_defaults` (RLS).
+- [x] ✅ Anonymous cannot read `event_prize_budgets` / `store_prize_defaults` (no grant to `anon`, verified via REST 2026-09-06). A logged-in non-admin (RLS path) is not verified yet.
 
 ## Changes made
 
@@ -49,5 +49,6 @@ Assumptions taken: one pot for the whole event (no per-division pots — a Junio
 - 2026-09-06 — created after the clarifying round (TOM player count, store defaults + per-event values, whole-unit presets, packs or store cash, admin-only with publish button). In Progress.
 - 2026-09-06 — implemented; tests, typecheck and lint green. In Review.
 - 2026-09-06 — committed and pushed (`228c4b6`), Vercel deploy green, anonymous prod smoke OK (home and a cup page 200; the budget card is not rendered for anonymous viewers — its strings in the HTML are only the serialized messages bundle). 0052 is not on Supabase yet: REST returns PGRST205 for both tables. Browser checks and the migration remain open.
+- 2026-09-06 — 0052 applied on Supabase by José María; REST probe confirms both tables exist and refuse anonymous reads. Open: browser checks of the card, publish button and store defaults.
 
 Last updated: 2026-09-06
