@@ -754,73 +754,64 @@ export default async function EventPage({
       ),
     });
 
+    // TOM import (PL-26) — its own tab, since once check-in is done the file
+    // drop after every round is what the TO does most on the day. One step:
+    // pick the .tdf, import, and the action redirects to `?tab=pairings`. The
+    // last-import line and the undo live here too; Gestión is for the event.
+    tabs.push({
+      value: "import",
+      label: t("tabImport"),
+      content: (
+        <Card>
+          <CardContent className="flex flex-col gap-4">
+            <TdfImport
+              eventId={event.id}
+              slug={slug}
+              labels={{
+                hint: tt("importHint"),
+                pick: tt("importPick"),
+                confirm: tt("importConfirm"),
+                importing: tt("importImporting"),
+              }}
+            />
+
+            {lastImport && (
+              <p className="text-sm text-muted-foreground">
+                {tt("lastImport", {
+                  file: lastImport.file_name ?? lastImport.tdf_id ?? "—",
+                  when: formatDateTime(lastImport.imported_at) ?? "—",
+                })}
+              </p>
+            )}
+
+            {tomRounds.length > 0 && (
+              <div className="flex flex-col items-start justify-between gap-3 border-t pt-4 sm:flex-row sm:items-center">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">{tt("clearTitle")}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {tt("clearHint")}
+                  </span>
+                </div>
+                <form action={clearEventTdfAction}>
+                  <input type="hidden" name="slug" value={slug} />
+                  <input type="hidden" name="event_id" value={event.id} />
+                  <ConfirmDeleteButton confirmMessage={tt("clearConfirm")}>
+                    {tt("clearCta")}
+                  </ConfirmDeleteButton>
+                </form>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ),
+    });
+
     tabs.push({
       value: "manage",
       label: t("tabManage"),
       content: (
         <div className="flex flex-col gap-6">
           {staffPanel}
-
-          {/* TOM import — the TO drops the .tdf here after pairing each round */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{tt("importTitle")}</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <TdfImport
-                eventId={event.id}
-                slug={slug}
-                labels={{
-                  hint: tt("importHint"),
-                  pick: tt("importPick"),
-                  read: tt("importRead"),
-                  reading: tt("importReading"),
-                  reviewTitle: tt("importReviewTitle"),
-                  playersTitle: tt("importPlayersTitle"),
-                  playersHint: tt("importPlayersHint"),
-                  createNew: tt("importCreateNew"),
-                  sourceMapped: tt("importSourceMapped"),
-                  sourcePokemonId: tt("importSourcePokemonId"),
-                  sourceName: tt("importSourceName"),
-                  sourceNone: tt("importSourceNone"),
-                  roundsTitle: tt("importRoundsTitle"),
-                  roundLabel: tt("importRoundLabel"),
-                  matchesLabel: tt("importMatchesLabel"),
-                  confirm: tt("importConfirm"),
-                  importing: tt("importImporting"),
-                  cancel: tt("importCancel"),
-                  imported: tt("importDone"),
-                }}
-              />
-
-              {lastImport && (
-                <p className="text-sm text-muted-foreground">
-                  {tt("lastImport", {
-                    file: lastImport.file_name ?? lastImport.tdf_id ?? "—",
-                    when: formatDateTime(lastImport.imported_at) ?? "—",
-                  })}
-                </p>
-              )}
-
-              {tomRounds.length > 0 && (
-                <div className="flex flex-col items-start justify-between gap-3 border-t pt-4 sm:flex-row sm:items-center">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium">{tt("clearTitle")}</span>
-                    <span className="text-sm text-muted-foreground">
-                      {tt("clearHint")}
-                    </span>
-                  </div>
-                  <form action={clearEventTdfAction}>
-                    <input type="hidden" name="slug" value={slug} />
-                    <input type="hidden" name="event_id" value={event.id} />
-                    <ConfirmDeleteButton confirmMessage={tt("clearConfirm")}>
-                      {tt("clearCta")}
-                    </ConfirmDeleteButton>
-                  </form>
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
           {/* Edit event details */}
           <Card>
