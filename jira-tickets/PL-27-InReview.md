@@ -38,7 +38,8 @@ Decided with the clarifying round (2026-09-06): both get feedback; action button
 - [ ] Browser: `ConfirmDeleteButton` → cancel in the confirm dialog shows no spinner; accept shows it until the redirect.
 - [ ] Browser: tap a landing row / league link with throttling → bar grows at the top, completes on arrival. Ctrl/Cmd+click, the same page's link, `?game=` filter chips (search-only change), back button: bar only for the filter chips, and it completes.
 - [ ] Browser: a link that is prefetched/instant shows no bar flash.
-- [ ] Deployed to prod and smoke-checked on the phone.
+- [x] ✅ Deployed to prod (2026-09-06): pushed `d317394`; the parallel PL-26 session pushed `48f60fc` and `7ea3be2` on top seconds later, so Vercel built those (both `success`, both contain PL-27). Prod smoke via curl: `/`, `/leagues`, `/arquetipos`, `/login` 200, `nav-progress` div present in the SSR HTML, new button classes present.
+- [ ] Phone check on prod (spinner on a result report, bar on a row tap) still to do by hand.
 
 ## Changes made
 
@@ -57,5 +58,6 @@ Decided with the clarifying round (2026-09-06): both get feedback; action button
 
 - 2026-09-06 — created after the clarifying round (scope: buttons + navigation; spinner + label, locked; global top bar). In Progress. Created as PL-26 and renumbered to PL-27 minutes later: a parallel session claimed PL-26 (TOM import) in INDEX.md at the same time.
 - 2026-09-06 — implemented; tsc/vitest/build/SSR smoke green (see QA). In Progress → In Review. Open: browser QA on the phone (spinner, bar, edge cases) and prod deploy.
+- 2026-09-06 — pushed and deployed to prod (see QA). Open: hands-on phone QA.
 
 Last updated: 2026-09-06
