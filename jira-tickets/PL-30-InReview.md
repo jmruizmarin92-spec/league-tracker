@@ -37,7 +37,7 @@ The `/events` index was removed in July (commit `182b0d0`) as "redundant with th
 - [ ] Browser, logged out: `/events` shows Próximos + Anteriores, past cups listed newest first, click through to the event page.
 - [ ] Browser: game / category filters narrow both sections; "Todos" chips clear them; empty-filter message shown.
 - [ ] Header: Eventos link visible logged in and out.
-- [ ] Prod: anonymous curl of `/events` returns 200 with the two headings after the deploy.
+- [x] ✅ Prod: anonymous curl of `/events` after the deploy (2026-09-06): 200, "Próximos (4)" / "Anteriores (8)", all 12 event links present incl. `september-5-2026-9-30am` under Anteriores, "Eventos" link in the header.
 
 ## Changes made
 
@@ -49,5 +49,6 @@ The `/events` index was removed in July (commit `182b0d0`) as "redundant with th
 
 - 2026-09-06 — created after the clarifying round (public /events, both sections, flat list with filters). In Progress.
 - 2026-09-06 — implemented; tests, typecheck and lint green. In Review.
+- 2026-09-06 — committed and pushed (`f212fce`), Vercel deployment 6294422838 `success`, anonymous prod smoke of `/events` OK. Browser checks (filters, click-through, header logged in) still open.
 
 Last updated: 2026-09-06
