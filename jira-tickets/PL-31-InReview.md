@@ -56,6 +56,7 @@ Until now the 52 files in `supabase/migrations/` were pasted by hand in the Supa
 ## Activity
 
 - 2026-09-06 — created after the clarifying round (Supabase CLI, gate only on pushes with DB changes, CI against prod only, idempotency as a standing rule). In Progress.
-- 2026-09-06 — implemented; lint, gate script (fail-open against prod confirmed), unit tests and isolated typecheck green. Committed, not pushed: the push only makes sense once the baseline is pasted and the two secrets exist, otherwise the workflow just fails red. In Progress → In Review.
+- 2026-09-06 — implemented; lint, gate script (fail-open against prod confirmed), unit tests and isolated typecheck green. Committed (`6055989`), not pushed: the push only makes sense once the baseline is pasted and the two secrets exist, otherwise the workflow just fails red. In Progress → In Review.
+- 2026-09-06 — note for the first push: `supabase db push` fails when the remote history has a version the checkout lacks, and `baseline.sql` records 0051 (applied on prod, PL-25) which is still uncommitted in another session. Commit 0051 before or together with this ticket.
 
 Last updated: 2026-09-06
