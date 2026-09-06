@@ -27,6 +27,7 @@ Assumptions taken: one pot for the whole event (no per-division pots — a Junio
 * ✅ `app/actions/event-prizes.ts`: `saveEventPrizeBudgetAction` (save / save+publish), `saveStorePrizeDefaultsAction`.
 * ✅ `components/event-prize-budget.tsx`, `components/store-prize-defaults-form.tsx`.
 * ✅ `app/events/[slug]/page.tsx` (Gestión card), `app/stores/[slug]/admin/page.tsx` (defaults card), `messages/es.json` (`eventPrizes` namespace + two `storeAdmin` keys), `docs/features/events.md`, `docs/features/admin.md`.
+* ✅ Commit `228c4b6` on `main`, pushed; Vercel deployment `success` (2026-09-06). Migration 0052 still to be applied on Supabase.
 
 ## QA — Dev
 
@@ -47,5 +48,6 @@ Assumptions taken: one pot for the whole event (no per-division pots — a Junio
 
 - 2026-09-06 — created after the clarifying round (TOM player count, store defaults + per-event values, whole-unit presets, packs or store cash, admin-only with publish button). In Progress.
 - 2026-09-06 — implemented; tests, typecheck and lint green. In Review.
+- 2026-09-06 — committed and pushed (`228c4b6`), Vercel deploy green, anonymous prod smoke OK (home and a cup page 200; the budget card is not rendered for anonymous viewers — its strings in the HTML are only the serialized messages bundle). 0052 is not on Supabase yet: REST returns PGRST205 for both tables. Browser checks and the migration remain open.
 
 Last updated: 2026-09-06
