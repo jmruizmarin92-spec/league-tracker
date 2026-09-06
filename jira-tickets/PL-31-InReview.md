@@ -29,7 +29,7 @@ Until now the 52 files in `supabase/migrations/` were pasted by hand in the Supa
 - ✅ `lib/migration-lint.test.ts`: unit cases per rule plus a test that lints the real `supabase/migrations/` folder, so `npm test` fails on a non-idempotent migration before it is ever pushed.
 - ✅ `.gitignore`: `supabase/.temp/`, `supabase/.branches/`.
 - ✅ Docs: DEPLOYMENT.md rewritten for the new flow (one-time setup, normal flow, what the gate does, troubleshooting); `docs/features/platform.md` new "Database migrations and deploy gate" section; project `CLAUDE.md` migration rules (idempotent, timestamp file names, never edit an applied file, run the lint).
-- One-time setup by José María (cannot be done from here): paste `supabase/baseline.sql` in the SQL editor; add the `SUPABASE_DB_URL` (session pooler) and `VERCEL_DEPLOY_HOOK_URL` repo secrets; create the deploy hook for `main` on Vercel; set the Ignored Build Step command to `node scripts/vercel-ignore-build.mjs`.
+- ✅ One-time setup by José María (2026-09-06): paste `supabase/baseline.sql` in the SQL editor; add the `SUPABASE_DB_URL` (session pooler) and `VERCEL_DEPLOY_HOOK_URL` repo secrets; create the deploy hook for `main` on Vercel; set the Ignored Build Step command to `node scripts/vercel-ignore-build.mjs`.
 
 ## QA — Dev
 
@@ -37,7 +37,7 @@ Until now the 52 files in `supabase/migrations/` were pasted by hand in the Supa
 - [x] ✅ `scripts/vercel-ignore-build.mjs` run locally with the prod URL + anon key: RPC not there yet → prints the HTTP status and exits 1 (build). Without env vars → exits 1 (build).
 - [x] ✅ `npx supabase db push --db-url <dead url> --dry-run` runs without a linked project or `config.toml` (fails only at the connection), so the workflow needs no `supabase link`.
 - [x] ✅ Baseline pasted (2026-09-06). Count was 54: two stale rows from 2026-07-19 (`20260719105951` = 0035, `20260719111839` = 0036, an early CLI/dashboard push) deleted by hand → 52. `supabase migration list --db-url <pooler>` from the laptop shows local and remote matching on 0001–0052 and `db push --dry-run` would apply only `20260906120000_migration_versions.sql`.
-- [ ] First workflow run (the push of this ticket, after the secrets exist) applies `20260906120000_migration_versions` and triggers the deploy hook; `POST /rest/v1/rpc/migration_versions` with the anon key returns 53 versions.
+- [x] ✅ First workflow run (push `dd1d492`, 2026-09-06 17:40, run 34043034403): all steps green, applied `20260906120000_migration_versions`, deploy hook called. Anon `POST /rest/v1/rpc/migration_versions` returns 53 versions ending in `0052, 20260906120000`. Vercel deployment of `dd1d492` success.
 - [ ] Gate check on Vercel: a later push with a migration shows the Git-triggered build as "Canceled" by the Ignored Build Step and the hook-triggered build as the one that goes live.
 - [ ] A push without migrations deploys through the Git integration as before (workflow does not run).
 
@@ -60,5 +60,7 @@ Until now the 52 files in `supabase/migrations/` were pasted by hand in the Supa
 - 2026-09-06 — note for the first push: `supabase db push` fails when the remote history has a version the checkout lacks, and `baseline.sql` records 0051 (applied on prod, PL-25) which is still uncommitted in another session. Commit 0051 before or together with this ticket.
 
 - 2026-09-06 — baseline applied and reconciled (54 → 52 rows); dry run against prod through the session pooler OK. Waiting on: secrets, deploy hook, Ignored Build Step, 0051 commit, push.
+
+- 2026-09-06 — secrets, deploy hook and Ignored Build Step configured by José María; 0051 committed (`dd1d492`) and pushed. db-migrate run green, RPC live with 53 versions, Vercel deploy success. Open: gate proof on the next real migration; this ticket commit is the no-migration push check.
 
 Last updated: 2026-09-06
