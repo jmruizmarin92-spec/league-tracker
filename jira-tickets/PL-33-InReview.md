@@ -46,6 +46,7 @@ A new "No tocar" link in the top header, right after "Estadísticas", visible to
 
 - 2026-10-30 — Created, status To Do → In Progress.
 - 2026-10-30 — Implemented, lint/tsc/test/build green, desktop browser QA done on localhost.
-- 2026-10-30 — Status In Progress → In Review, committed.
+- 2026-10-30 — Status In Progress → In Review, committed as 7643acb and pushed to main.
+- 2026-10-30 — Vercel production deployment of 7643acb reported success (GitHub deployments API, ~2 min after push); prod `/no-tocar` answers 200 with the header link and the h1. No migration involved. Phone touch check still pending.
 
 Last updated: 2026-10-30
