@@ -36,6 +36,18 @@
   "breadcrumbs": {
     "home": "Inicio"
   },
+  "snake": {
+    "title": "No tocar",
+    "hint": "Te lo hemos dicho. Flechas o WASD en el ordenador, los botones en el movil.",
+    "score": "Puntos",
+    "start": "Pulsa una direccion para empezar",
+    "gameOver": "Fin de la partida",
+    "restart": "Otra vez",
+    "up": "Arriba",
+    "down": "Abajo",
+    "left": "Izquierda",
+    "right": "Derecha"
+  },
   "nav": {
     "signIn": "Entrar",
     "signOut": "Salir",
@@ -47,6 +59,7 @@
     "leagues": "Ligas",
     "events": "Eventos",
     "statistics": "Estadísticas",
+    "noTocar": "No tocar",
     "adminEvents": "Eventos",
     "adminStores": "Tiendas",
     "storeAdmin": "Administrar {name}"

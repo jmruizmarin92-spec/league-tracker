@@ -47,6 +47,12 @@ export async function SiteHeader() {
               {t("statistics")}
             </Link>
           )}
+          <Link
+            href="/no-tocar"
+            className="shrink-0 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {t("noTocar")}
+          </Link>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <ThemeToggle />

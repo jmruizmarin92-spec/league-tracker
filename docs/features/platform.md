@@ -26,6 +26,12 @@ i18n, theming, realtime updates, site navigation, game-specific domain routing, 
 - `components/breadcrumbs.tsx` — presentational nav rendering a list of `{label, href?}` items with chevron separators; the last/href-less item renders as plain text (current page).
 - `app/settings/page.tsx` — currently a placeholder page (`requireUser()` guard + "coming soon" text via the `placeholder` i18n namespace); no real settings implemented yet.
 
+## "No tocar" Snake minigame (PL-33)
+
+- `components/site-header.tsx` — a "No tocar" link (`nav.noTocar`) after the Estadísticas slot, rendered for every visitor regardless of auth.
+- `app/no-tocar/page.tsx` — public server page: breadcrumbs, title and hint from the `snake` i18n namespace, then `<SnakeGame labels={...} />` with the client strings passed as props (the component takes no next-intl dependency).
+- `components/snake-game.tsx` — client component. 16×16 grid drawn on a 384×384 canvas scaled with CSS to the container (`max-w-[384px]`, `aspect-square`). Game state (snake, direction, queued direction, food) lives in refs so the `setInterval` loop (140 ms) never closes over stale state; React state only mirrors `phase` (`idle`/`running`/`over`) and the score for the UI. `step()` is a pure function: wall or self collision returns `null`, eating keeps the tail and spawns food on a free cell. Controls: window `keydown` for arrows/WASD (`preventDefault` so arrows do not scroll), plus a 3×3 D-pad of `Button`s under the board firing on `onPointerDown` for touch. Any direction input while idle or game over starts a new game in that direction; reversing into the neck is ignored by comparing against the last applied direction, not the queued one. Nothing is persisted.
+
 ## Tap feedback (PL-27)
 
 Every page is dynamic (auth cookies) and there is no `loading.tsx`, so without this a tap on the phone showed nothing until the server answered.
