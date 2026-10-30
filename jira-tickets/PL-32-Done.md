@@ -1,6 +1,6 @@
 # PL-32 — Pairings repeat across sessions: tied players are ordered by player id, never shuffled
 
-Status: In Review | Type: Bug | Assignee: José María Ruiz Marín | Created: 2026-10-30 | Done: —
+Status: Done | Type: Bug | Assignee: José María Ruiz Marín | Created: 2026-10-30 | Done: 2026-10-30
 
 ## Description
 
@@ -27,8 +27,8 @@ Fix: shuffle players within tie groups (same points, OWP and wins) before pairin
 
 - [x] ✅ `npm test` green (vitest + migration lint): 18 files, 198 tests.
 - [ ] `npm run lint` — 2 pre-existing `react-hooks/set-state-in-effect` errors in `components/round-timer.tsx` and `components/theme-toggle.tsx`, present on a clean checkout, unrelated to this change. Nothing new from PL-32.
-- [ ] Browser: generate round 1 twice on sessions with the same roster and see different pairings.
-- [ ] Browser: generate round 2 and check the tie groups still pair by bracket (no 3-0 vs 0-3 in a 2-round field).
+- [x] ✅ Browser (prod, 2026-10-30): War Lotus 9 Oct session, 13 players. Generated round 1, deleted it, generated again: all 6 tables differed and the bye moved (Sergey I. → Rafa R.). Round deleted and session status reset to Preparación afterwards, nothing left behind.
+- [ ] Browser: generate round 2 and check the tie groups still pair by bracket — not run in prod (needs reported results); bracket order is covered by the unit tests (groups never cross). Watch the first real session.
 
 ## Changes made
 
@@ -44,6 +44,8 @@ Fix: shuffle players within tie groups (same points, OWP and wins) before pairin
 - 2026-10-30 — Created, status To Do → In Progress.
 - 2026-10-30 — Fix implemented, unit tests green. Browser QA pending.
 - 2026-10-30 — Status In Progress → In Review, committed as d71e24c and pushed to main.
-- 2026-10-30 — Vercel production deployment of d71e24c reported success (GitHub deployments API); prod host answers 200. No migration involved. Browser check of a freshly generated round still pending.
+- 2026-10-30 — Vercel production deployment of d71e24c reported success (GitHub deployments API); prod host answers 200. No migration involved. 
+
+- 2026-10-30 — Browser QA on prod done (two round-1 generations differ). Status In Review → Done.
 
 Last updated: 2026-10-30
