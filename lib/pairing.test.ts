@@ -4,6 +4,7 @@ import {
   repairSwissPairings,
   pairKey,
   recommendedRoundCount,
+  shuffleWithinTies,
   type Pairing,
   type SeatedPairing,
 } from "./pairing";
@@ -328,5 +329,66 @@ describe("recommendedRoundCount", () => {
 
   it("extrapolates beyond the table with log2", () => {
     expect(recommendedRoundCount(2507)).toBe(Math.ceil(Math.log2(2507)) + 4);
+  });
+});
+
+describe("shuffleWithinTies", () => {
+  type Row = { id: string; pts: number };
+  const tied = (a: Row, b: Row) => a.pts === b.pts;
+  const rows: Row[] = [
+    { id: "a", pts: 6 },
+    { id: "b", pts: 6 },
+    { id: "c", pts: 3 },
+    { id: "d", pts: 0 },
+    { id: "e", pts: 0 },
+    { id: "f", pts: 0 },
+  ];
+
+  it("keeps tie groups in place and only permutes their members", () => {
+    for (let run = 0; run < 50; run++) {
+      const out = shuffleWithinTies(rows, tied);
+      expect(out.map((r) => r.pts)).toEqual([6, 6, 3, 0, 0, 0]);
+      expect(out.slice(0, 2).map((r) => r.id).sort()).toEqual(["a", "b"]);
+      expect(out[2].id).toBe("c");
+      expect(out.slice(3).map((r) => r.id).sort()).toEqual(["d", "e", "f"]);
+    }
+  });
+
+  it("does not mutate the input", () => {
+    const copy = [...rows];
+    shuffleWithinTies(rows, tied);
+    expect(rows).toEqual(copy);
+  });
+
+  it("is deterministic with a fixed rng", () => {
+    // rng = 0 swaps each i with the group start: [a,b] -> [b,a],
+    // [d,e,f] -> f<->d gives [f,e,d], then e<->f gives [e,f,d].
+    const out = shuffleWithinTies(rows, tied, () => 0);
+    expect(out.map((r) => r.id)).toEqual(["b", "a", "c", "e", "f", "d"]);
+    // rng just under 1 keeps every member where it is.
+    const same = shuffleWithinTies(rows, tied, () => 0.999999);
+    expect(same.map((r) => r.id)).toEqual(["a", "b", "c", "d", "e", "f"]);
+  });
+
+  it("an all-tied field (round 1) comes out in more than one order", () => {
+    const field = Array.from({ length: 8 }, (_, i) => ({ id: String(i), pts: 0 }));
+    const orders = new Set<string>();
+    for (let run = 0; run < 40; run++) {
+      orders.add(shuffleWithinTies(field, tied).map((r) => r.id).join(""));
+    }
+    // 8! orders; 40 draws landing on one of them is practically impossible.
+    expect(orders.size).toBeGreaterThan(1);
+  });
+
+  it("round 1 pairings vary with the shuffled roster", () => {
+    const field = ["a", "b", "c", "d", "e", "f", "g", "h"];
+    const firsts = new Set<string>();
+    for (let run = 0; run < 40; run++) {
+      const ordered = shuffleWithinTies(field, () => true);
+      const p = generateSwissPairings(ordered)!;
+      expectEveryoneOnce(p, field);
+      firsts.add(pairKey(p[0].player1, p[0].player2 as string));
+    }
+    expect(firsts.size).toBeGreaterThan(1);
   });
 });

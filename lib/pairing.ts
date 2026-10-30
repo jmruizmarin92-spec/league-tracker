@@ -6,6 +6,37 @@ export function pairKey(a: string, b: string): string {
   return a < b ? `${a}|${b}` : `${b}|${a}`;
 }
 
+/**
+ * Shuffle the members of each tie group while keeping the groups where they
+ * are. `items` must already be sorted so that tied items are adjacent;
+ * `tied(a, b)` says whether two adjacent items belong to the same group.
+ * Returns a new array (the input is not touched).
+ *
+ * This is what gives pairings their randomness: the standings sort breaks
+ * ties by player id, so without this every session with the same roster
+ * would produce the same round 1, and every tie group in later rounds would
+ * pair the same way. `rng` returns a float in [0, 1); injectable for tests.
+ */
+export function shuffleWithinTies<T>(
+  items: T[],
+  tied: (a: T, b: T) => boolean,
+  rng: () => number = Math.random,
+): T[] {
+  const out = [...items];
+  let start = 0;
+  while (start < out.length) {
+    let end = start + 1;
+    while (end < out.length && tied(out[end - 1], out[end])) end++;
+    // Fisher–Yates over out[start, end).
+    for (let i = end - 1; i > start; i--) {
+      const j = start + Math.floor(rng() * (i - start + 1));
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+    start = end;
+  }
+  return out;
+}
+
 // Official Play! Pokémon Swiss round count by attendance (upper bound → rounds).
 const SWISS_ROUND_TABLE: [number, number][] = [
   [8, 3],

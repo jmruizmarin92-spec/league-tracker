@@ -13,6 +13,7 @@ import {
   generateSwissPairings,
   repairSwissPairings,
   pairKey,
+  shuffleWithinTies,
   type SeatedPairing,
 } from "@/lib/pairing";
 
@@ -42,8 +43,18 @@ function pairingContext(matches: DbMatch[], activeIds: string[]) {
   }));
   const standings = computeStandings(allIds, inputs);
 
+  // Players tied on every ranking key are shuffled among themselves before
+  // pairing. The scorer breaks ties by player id for a stable table, which
+  // is right for display but made round 1 (everyone tied) and every later
+  // tie group pair identically session after session.
   const activeSet = new Set(activeIds);
-  const ordered = standings
+  const ordered = shuffleWithinTies(
+    standings,
+    (a, b) =>
+      a.points === b.points &&
+      a.oppWinRate === b.oppWinRate &&
+      a.wins === b.wins,
+  )
     .map((s) => s.playerId)
     .filter((id) => activeSet.has(id));
 
