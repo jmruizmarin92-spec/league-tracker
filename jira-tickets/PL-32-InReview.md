@@ -43,6 +43,7 @@ Fix: shuffle players within tie groups (same points, OWP and wins) before pairin
 
 - 2026-10-30 — Created, status To Do → In Progress.
 - 2026-10-30 — Fix implemented, unit tests green. Browser QA pending.
-- 2026-10-30 — Status In Progress → In Review, committed and pushed to main (Vercel auto-deploy).
+- 2026-10-30 — Status In Progress → In Review, committed as d71e24c and pushed to main.
+- 2026-10-30 — Vercel production deployment of d71e24c reported success (GitHub deployments API); prod host answers 200. No migration involved. Browser check of a freshly generated round still pending.
 
 Last updated: 2026-10-30
